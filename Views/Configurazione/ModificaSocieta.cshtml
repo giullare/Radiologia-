@@ -1,0 +1,93 @@
+@model RadiologiaAppNew.Models.SocietaManutenzione
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = $"Modifica — {Model.Nome}";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-wrench-adjustable me-2 text-primary"></i>
+            Modifica Società di Manutenzione
+        </h1>
+        <p class="page-subtitle">@Model.Nome</p>
+    </div>
+    <div class="page-actions">
+        <a href="/Configurazione?tab=societa" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <form asp-action="ModificaSocieta"
+              asp-controller="Configurazione" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-wrench-adjustable text-primary"></i>
+                    <h4 class="form-section-title">Dati Società</h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="Nome" class="form-label"></label>
+                            <input asp-for="Nome" class="form-control" />
+                            <span asp-validation-for="Nome"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="NumeroAssistenza"
+                                   class="form-label"></label>
+                            <input asp-for="NumeroAssistenza"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="NumeroReperibilita"
+                                   class="form-label"></label>
+                            <input asp-for="NumeroReperibilita"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="EmailAssistenza"
+                                   class="form-label"></label>
+                            <input asp-for="EmailAssistenza"
+                                   type="email" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="GlobalService"
+                                   class="form-label"></label>
+                            <input asp-for="GlobalService"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="SitoWeb"
+                                   class="form-label"></label>
+                            <input asp-for="SitoWeb"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Note" class="form-label"></label>
+                            <textarea asp-for="Note"
+                                      class="form-control" rows="2">
+                            </textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Salva Modifiche
+                </button>
+                <a href="/Configurazione?tab=societa"
+                   class="btn btn-ghost">Annulla</a>
+            </div>
+        </form>
+    </div>
+</div>

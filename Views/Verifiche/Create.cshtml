@@ -1,0 +1,562 @@
+@model RadiologiaAppNew.ViewModels.Verifiche.VerificaCreateViewModel
+@{
+    Layout = "_Layout";
+    var isEdit = ViewBag.VerificaId != null;
+    ViewData["Title"] = isEdit ? "Modifica Verifica" : "Nuova Verifica CQ";
+}
+
+<!-- ═══ PAGE HEADER ══════════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-clipboard2-plus me-2 text-primary"></i>
+            @(isEdit ? "Modifica Verifica" : "Nuova Verifica CQ")
+        </h1>
+        <p class="page-subtitle">
+            <i class="bi bi-hdd-rack me-1"></i>
+            @Model.ApparecchiaturaCodice — @Model.ApparecchiaturaDescrizione
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId?tab=verifiche"
+           class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i>
+            Torna alla scheda
+        </a>
+    </div>
+</div>
+
+<!-- ═══ FORM ══════════════════════════════════════════════════════ -->
+<form asp-action="@(isEdit ? "Edit" : "Create")"
+      asp-controller="Verifiche"
+      asp-route-id="@(isEdit ? (int?)ViewBag.VerificaId : null)"
+      method="post" id="formVerifica">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ApparecchiaturaId" />
+    <input type="hidden" asp-for="ApparecchiaturaDescrizione" />
+    <input type="hidden" asp-for="ApparecchiaturaCodice" />
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert-radiologia alert-danger mb-4">
+            <i class="bi bi-exclamation-circle alert-icon"></i>
+            <div>
+                <strong>Correggi i seguenti errori:</strong>
+                <ul style="margin:6px 0 0;padding-left:16px;">
+                    @foreach (var error in ViewData.ModelState.Values
+                        .SelectMany(v => v.Errors))
+                    {
+                        <li style="font-size:0.85rem;">@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <!-- ── Colonna sinistra: dati principali ──────────────── -->
+        <div class="col-lg-8">
+
+            <!-- Tipo e Protocollo -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-clipboard2 text-primary"></i>
+                    <h4 class="form-section-title">
+                        Tipo Verifica e Protocollo
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-5">
+                            <label asp-for="Tipo" class="form-label"></label>
+                            <select asp-for="Tipo" class="form-select"
+                                    id="selectTipo"
+                                    onchange="onTipoChange()">
+                                @foreach (var t in Enum.GetValues<RadiologiaAppNew.Enums.TipoProtocollo>())
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-7">
+                            <label asp-for="ProtocolloId" class="form-label">
+                                Protocollo di Riferimento
+                            </label>
+                            <select asp-for="ProtocolloId"
+                                    class="form-select"
+                                    id="selectProtocollo"
+                                    onchange="onProtocolloChange()">
+                                <option value="">
+                                    — Seleziona protocollo —
+                                </option>
+                                @foreach (var p in Model.ProtocolliDisponibili)
+                                {
+                                    <option value="@p.Id"
+        data-periodicita="@p.PeriodicitaMesi"
+        selected="@(Model.ProtocolloId == p.Id)">
+    @p.Codice — @p.Descrizione (@p.Revisione)
+</option>
+
+                                }
+                            </select>
+                            <div class="form-text" id="infoPeriodicita"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date ed Esito -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-calendar3 text-primary"></i>
+                    <h4 class="form-section-title">Date ed Esito</h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-3">
+                            <label asp-for="DataInizio" class="form-label">
+                                Data Inizio Verifica
+                            </label>
+                            <input asp-for="DataInizio"
+                                   type="date" class="form-control"
+                                   onchange="calcolaProssimaVerifica()" />
+                            <span asp-validation-for="DataInizio"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="DataFine" class="form-label">
+                                Data Fine Verifica
+                            </label>
+                            <input asp-for="DataFine"
+                                   type="date" class="form-control" />
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="Anno" class="form-label"></label>
+                            <input asp-for="Anno"
+                                   type="number" class="form-control"
+                                   placeholder="Es. 2025" />
+                        </div>
+
+                        <div class="col-md-3" id="divSemestre"
+                             style="display:none;">
+                            <label asp-for="Semestre" class="form-label"></label>
+                            <select asp-for="Semestre" class="form-select">
+                                <option value="">— Seleziona —</option>
+                                @for (int y = DateTime.Today.Year;
+                                      y >= DateTime.Today.Year - 3; y--)
+                                {
+                                    <option value="1S-@y">1° Semestre @y</option>
+                                    <option value="2S-@y">2° Semestre @y</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Esito" class="form-label"></label>
+                            <select asp-for="Esito" class="form-select"
+                                    id="selectEsito"
+                                    onchange="onEsitoChange()">
+                                @foreach (var e in Enum.GetValues<RadiologiaAppNew.Enums.EsitoVerifica>())
+                                {
+                                    <option value="@e">@e</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="ProssimaVerificaData"
+                                   class="form-label">
+                                Prossima Verifica
+                            </label>
+                            <input asp-for="ProssimaVerificaData"
+                                   type="date" class="form-control"
+                                   id="inputProssimaVerifica" />
+                            <div class="form-text">
+                                Calcolata automaticamente dalla periodicità
+                                del protocollo
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Note" class="form-label"></label>
+                            <textarea asp-for="Note"
+                                      class="form-control" rows="3"
+                                      placeholder="Note tecniche, osservazioni, parametri rilevati...">
+                            </textarea>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sezione Guasto (visibile se esito Non Superato / Con Riserva) -->
+            <div class="form-section" id="sezioneGuasto"
+                 style="display:none;">
+                <div class="form-section-header"
+                     style="background:#FEF9E7;">
+                    <i class="bi bi-tools text-warning"></i>
+                    <h4 class="form-section-title"
+                        style="color:var(--warning);">
+                        Informazioni Guasto
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label asp-for="InfoGuasto"
+                                   class="form-label"></label>
+                            <textarea asp-for="InfoGuasto"
+                                      class="form-control" rows="2"
+                                      placeholder="Descrivi il guasto o la non conformità rilevata...">
+                            </textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="TipoGuasto"
+                                   class="form-label"></label>
+                            <select asp-for="TipoGuasto"
+                                    class="form-select">
+                                <option value="">— Seleziona —</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Software">Software</option>
+                                <option value="Calibrazione">Calibrazione</option>
+                                <option value="Meccanico">Meccanico</option>
+                                <option value="Elettrico">Elettrico</option>
+                                <option value="Altro">Altro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sezione Benestare (visibile per Accettazione) -->
+            <div class="form-section" id="sezioneBenestare"
+                 style="display:none;">
+                <div class="form-section-header"
+                     style="background:#D5F5E3;">
+                    <i class="bi bi-patch-check text-success"></i>
+                    <h4 class="form-section-title"
+                        style="color:var(--success);">
+                        Benestare
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="BenestareQualitaTecnicaData"
+                                   class="form-label">
+                                Data Benestare Qualità Tecnica
+                            </label>
+                            <input asp-for="BenestareQualitaTecnicaData"
+                                   type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-8">
+                            <label asp-for="BenestareQualitaTecnicaBy"
+                                   class="form-label">
+                                Firmato da (SFM)
+                            </label>
+                            <input asp-for="BenestareQualitaTecnicaBy"
+                                   class="form-control"
+                                   placeholder="Nome e cognome SFM" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="BenestareCliniciData"
+                                   class="form-label">
+                                Data Benestare Clinico
+                            </label>
+                            <input asp-for="BenestareCliniciData"
+                                   type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-8">
+                            <label asp-for="BenestareClinicoBy"
+                                   class="form-label">
+                                Firmato da (RIR)
+                            </label>
+                            <input asp-for="BenestareClinicoBy"
+                                   class="form-control"
+                                   placeholder="Nome e cognome RIR" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sezione Manutenzione (visibile per PostManutenzione) -->
+            <div class="form-section" id="sezioneManutenzione"
+                 style="display:none;">
+                <div class="form-section-header"
+                     style="background:#EBF5FB;">
+                    <i class="bi bi-wrench text-primary"></i>
+                    <h4 class="form-section-title">
+                        Dettagli Intervento Manutenzione
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="TipoInterventoManutenzione"
+                                   class="form-label"></label>
+                            <input asp-for="TipoInterventoManutenzione"
+                                   class="form-control"
+                                   placeholder="Es. Sostituzione tubo RX" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="DataInterventoManutenzione"
+                                   class="form-label"></label>
+                            <input asp-for="DataInterventoManutenzione"
+                                   type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="SocietaManutenzione"
+                                   class="form-label"></label>
+                            <input asp-for="SocietaManutenzione"
+                                   class="form-control"
+                                   placeholder="Società" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="TecnicoManutentore"
+                                   class="form-label"></label>
+                            <input asp-for="TecnicoManutentore"
+                                   class="form-control"
+                                   placeholder="Nome tecnico manutentore" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Colonna destra: info e riepilogo ──────────────── -->
+        <div class="col-lg-4">
+
+            <!-- Info apparecchiatura -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-hdd-rack card-icon"></i>
+                        Apparecchiatura
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="fw-700 mb-1">
+                        @Model.ApparecchiaturaDescrizione
+                    </div>
+                    <code style="font-size:0.8rem;
+                                 background:var(--neutral-100);
+                                 padding:2px 6px;border-radius:4px;">
+                        @Model.ApparecchiaturaCodice
+                    </code>
+                    <hr class="divider" />
+                    <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId"
+                       class="btn btn-ghost btn-sm w-100">
+                        <i class="bi bi-eye"></i>
+                        Apri scheda apparecchiatura
+                    </a>
+                </div>
+            </div>
+
+            <!-- Info protocollo selezionato -->
+            <div class="card mb-4" id="cardInfoProtocollo"
+                 style="display:none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-info-circle card-icon"></i>
+                        Info Protocollo
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div id="protocolloDescrizione"
+                         style="font-size:0.875rem;
+                                color:var(--neutral-700);">
+                    </div>
+                    <div id="protocolloPeriodicita"
+                         style="font-size:0.8rem;
+                                color:var(--neutral-500);
+                                margin-top:8px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Riepilogo prima di salvare -->
+            <div class="card"
+                 style="border:2px solid var(--primary);
+                        border-radius:var(--border-radius);">
+                <div class="card-header"
+                     style="background:var(--primary);color:white;">
+                    <h3 class="card-title" style="color:white;">
+                        <i class="bi bi-clipboard-check me-2"></i>
+                        Riepilogo
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <div class="form-label">Tipo</div>
+                        <div id="riepilogoTipo" class="fw-600">—</div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="form-label">Data</div>
+                        <div id="riepilogoData" class="fw-600">—</div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="form-label">Esito</div>
+                        <div id="riepilogoEsito" class="fw-600">—</div>
+                    </div>
+                    <div>
+                        <div class="form-label">Prossima verifica</div>
+                        <div id="riepilogoProssima" class="fw-600">—</div>
+                    </div>
+                    <hr class="divider" />
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-check-circle"></i>
+                        @(isEdit ? "Aggiorna Verifica" : "Salva Verifica")
+                    </button>
+                    <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId?tab=verifiche"
+                       class="btn btn-ghost w-100 mt-2">
+                        Annulla
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+// Periodicità dal protocollo selezionato (in mesi)
+let periodicitaCorrente = null;
+
+// ─── INIT ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    onTipoChange();
+    onEsitoChange();
+    aggiornaRiepilogo();
+    // Se edit: mostra periodicità del protocollo già selezionato
+    const sel = document.getElementById('selectProtocollo');
+    if (sel?.value) {
+        const opt = sel.options[sel.selectedIndex];
+        const per = opt.getAttribute('data-periodicita');
+        if (per) {
+            periodicitaCorrente = parseInt(per);
+            mostraInfoProtocollo(opt.text, per);
+        }
+    }
+});
+
+// ─── TIPO CHANGE ─────────────────────────────────────────────────
+function onTipoChange() {
+    const tipo = document.getElementById('selectTipo')?.value;
+
+    // Semestre: visibile solo per protocolli RM (periodici semestrali)
+    const divSem = document.getElementById('divSemestre');
+    if (divSem) divSem.style.display =
+        tipo === 'Periodico' ? 'block' : 'none';
+
+    // Benestare: solo per Accettazione
+    const sezBen = document.getElementById('sezioneBenestare');
+    if (sezBen) sezBen.style.display =
+        tipo === 'Accettazione' ? 'block' : 'none';
+
+    // Manutenzione: solo per PostManutenzione
+    const sezMan = document.getElementById('sezioneManutenzione');
+    if (sezMan) sezMan.style.display =
+        tipo === 'PostManutenzione' ? 'block' : 'none';
+
+    aggiornaRiepilogo();
+}
+
+// ─── ESITO CHANGE ────────────────────────────────────────────────
+function onEsitoChange() {
+    const esito = document.getElementById('selectEsito')?.value;
+    const sez = document.getElementById('sezioneGuasto');
+    if (sez) sez.style.display =
+        (esito === 'NonSuperato' || esito === 'ConRiserva')
+            ? 'block' : 'none';
+    aggiornaRiepilogo();
+}
+
+// ─── PROTOCOLLO CHANGE ───────────────────────────────────────────
+function onProtocolloChange() {
+    const sel  = document.getElementById('selectProtocollo');
+    const opt  = sel?.options[sel.selectedIndex];
+    const per  = opt?.getAttribute('data-periodicita');
+
+    periodicitaCorrente = per ? parseInt(per) : null;
+
+    if (opt?.value) {
+        mostraInfoProtocollo(opt.text, per);
+    } else {
+        document.getElementById('cardInfoProtocollo').style.display
+            = 'none';
+    }
+
+    calcolaProssimaVerifica();
+}
+
+function mostraInfoProtocollo(testo, periodicita) {
+    const card = document.getElementById('cardInfoProtocollo');
+    if (card) card.style.display = 'block';
+
+    const desc = document.getElementById('protocolloDescrizione');
+    if (desc) desc.textContent = testo;
+
+    const per = document.getElementById('protocolloPeriodicita');
+    if (per) {
+        per.textContent = periodicita
+            ? `Periodicità: ogni ${periodicita} mesi`
+            : 'Verifica non periodica';
+    }
+}
+
+// ─── CALCOLA PROSSIMA VERIFICA ───────────────────────────────────
+function calcolaProssimaVerifica() {
+    const dataInput = document.getElementById('DataInizio')?.value;
+    const prossimaInput = document.getElementById('inputProssimaVerifica');
+
+    if (!dataInput || !periodicitaCorrente || !prossimaInput) return;
+    if (prossimaInput.value) return; // Non sovrascrivere se già impostata
+
+    const data   = new Date(dataInput);
+    data.setMonth(data.getMonth() + periodicitaCorrente);
+    const yyyy   = data.getFullYear();
+    const mm     = String(data.getMonth() + 1).padStart(2, '0');
+    const dd     = String(data.getDate()).padStart(2, '0');
+    prossimaInput.value = `${yyyy}-${mm}-${dd}`;
+
+    aggiornaRiepilogo();
+}
+
+// ─── RIEPILOGO ───────────────────────────────────────────────────
+function aggiornaRiepilogo() {
+    const get = id => document.getElementById(id)?.value || '—';
+    const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val || '—';
+    };
+
+    set('riepilogoTipo',
+        document.getElementById('selectTipo')?.value || '—');
+
+    const d = get('DataInizio');
+    set('riepilogoData', d !== '—'
+        ? new Date(d).toLocaleDateString('it-IT') : '—');
+
+    set('riepilogoEsito',
+        document.getElementById('selectEsito')?.value || '—');
+
+    const p = get('ProssimaVerificaData');
+    set('riepilogoProssima', p !== '—'
+        ? new Date(p).toLocaleDateString('it-IT') : 'Non calcolata');
+}
+
+// Aggiorna riepilogo live
+document.addEventListener('change', aggiornaRiepilogo);
+document.addEventListener('input',  aggiornaRiepilogo);
+</script>
+}

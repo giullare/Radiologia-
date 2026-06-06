@@ -1,0 +1,158 @@
+@model RadiologiaAppNew.Controllers.UtenteDetailVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = $"{Model.Nome} {Model.Cognome}";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-person-badge me-2 text-primary"></i>
+            @Model.Nome @Model.Cognome
+        </h1>
+        <p class="page-subtitle">@Model.Email</p>
+    </div>
+    <div class="page-actions">
+        <a href="/Utenti/Edit/@Model.Id" class="btn btn-outline">
+            <i class="bi bi-pencil"></i> Modifica
+        </a>
+        <a href="/Utenti" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna alla lista
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center" style="padding:32px;">
+                <div style="width:80px;height:80px;border-radius:50%;
+                            background:@(Model.Attivo
+                                ? "var(--primary)" : "var(--neutral-300)");
+                            color:white;display:flex;align-items:center;
+                            justify-content:center;font-size:2rem;
+                            font-weight:700;margin:0 auto 16px;">
+                    @(Model.Nome.Length > 0 ? Model.Nome[0].ToString() : "")@(Model.Cognome.Length > 0 ? Model.Cognome[0].ToString() : "")
+                </div>
+                <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">
+                    @Model.Nome @Model.Cognome
+                </h2>
+                <div style="color:var(--neutral-500);
+                            font-size:0.875rem;margin-bottom:16px;">
+                    @Model.Email
+                </div>
+                @if (Model.Attivo)
+                {
+                    <span class="badge-compliance badge-ok">
+                        <i class="bi bi-check-circle"></i> Attivo
+                    </span>
+                }
+                else
+                {
+                    <span class="badge-compliance badge-missing">
+                        <i class="bi bi-slash-circle"></i> Disabilitato
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="form-section mb-4">
+            <div class="form-section-header">
+                <i class="bi bi-info-circle text-primary"></i>
+                <h4 class="form-section-title">Informazioni Account</h4>
+            </div>
+            <div class="form-section-body">
+                <div class="row g-3">
+                    @if (!string.IsNullOrEmpty(Model.Telefono))
+                    {
+                        <div class="col-md-4">
+                            <div class="form-label">Telefono Interno</div>
+                            <div class="fw-600">@Model.Telefono</div>
+                        </div>
+                    }
+                    <div class="col-md-4">
+                        <div class="form-label">Registrato il</div>
+                        <div class="fw-600">
+                            @Model.CreatedAt.ToString("dd/MM/yyyy")
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-label">Ultimo Accesso</div>
+                        <div class="fw-600">
+                            @(Model.UltimoAccesso.HasValue
+                                ? Model.UltimoAccesso.Value
+                                    .ToString("dd/MM/yyyy HH:mm")
+                                : "Mai effettuato")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="bi bi-shield-lock text-primary"></i>
+                <h4 class="form-section-title">
+                    Ruoli Assegnati (@Model.Ruoli.Count)
+                </h4>
+            </div>
+            <div class="form-section-body">
+                @if (!Model.Ruoli.Any())
+                {
+                    <div style="color:var(--neutral-400);
+                                font-size:0.875rem;">
+                        Nessun ruolo assegnato
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-2">
+                        @foreach (var ruolo in Model.Ruoli)
+                        {
+                            var desc = ruolo switch
+                            {
+                                "ADMIN_ORG"  => "Accesso completo al sistema",
+                                "EFM"        => "Gestione apparecchiature e CQ",
+                                "EDR"        => "Adempimenti radioprotezione",
+                                "RIR"        => "Benestare clinico impianti",
+                                "SFM"        => "Verifiche tecniche specialistiche",
+                                "MA"         => "Responsabile medico RM",
+                                "ES"         => "Sicurezza RM",
+                                "MR"         => "Medico responsabile RM",
+                                "RQ"         => "Supervisione qualità",
+                                "OPERATORE"  => "Inserimento dati limitato",
+                                "READER"     => "Solo lettura",
+                                _            => "—"
+                            };
+                            <div class="col-md-6">
+                                <div style="display:flex;gap:10px;
+                                            align-items:flex-start;
+                                            padding:10px 14px;
+                                            background:rgba(27,79,114,0.04);
+                                            border:1.5px solid var(--primary);
+                                            border-radius:8px;">
+                                    <i class="bi bi-shield-fill-check"
+                                       style="color:var(--primary);
+                                              margin-top:2px;"></i>
+                                    <div>
+                                        <div class="fw-700"
+                                             style="font-size:0.875rem;
+                                                    color:var(--primary);">
+                                            @ruolo
+                                        </div>
+                                        <div style="font-size:0.775rem;
+                                                    color:var(--neutral-500);">
+                                            @desc
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

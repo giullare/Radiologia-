@@ -1,0 +1,176 @@
+@model RadiologiaAppNew.Controllers.MedicinaNucleareIndexVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Registri Medicina Nucleare";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-radioactive me-2 text-primary"></i>
+            Modulo 3 — Registri Medicina Nucleare
+        </h1>
+        <p class="page-subtitle">
+            Sorveglianza ambientale, dosimetria, contaminazione,
+            radiofarmaci e rifiuti
+        </p>
+    </div>
+</div>
+
+<!-- ═══ INFO MODULO ══════════════════════════════════════════════ -->
+<div class="alert-radiologia alert-info mb-4">
+    <i class="bi bi-info-circle alert-icon"></i>
+    <div>
+        <strong>Modulo 3 — D.Lgs. 101/20</strong><br />
+        Questo modulo gestisce i registri di sorveglianza in Medicina Nucleare:
+        dosimetria ambientale, contaminazione superficiale, inventario
+        radiofarmaci e sorgenti, registro rifiuti, controllo ventilazione.
+        <br />
+        <span style="font-size:0.8rem;color:var(--neutral-500);">
+            ⚠️ Modulo in sviluppo — funzionalità complete disponibili
+            nella prossima versione.
+        </span>
+    </div>
+</div>
+
+<!-- ═══ APPARECCHIATURE MN ══════════════════════════════════════ -->
+@if (!Model.Apparecchiature.Any())
+{
+    <div class="card">
+        <div class="empty-state">
+            <i class="bi bi-radioactive empty-state-icon"></i>
+            <div class="empty-state-title">
+                Nessuna apparecchiatura di Medicina Nucleare
+            </div>
+            <p class="empty-state-text">
+                Aggiungi apparecchiature con ambito "Medicina Nucleare"
+                per attivare i registri di sorveglianza.
+            </p>
+            <a href="/Apparecchiature/Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                Nuova Apparecchiatura MN
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4 mb-4">
+        @foreach (var a in Model.Apparecchiature)
+        {
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100"
+                     style="cursor:pointer;"
+                     onclick="location.href='/Apparecchiature/Detail/@a.Id'">
+                    <div style="background:linear-gradient(135deg,
+                                    #148F77,#0E6655);
+                                padding:20px;
+                                border-radius:12px 12px 0 0;">
+                        <div class="d-flex justify-content-between
+                                    align-items-start">
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);
+                                            font-size:0.75rem;font-weight:600;
+                                            text-transform:uppercase;">
+                                    @a.Codice
+                                </div>
+                                <div style="color:white;font-weight:700;
+                                            font-size:1rem;margin-top:4px;">
+                                    @a.Descrizione
+                                </div>
+                                <div style="color:rgba(255,255,255,0.7);
+                                            font-size:0.8rem;margin-top:2px;">
+                                    @a.Tipologia
+                                </div>
+                            </div>
+                            <i class="bi bi-radioactive"
+                               style="color:rgba(255,255,255,0.3);
+                                      font-size:1.8rem;"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="form-label">Costruttore</div>
+                                <div style="font-size:0.85rem;font-weight:600;">
+                                    @a.Costruttore
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-label">Reparto</div>
+                                <div style="font-size:0.85rem;">
+                                    @(a.Reparto?.Nome ?? "—")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/Apparecchiature/Detail/@a.Id"
+                           class="btn btn-outline btn-sm w-100"
+                           onclick="event.stopPropagation()">
+                            <i class="bi bi-eye"></i>
+                            Apri Scheda
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Sezioni registro (placeholder con roadmap) -->
+    <div class="row g-4">
+        @{
+            var sezioni = new[]
+            {
+                ("bi-thermometer-half", "Dosimetria Ambientale",
+                 "Dosimetri passivi e sonde area monitor",
+                 "var(--primary)"),
+                ("bi-exclamation-triangle", "Contaminazione Superficiale",
+                 "Test contaminazione Bq/cm²",
+                 "var(--warning)"),
+                ("bi-trash3", "Registro Rifiuti",
+                 "Rifiuti radioattivi e smaltimento",
+                 "var(--danger)"),
+                ("bi-flask", "Inventario Radiofarmaci",
+                 "Attività autorizzate e utilizzate",
+                 "var(--secondary)"),
+                ("bi-cpu", "Inventario Strumentazione",
+                 "Calibrazioni e stato strumenti",
+                 "var(--accent)"),
+                ("bi-wind", "Controllo Ventilazione",
+                 "Ricambi ora e pressione differenziale",
+                 "var(--primary-light)")
+            };
+        }
+        @foreach (var (icon, titolo, desc, colore) in sezioni)
+        {
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100"
+                     style="border-top:3px solid @colore;">
+                    <div class="card-body text-center"
+                         style="padding:28px;">
+                        <i class="bi @icon"
+                           style="font-size:2.5rem;
+                                  color:@colore;
+                                  opacity:0.7;
+                                  margin-bottom:12px;
+                                  display:block;"></i>
+                        <h5 class="fw-700"
+                            style="font-size:0.95rem;margin-bottom:6px;">
+                            @titolo
+                        </h5>
+                        <p style="font-size:0.82rem;
+                                  color:var(--neutral-500);
+                                  margin-bottom:16px;">
+                            @desc
+                        </p>
+                        <span class="badge-compliance badge-todo">
+                            <i class="bi bi-clock"></i>
+                            In sviluppo — v2.0
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

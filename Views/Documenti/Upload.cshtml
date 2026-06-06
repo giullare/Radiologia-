@@ -1,0 +1,310 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Carica Documento";
+    var apparecchiatura = ViewBag.Apparecchiatura as
+        RadiologiaAppNew.Models.Apparecchiatura;
+    var tipo     = (string)(ViewBag.Tipo ?? "apparecchiatura");
+    var entitaId = (int)(ViewBag.EntitaId ?? 0);
+    var returnUrl = (string)(ViewBag.ReturnUrl ?? "/");
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-upload me-2 text-primary"></i>
+            Carica Documento
+        </h1>
+        @if (apparecchiatura != null)
+        {
+            <p class="page-subtitle">
+                <i class="bi bi-hdd-rack me-1"></i>
+                @apparecchiatura.Codice — @apparecchiatura.Descrizione
+            </p>
+        }
+    </div>
+    <div class="page-actions">
+        <a href="@returnUrl" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i>
+            Torna indietro
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+
+        <form asp-action="@(tipo == "verifica" ? "UploadVerifica" : "Upload")"
+              asp-controller="Documenti"
+              asp-route-id="@entitaId"
+              method="post"
+              enctype="multipart/form-data"
+              id="formUpload">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-file-earmark-arrow-up card-icon"></i>
+                        Seleziona File
+                    </h3>
+                </div>
+                <div class="card-body">
+
+                    <!-- Drop area -->
+                    <div class="upload-area" id="dropArea"
+                         onclick="document.getElementById('fileInput').click()">
+                        <i class="bi bi-cloud-upload upload-icon"
+                           id="uploadIcon"></i>
+                        <div class="upload-text" id="uploadText">
+                            Trascina qui il file oppure clicca per selezionarlo
+                        </div>
+                        <div class="upload-hint">
+                            PDF, Word, Excel, immagini — max 50 MB
+                        </div>
+                    </div>
+
+                    <input type="file"
+                           name="file"
+                           id="fileInput"
+                           style="display:none;"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,
+                                   .jpg,.jpeg,.png,.tiff,.zip"
+                           onchange="onFileSelected(this)" />
+
+                    <!-- Preview file selezionato -->
+                    <div id="filePreview"
+                         style="display:none;margin-top:12px;">
+                        <div class="file-item">
+                            <i class="bi bi-file-earmark file-item-icon"
+                               id="previewIcon"></i>
+                            <div class="file-item-info">
+                                <div class="file-item-name"
+                                     id="previewName"></div>
+                                <div class="file-item-meta"
+                                     id="previewSize"></div>
+                            </div>
+                            <button type="button"
+                                    class="btn btn-ghost btn-icon btn-sm"
+                                    onclick="rimuoviFile()"
+                                    title="Rimuovi">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-tag card-icon"></i>
+                        Metadati Documento
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                Categoria Documento
+                            </label>
+                            <select name="categoria" class="form-select"
+                                    required>
+                                <option value="">— Seleziona —</option>
+                                @if (tipo == "verifica")
+                                {
+                                    <option value="Report Verifica" selected>
+                                        Report Verifica
+                                    </option>
+                                    <option value="File Lavoro CQ">
+                                        File Lavoro CQ (Excel)
+                                    </option>
+                                    <option value="Protocollo CQ">
+                                        Protocollo CQ
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="Manuale d'Uso">
+                                        Manuale d'Uso
+                                    </option>
+                                    <option value="Manuale di Qualità">
+                                        Manuale di Qualità
+                                    </option>
+                                    <option value="Planimetria">
+                                        Planimetria / Zone Classificate
+                                    </option>
+                                    <option value="Foto Apparecchiatura">
+                                        Foto Apparecchiatura
+                                    </option>
+                                    <option value="Ricevuta INAIL">
+                                        Ricevuta INAIL
+                                    </option>
+                                    <option value="Ricevuta STRIMS">
+                                        Ricevuta STRIMS
+                                    </option>
+                                    <option value="Notifica di Pratica">
+                                        Notifica di Pratica
+                                    </option>
+                                    <option value="Nulla Osta">
+                                        Nulla Osta
+                                    </option>
+                                    <option value="Certificato Cespite">
+                                        Certificato Cespite
+                                    </option>
+                                }
+                                <option value="Altro">Altro</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                Descrizione (opzionale)
+                            </label>
+                            <input type="text" name="descrizione"
+                                   class="form-control"
+                                   placeholder="Breve descrizione del documento..." />
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div id="progressContainer"
+                 style="display:none;margin-top:16px;">
+                <div style="background:var(--neutral-200);
+                            border-radius:8px;height:8px;
+                            overflow:hidden;">
+                    <div id="progressBar"
+                         style="background:var(--primary);
+                                height:100%;width:0%;
+                                transition:width 0.3s ease;
+                                border-radius:8px;">
+                    </div>
+                </div>
+                <div style="font-size:0.8rem;color:var(--neutral-500);
+                            margin-top:6px;text-align:center;"
+                     id="progressText">
+                    Caricamento in corso...
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn btn-primary flex-fill"
+                        id="btnUpload" disabled>
+                    <i class="bi bi-upload"></i>
+                    Carica Documento
+                </button>
+                <a href="@returnUrl" class="btn btn-ghost">
+                    Annulla
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const dropArea  = document.getElementById('dropArea');
+const fileInput = document.getElementById('fileInput');
+const btnUpload = document.getElementById('btnUpload');
+
+// ─── DRAG & DROP ─────────────────────────────────────────────────
+['dragenter','dragover'].forEach(e => {
+    dropArea.addEventListener(e, ev => {
+        ev.preventDefault();
+        dropArea.classList.add('drag-over');
+    });
+});
+
+['dragleave','drop'].forEach(e => {
+    dropArea.addEventListener(e, ev => {
+        ev.preventDefault();
+        dropArea.classList.remove('drag-over');
+    });
+});
+
+dropArea.addEventListener('drop', ev => {
+    const files = ev.dataTransfer?.files;
+    if (files?.length) {
+        fileInput.files = files;
+        onFileSelected(fileInput);
+    }
+});
+
+// ─── FILE SELEZIONATO ────────────────────────────────────────────
+function onFileSelected(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Validazione dimensione
+    if (file.size > 50 * 1024 * 1024) {
+        alert('File troppo grande. Massimo 50 MB.');
+        input.value = '';
+        return;
+    }
+
+    // Aggiorna UI drop area
+    document.getElementById('uploadIcon').className =
+        'bi bi-file-earmark-check upload-icon';
+    document.getElementById('uploadText').textContent =
+        'File selezionato';
+
+    // Preview
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const iconMap = {
+        pdf: 'bi-file-earmark-pdf pdf',
+        xlsx: 'bi-file-earmark-excel excel',
+        xls:  'bi-file-earmark-excel excel',
+        docx: 'bi-file-earmark-word word',
+        doc:  'bi-file-earmark-word word',
+        jpg:  'bi-file-earmark-image image',
+        jpeg: 'bi-file-earmark-image image',
+        png:  'bi-file-earmark-image image'
+    };
+
+    document.getElementById('previewIcon').className =
+        `bi ${iconMap[ext] || 'bi-file-earmark other'} file-item-icon`;
+    document.getElementById('previewName').textContent = file.name;
+    document.getElementById('previewSize').textContent =
+        `${(file.size / 1024).toFixed(0)} KB`;
+    document.getElementById('filePreview').style.display = 'block';
+
+    btnUpload.disabled = false;
+}
+
+function rimuoviFile() {
+    fileInput.value = '';
+    document.getElementById('filePreview').style.display = 'none';
+    document.getElementById('uploadIcon').className =
+        'bi bi-cloud-upload upload-icon';
+    document.getElementById('uploadText').textContent =
+        'Trascina qui il file oppure clicca per selezionarlo';
+    btnUpload.disabled = true;
+}
+
+// ─── PROGRESS SIMULATO ───────────────────────────────────────────
+document.getElementById('formUpload')
+    .addEventListener('submit', () => {
+        document.getElementById('progressContainer')
+            .style.display = 'block';
+        btnUpload.disabled = true;
+        btnUpload.innerHTML =
+            '<i class="bi bi-hourglass-split"></i> Caricamento...';
+
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress = Math.min(progress + Math.random() * 15, 90);
+            document.getElementById('progressBar').style.width =
+                progress + '%';
+        }, 200);
+
+        // Pulizia interval dopo timeout
+        setTimeout(() => clearInterval(interval), 10000);
+    });
+</script>
+}

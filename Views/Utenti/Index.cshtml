@@ -1,0 +1,180 @@
+@model List<RadiologiaAppNew.Controllers.UtenteRowVm>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Gestione Utenti";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-people me-2 text-primary"></i>
+            Gestione Utenti
+        </h1>
+        <p class="page-subtitle">@Model.Count utenti registrati</p>
+    </div>
+    <div class="page-actions">
+        <a href="/Utenti/Create" class="btn btn-primary">
+            <i class="bi bi-person-plus"></i>
+            Nuovo Utente
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="bi bi-table card-icon"></i>
+            Elenco Utenti
+        </h3>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="table-radiologia w-100">
+            <thead>
+                <tr>
+                    <th>Utente</th>
+                    <th>Email</th>
+                    <th>Ruoli</th>
+                    <th>Ultimo Accesso</th>
+                    <th>Stato</th>
+                    <th style="width:120px;">Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:36px;height:36px;
+                                            border-radius:50%;
+                                            background:@(u.Attivo
+                                                ? "var(--primary)"
+                                                : "var(--neutral-300)");
+                                            color:white;
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                            font-size:0.8rem;
+                                            font-weight:700;
+                                            flex-shrink:0;">
+                                    @(u.Nome.Length > 0 ? u.Nome[0].ToString() : "")@(u.Cognome.Length > 0 ? u.Cognome[0].ToString() : "")
+                                </div>
+                                <div>
+                                    <div class="fw-600">
+                                        @u.Nome @u.Cognome
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="mailto:@u.Email"
+                               style="font-size:0.85rem;">
+                                @u.Email
+                            </a>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var r in u.Ruoli)
+                                {
+                                    <span style="background:var(--primary);
+                                                 color:white;
+                                                 font-size:0.65rem;
+                                                 font-weight:700;
+                                                 padding:2px 7px;
+                                                 border-radius:10px;">
+                                        @r
+                                    </span>
+                                }
+                                @if (!u.Ruoli.Any())
+                                {
+                                    <span style="color:var(--neutral-400);
+                                                 font-size:0.8rem;">
+                                        Nessun ruolo
+                                    </span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-size:0.85rem;
+                                         color:var(--neutral-500);">
+                                @(u.UltimoAccesso.HasValue
+                                    ? u.UltimoAccesso.Value
+                                        .ToString("dd/MM/yyyy HH:mm")
+                                    : "Mai")
+                            </span>
+                        </td>
+                        <td>
+                            @if (u.Attivo)
+                            {
+                                <span class="badge-compliance badge-ok">
+                                    <i class="bi bi-check-circle"></i>
+                                    Attivo
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-compliance badge-missing">
+                                    <i class="bi bi-slash-circle"></i>
+                                    Disabilitato
+                                </span>
+                            }
+                        </td>
+                        <td>
+    <div class="d-flex gap-1">
+        <a href="/Utenti/Detail/@u.Id"
+           class="btn btn-ghost btn-icon btn-sm"
+           title="Visualizza profilo"
+           data-bs-toggle="tooltip">
+            <i class="bi bi-eye"></i>
+        </a>
+        <a href="/Utenti/Edit/@u.Id"
+           class="btn btn-ghost btn-icon btn-sm"
+           title="Modifica"
+           data-bs-toggle="tooltip">
+            <i class="bi bi-pencil"></i>
+        </a>
+        <form asp-action="ToggleAttivo"
+              asp-controller="Utenti"
+              method="post"
+              style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@u.Id" />
+            <button type="submit"
+                    class="btn btn-ghost btn-icon btn-sm"
+                    title="@(u.Attivo ? "Disabilita" : "Riabilita")"
+                    data-bs-toggle="tooltip"
+                    data-confirm="@(u.Attivo
+                        ? "Disabilitare questo account?"
+                        : "Riabilitare questo account?")">
+                <i class="bi @(u.Attivo
+                    ? "bi-person-slash"
+                    : "bi-person-check")"></i>
+            </button>
+        </form>
+        @if (u.Id != User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+        {
+            <form asp-action="Delete"
+                  asp-controller="Utenti"
+                  method="post"
+                  style="display:inline;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@u.Id" />
+                <button type="submit"
+                        class="btn btn-ghost btn-icon btn-sm"
+                        title="Elimina utente"
+                        data-bs-toggle="tooltip"
+                        data-confirm="ATTENZIONE: eliminare definitivamente l'utente @u.Email? L'operazione non è reversibile."
+                        style="color:var(--danger);">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </form>
+        }
+    </div>
+</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

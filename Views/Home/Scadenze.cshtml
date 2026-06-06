@@ -1,0 +1,331 @@
+@model List<RadiologiaAppNew.Models.RecordVerifica>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Scadenze e Alert";
+    var oggi        = (DateTime)ViewData["Oggi"]!;
+    var giorni      = (int)ViewData["GiorniFiltro"]!;
+    var pagina      = (int)ViewData["PaginaCorrente"]!;
+    var totPagine   = (int)ViewData["TotalePagine"]!;
+    var totRis      = (int)ViewData["TotaleRisultati"]!;
+    var noScadenza  = ViewData["NoScadenza"] as
+        List<RadiologiaAppNew.Models.NullaOsta> ?? new();
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-calendar-event me-2 text-primary"></i>
+            Scadenze e Alert
+        </h1>
+        <p class="page-subtitle">
+            @totRis verific@(totRis==1?"a":"he") +
+            @noScadenza.Count Nulla Osta in scadenza
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/" class="btn btn-ghost">
+            <i class="bi bi-house"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Filtro giorni -->
+<div class="card mb-4">
+    <div class="card-body" style="padding:14px 20px;">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <span style="font-size:0.85rem;font-weight:600;
+                         color:var(--neutral-700);">
+                Mostra scadenze entro:
+            </span>
+            @foreach (var g in new[] { 7, 14, 30, 60, 90 })
+            {
+                <a href="/Home/Scadenze?giorni=@g"
+                   class="btn @(giorni == g ? "btn-primary" : "btn-ghost") btn-sm">
+                    @g giorni
+                </a>
+            }
+            <a href="/Home/Scadenze?giorni=60&tipo=scadute"
+               class="btn btn-danger btn-sm ms-2">
+                <i class="bi bi-x-circle"></i>
+                Solo scadute
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Verifiche in scadenza -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="bi bi-clipboard2-check card-icon"></i>
+            Verifiche CQ in Scadenza
+            <span style="background:var(--neutral-200);
+                         border-radius:10px;padding:1px 8px;
+                         font-size:0.75rem;margin-left:6px;">
+                @totRis
+            </span>
+        </h3>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state" style="padding:40px;">
+            <i class="bi bi-calendar-check empty-state-icon"></i>
+            <div class="empty-state-title">
+                Nessuna scadenza nei prossimi @giorni giorni
+            </div>
+            <p class="empty-state-text">
+                Tutte le verifiche sono in regola.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Apparecchiatura</th>
+                        <th>Tipo Verifica</th>
+                        <th>Protocollo</th>
+                        <th>Scadenza</th>
+                        <th>Stato</th>
+                        <th style="width:80px;">Azione</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in Model)
+                    {
+                        var gg = (v.ProssimaVerificaData!.Value.Date
+                                  - oggi).Days;
+                        <tr class="@(gg < 0 ? "" : "")"
+                            style="@(gg < 0
+                                ? "background:#FFF5F5;"
+                                : gg <= 7
+                                    ? "background:#FFFBF0;" : "")">
+                            <td>
+                                <div class="fw-600">
+                                    @v.Apparecchiatura.Descrizione
+                                </div>
+                                <div style="font-size:0.775rem;
+                                            color:var(--neutral-500);">
+                                    @v.Apparecchiatura.Codice
+                                </div>
+                            </td>
+                            <td>
+                                <span style="font-size:0.85rem;
+                                             font-weight:600;">
+                                    @v.Tipo
+                                </span>
+                            </td>
+                            <td>
+                                <span style="font-size:0.8rem;
+                                             color:var(--neutral-500);">
+                                    @v.Protocollo?.Codice
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-700"
+                                      style="color:@(gg < 0
+                                          ? "var(--danger)"
+                                          : gg <= 7
+                                              ? "var(--danger)"
+                                              : gg <= 30
+                                                  ? "var(--warning)"
+                                                  : "inherit");">
+                                    @v.ProssimaVerificaData.Value
+                                        .ToString("dd/MM/yyyy")
+                                </span>
+                                <div style="font-size:0.75rem;
+                                            color:@(gg < 0
+                                                ? "var(--danger)"
+                                                : "var(--warning)");">
+                                    @if (gg < 0)
+                                    {
+                                        <span>
+                                            Scaduta da @Math.Abs(gg) giorni
+                                        </span>
+                                    }
+                                    else if (gg == 0)
+                                    {
+                                        <span>Scade oggi!</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Tra @gg giorni</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                @if (gg < 0)
+                                {
+                                    <span class="badge-compliance badge-danger">
+                                        <i class="bi bi-x-circle"></i>
+                                        Scaduta
+                                    </span>
+                                }
+                                else if (gg <= 7)
+                                {
+                                    <span class="badge-compliance badge-danger">
+                                        <i class="bi bi-exclamation-circle"></i>
+                                        Urgente
+                                    </span>
+                                }
+                                else if (gg <= 30)
+                                {
+                                    <span class="badge-compliance badge-warning">
+                                        <i class="bi bi-clock"></i>
+                                        Imminente
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge-compliance badge-todo">
+                                        <i class="bi bi-calendar"></i>
+                                        Pianifica
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <a href="/Verifiche/Create/@v.ApparecchiaturaId"
+                                   class="btn btn-primary btn-sm"
+                                   title="Registra verifica">
+                                    <i class="bi bi-plus-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totPagine > 1)
+        {
+            <div class="card-footer">
+                <div class="pagination-radiologia">
+                    @if (pagina > 1)
+                    {
+                        <a href="/Home/Scadenze?pagina=@(pagina-1)&giorni=@giorni"
+                           class="page-btn">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    }
+                    @for (int p = Math.Max(1, pagina-2);
+                          p <= Math.Min(totPagine, pagina+2); p++)
+                    {
+                        <a href="/Home/Scadenze?pagina=@p&giorni=@giorni"
+                           class="page-btn @(p==pagina?"active":"")">
+                            @p
+                        </a>
+                    }
+                    @if (pagina < totPagine)
+                    {
+                        <a href="/Home/Scadenze?pagina=@(pagina+1)&giorni=@giorni"
+                           class="page-btn">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Nulla Osta in scadenza -->
+@if (noScadenza.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="bi bi-shield-check card-icon"></i>
+                Nulla Osta in Scadenza
+                <span style="background:var(--neutral-200);
+                             border-radius:10px;padding:1px 8px;
+                             font-size:0.75rem;margin-left:6px;">
+                    @noScadenza.Count
+                </span>
+            </h3>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Apparecchiatura</th>
+                        <th>Tipo NO</th>
+                        <th>Numero</th>
+                        <th>Scadenza</th>
+                        <th>Stato</th>
+                        <th style="width:80px;">Azione</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var no in noScadenza)
+                    {
+                        var gg = (no.DataScadenza!.Value.Date - oggi).Days;
+                        <tr style="@(gg <= 0 ? "background:#FFF5F5;" :
+                                     gg <= 30 ? "background:#FFFBF0;" : "")">
+                            <td>
+                                <div class="fw-600">
+                                    @no.Apparecchiatura?.Descrizione
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-compliance badge-todo"
+                                      style="font-size:0.75rem;">
+                                    @no.Tipo
+                                </span>
+                            </td>
+                            <td>
+                                <code style="font-size:0.8rem;
+                                             background:var(--neutral-100);
+                                             padding:2px 6px;
+                                             border-radius:4px;">
+                                    @no.Numero
+                                </code>
+                            </td>
+                            <td>
+                                <span class="fw-700"
+                                      style="color:@(gg <= 0
+                                          ? "var(--danger)"
+                                          : gg <= 30
+                                              ? "var(--warning)"
+                                              : "inherit");">
+                                    @no.DataScadenza.Value
+                                        .ToString("dd/MM/yyyy")
+                                </span>
+                                <div style="font-size:0.75rem;
+                                            color:var(--warning);">
+                                    @if (gg < 0)
+                                    {
+                                        <span>Scaduto da @Math.Abs(gg) gg</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Tra @gg giorni</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                @{
+                                    var nClass = gg <= 0 ? "badge-danger"
+                                               : gg <= 30 ? "badge-warning"
+                                               : "badge-todo";
+                                }
+                                <span class="badge-compliance @nClass">
+                                    @no.Stato
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/Adempimenti/NuovoNullaOsta/@no.ApparecchiaturaId"
+                                   class="btn btn-outline btn-sm"
+                                   title="Rinnova NO">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

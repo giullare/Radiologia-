@@ -1,0 +1,144 @@
+@model RadiologiaAppNew.ViewModels.Account.LoginViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Accesso";
+}
+
+<div class="card shadow-lg border-0"
+     style="width: 420px; border-radius: 20px; overflow: hidden;">
+
+    <!-- Header card login -->
+    <div style="background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+                padding: 36px 32px 28px; text-align: center;">
+        <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.15);
+                    border-radius: 16px; display: inline-flex;
+                    align-items: center; justify-content: center;
+                    font-size: 2rem; color: white; margin-bottom: 16px;">
+            <i class="bi bi-radioactive"></i>
+        </div>
+        <h1 style="color: white; font-size: 1.4rem; font-weight: 800;
+                   margin: 0 0 4px; letter-spacing: -0.02em;">
+            RadiologiaApp
+        </h1>
+        <p style="color: rgba(255,255,255,0.6); font-size: 0.8rem; margin: 0;">
+            Fisica Sanitaria e Radioprotezione
+        </p>
+    </div>
+
+    <!-- Body card login -->
+    <div style="padding: 32px;">
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert-radiologia alert-danger mb-4">
+                <i class="bi bi-exclamation-circle alert-icon"></i>
+                <div>
+                    @foreach (var error in ViewData.ModelState.Values
+                        .SelectMany(v => v.Errors))
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                </div>
+            </div>
+        }
+
+        <form asp-action="Login" asp-controller="Account" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+            <div class="mb-4">
+                <label asp-for="Email" class="form-label"></label>
+                <div style="position: relative;">
+                    <i class="bi bi-envelope"
+                       style="position: absolute; left: 12px; top: 50%;
+                              transform: translateY(-50%);
+                              color: var(--neutral-500); font-size: 0.9rem;"></i>
+                    <input asp-for="Email"
+                           class="form-control"
+                           style="padding-left: 36px;"
+                           placeholder="nome@ospedale.it"
+                           autocomplete="email" />
+                </div>
+                <span asp-validation-for="Email" class="text-danger"
+                      style="font-size:0.775rem"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Password" class="form-label"></label>
+                <div style="position: relative;">
+                    <i class="bi bi-lock"
+                       style="position: absolute; left: 12px; top: 50%;
+                              transform: translateY(-50%);
+                              color: var(--neutral-500); font-size: 0.9rem;"></i>
+                    <input asp-for="Password"
+                           class="form-control"
+                           style="padding-left: 36px;"
+                           placeholder="••••••••"
+                           autocomplete="current-password"
+                           id="passwordInput" />
+                    <button type="button"
+                            onclick="togglePassword()"
+                            style="position: absolute; right: 12px; top: 50%;
+                                   transform: translateY(-50%); background: none;
+                                   border: none; color: var(--neutral-500);
+                                   cursor: pointer; padding: 0;">
+                        <i class="bi bi-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+                <span asp-validation-for="Password" class="text-danger"
+                      style="font-size:0.775rem"></span>
+            </div>
+
+            <div class="mb-4 d-flex align-items-center">
+                <input asp-for="RicordamiAccesso"
+                       type="checkbox"
+                       class="form-check-input me-2"
+                       id="ricordami" />
+                <label for="ricordami"
+                       style="font-size: 0.875rem; color: var(--neutral-700);
+                              cursor: pointer; margin: 0;">
+                    Ricordami su questo dispositivo
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-lg">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Accedi
+            </button>
+
+        </form>
+
+        <hr class="divider mt-4" />
+
+        <div style="text-align: center; font-size: 0.775rem;
+                    color: var(--neutral-500);">
+            <i class="bi bi-shield-lock me-1"></i>
+            Accesso riservato al personale autorizzato.<br />
+            In caso di problemi contattare l'amministratore.
+        </div>
+
+        <!-- Credenziali demo -->
+        <div style="background: var(--neutral-50); border: 1px solid var(--neutral-200);
+                    border-radius: 8px; padding: 12px; margin-top: 16px;
+                    font-size: 0.775rem; color: var(--neutral-500);">
+            <strong style="color: var(--neutral-700);">
+                <i class="bi bi-info-circle me-1"></i>Accesso demo:
+            </strong><br />
+            Email: <code>admin@@radiologia.local</code><br />
+            Password: <code>Admin@@1234</code>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function togglePassword() {
+    const input   = document.getElementById('passwordInput');
+    const icon    = document.getElementById('eyeIcon');
+    const isText  = input.type === 'text';
+    input.type    = isText ? 'password' : 'text';
+    icon.className = isText ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+</script>
+}

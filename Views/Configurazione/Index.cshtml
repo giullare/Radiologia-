@@ -1,0 +1,1176 @@
+@model RadiologiaAppNew.Controllers.ConfigurazioneVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Configurazione";
+    var tabAttivo = ViewData["TabAttivo"]?.ToString() ?? "struttura";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-gear me-2 text-primary"></i>
+            Configurazione Sistema
+        </h1>
+    </div>
+</div>
+
+<!-- Tab navigation -->
+<div class="tabs-radiologia mb-4">
+    <button class="tab-btn @(tabAttivo=="struttura"?"active":"")"
+            onclick="switchTabConf('struttura', this)">
+        <i class="bi bi-building"></i> Struttura Fisica
+    </button>
+    <button class="tab-btn @(tabAttivo=="reparti"?"active":"")"
+            onclick="switchTabConf('reparti', this)">
+        <i class="bi bi-diagram-3"></i> Reparti
+    </button>
+    <button class="tab-btn @(tabAttivo=="costruttori"?"active":"")"
+            onclick="switchTabConf('costruttori', this)">
+        <i class="bi bi-tools"></i> Costruttori
+    </button>
+    <button class="tab-btn @(tabAttivo=="societa"?"active":"")"
+            onclick="switchTabConf('societa', this)">
+        <i class="bi bi-wrench-adjustable"></i> Manutenzione
+    </button>
+    <button class="tab-btn @(tabAttivo=="protocolli"?"active":"")"
+            onclick="switchTabConf('protocolli', this)">
+        <i class="bi bi-file-text"></i> Protocolli
+    </button>
+</div>
+
+<!-- ═══ TAB: STRUTTURA FISICA ══════════════════════════════════════ -->
+<div class="tab-panel @(tabAttivo=="struttura"?"active":"")"
+     id="tab-struttura">
+
+    <!-- FORM NUOVO SITO — in cima -->
+    <div class="card mb-4"
+         style="border:2px solid var(--primary);">
+        <div class="card-header"
+             style="background:var(--primary);color:white;">
+            <h3 class="card-title" style="color:white;">
+                <i class="bi bi-plus-circle me-2"></i>
+                Nuovo Sito / Presidio
+            </h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="NuovoSito"
+                  asp-controller="Configurazione" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tab" value="struttura" />
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" name="nome"
+                               class="form-control"
+                               placeholder="Nome sito / presidio *"
+                               required />
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="indirizzo"
+                               class="form-control"
+                               placeholder="Indirizzo (opzionale)" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit"
+                                class="btn btn-primary w-100">
+                            <i class="bi bi-plus-circle"></i>
+                            Aggiungi
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pulsanti collapse/expand tutti -->
+    @if (Model.Siti.Any())
+    {
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-ghost btn-sm"
+                    onclick="expandAll('sito')">
+                <i class="bi bi-arrows-expand"></i>
+                Espandi tutti
+            </button>
+            <button class="btn btn-ghost btn-sm"
+                    onclick="collapseAll('sito')">
+                <i class="bi bi-arrows-collapse"></i>
+                Comprimi tutti
+            </button>
+        </div>
+    }
+
+    <!-- Presidi esistenti -->
+    @foreach (var sito in Model.Siti)
+    {
+        <div class="card mb-3">
+            <!-- Header presidio collassabile -->
+            <div class="card-header"
+                 style="cursor:pointer;
+                        background:var(--primary-dark);
+                        color:white;"
+                 onclick="toggleCollapse('sito-@sito.Id')">
+                <h3 class="card-title" style="color:white;">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    @sito.Nome
+                    @if (!string.IsNullOrEmpty(sito.Indirizzo))
+                    {
+                        <span style="font-weight:400;font-size:0.8rem;
+                                     opacity:0.7;margin-left:8px;">
+                            @sito.Indirizzo
+                        </span>
+                    }
+                    <span style="font-size:0.75rem;opacity:0.6;
+                                 margin-left:8px;">
+                        (@sito.Immobili.Count edifici)
+                    </span>
+                </h3>
+                <div class="d-flex gap-2 align-items-center"
+                     onclick="event.stopPropagation()">
+                    <i class="bi bi-chevron-down collapse-icon"
+                       id="icon-sito-@sito.Id"
+                       style="color:white;font-size:0.9rem;
+                              transition:transform 0.25s;"></i>
+                    <form asp-action="EliminaSito"
+                          asp-controller="Configurazione"
+                          method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id"
+                               value="@sito.Id" />
+                        <input type="hidden" name="tab"
+                               value="struttura" />
+                        <button type="submit"
+                                class="btn btn-sm"
+                                style="background:rgba(255,255,255,0.15);
+                                       color:white;border:none;"
+                                data-confirm="ATTENZIONE: eliminare l'intero presidio «@sito.Nome» con tutti gli edifici, piani e locali? L'operazione non è reversibile.">
+                            <i class="bi bi-trash3"></i>
+                            Elimina Presidio
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Corpo collassabile -->
+            <div class="sito-body" id="sito-@sito.Id">
+                <div class="card-body">
+
+                    <!-- Form nuovo edificio — in cima -->
+                    <div style="background:var(--neutral-50);
+                                border:1px solid var(--neutral-200);
+                                border-radius:8px;padding:12px;
+                                margin-bottom:16px;">
+                        <div class="fw-600 mb-2"
+                             style="font-size:0.85rem;
+                                    color:var(--primary);">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Nuovo Edificio in «@sito.Nome»
+                        </div>
+                        <form asp-action="NuovoImmobile"
+                              asp-controller="Configurazione"
+                              method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="sitoId"
+                                   value="@sito.Id" />
+                            <input type="hidden" name="tab"
+                                   value="struttura" />
+                            <div class="d-flex gap-2">
+                                <input type="text" name="nome"
+                                       class="form-control"
+                                       style="font-size:0.85rem;"
+                                       placeholder="Nome edificio *"
+                                       required />
+                                <button type="submit"
+                                        class="btn btn-primary btn-sm"
+                                        style="white-space:nowrap;">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Aggiungi Edificio
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    @foreach (var imm in sito.Immobili
+                        .OrderBy(i => i.Nome))
+                    {
+                        <div class="mb-3"
+                             style="border:1px solid var(--neutral-200);
+                                    border-radius:10px;overflow:hidden;">
+
+                            <!-- Header edificio -->
+                            <div style="background:var(--neutral-100);
+                                        padding:10px 16px;display:flex;
+                                        align-items:center;
+                                        justify-content:space-between;
+                                        cursor:pointer;"
+                                 onclick="toggleCollapse('imm-@imm.Id')">
+                                <span class="fw-600">
+                                    <i class="bi bi-buildings me-2"
+                                       style="color:var(--primary-light);">
+                                    </i>
+                                    @imm.Nome
+                                    <span style="font-size:0.75rem;
+                                                 color:var(--neutral-500);
+                                                 margin-left:6px;">
+                                        (@imm.Piani.Count piani)
+                                    </span>
+                                </span>
+                                <div class="d-flex gap-2 align-items-center"
+                                     onclick="event.stopPropagation()">
+                                    <i class="bi bi-chevron-down collapse-icon"
+                                       id="icon-imm-@imm.Id"
+                                       style="color:var(--neutral-500);
+                                              font-size:0.8rem;
+                                              transition:transform 0.25s;">
+                                    </i>
+                                    <form asp-action="EliminaImmobile"
+                                          asp-controller="Configurazione"
+                                          method="post"
+                                          style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id"
+                                               value="@imm.Id" />
+                                        <input type="hidden" name="tab"
+                                               value="struttura" />
+                                        <button type="submit"
+                                                class="btn btn-ghost btn-icon btn-sm"
+                                                data-confirm="Eliminare edificio «@imm.Nome»?"
+                                                title="Elimina edificio">
+                                            <i class="bi bi-trash3"
+                                               style="color:var(--danger);">
+                                            </i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Corpo edificio -->
+                            <div class="imm-body" id="imm-@imm.Id"
+                                 style="display:none;">
+                                <div style="padding:12px 16px;">
+
+                                    <!-- Form nuovo piano — in cima -->
+                                    <div style="background:#EBF5FB;
+                                                border-radius:8px;
+                                                padding:10px;
+                                                margin-bottom:12px;">
+                                        <div class="fw-600 mb-2"
+                                             style="font-size:0.8rem;
+                                                    color:var(--primary);">
+                                            <i class="bi bi-plus-circle me-1">
+                                            </i>
+                                            Nuovo Piano
+                                        </div>
+                                        <form asp-action="NuovoPiano"
+                                              asp-controller="Configurazione"
+                                              method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden"
+                                                   name="immobileId"
+                                                   value="@imm.Id" />
+                                            <input type="hidden"
+                                                   name="tab"
+                                                   value="struttura" />
+                                            <div class="d-flex gap-2">
+                                                <input type="text"
+                                                       name="nome"
+                                                       class="form-control"
+                                                       style="font-size:0.85rem;"
+                                                       placeholder="Nome piano *"
+                                                       required />
+                                                <input type="number"
+                                                       name="numero"
+                                                       class="form-control"
+                                                       style="font-size:0.85rem;width:80px;"
+                                                       placeholder="N°" />
+                                                <button type="submit"
+                                                        class="btn btn-primary btn-sm"
+                                                        style="white-space:nowrap;">
+                                                    <i class="bi bi-check"></i>
+                                                    Aggiungi
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                    @foreach (var piano in imm.Piani
+                                        .OrderBy(p => p.Numero))
+                                    {
+                                        <div style="border:1px solid var(--neutral-200);
+                                                    border-radius:8px;
+                                                    margin-bottom:8px;
+                                                    overflow:hidden;">
+                                            <!-- Header piano -->
+                                            <div style="background:var(--neutral-50);
+                                                        padding:8px 12px;
+                                                        display:flex;
+                                                        align-items:center;
+                                                        justify-content:space-between;">
+                                                <span class="fw-600"
+                                                      style="font-size:0.875rem;
+                                                             color:var(--primary);">
+                                                    <i class="bi bi-layers me-1"
+                                                       style="color:var(--neutral-400);">
+                                                    </i>
+                                                    @piano.Nome
+                                                </span>
+                                                <form asp-action="EliminaPiano"
+                                                      asp-controller="Configurazione"
+                                                      method="post"
+                                                      style="display:inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden"
+                                                           name="id"
+                                                           value="@piano.Id" />
+                                                    <input type="hidden"
+                                                           name="tab"
+                                                           value="struttura" />
+                                                    <button type="submit"
+                                                            class="btn btn-ghost btn-icon btn-sm"
+                                                            data-confirm="Eliminare piano «@piano.Nome»?"
+                                                            title="Elimina piano">
+                                                        <i class="bi bi-trash3"
+                                                           style="color:var(--danger);
+                                                                  font-size:0.8rem;">
+                                                        </i>
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                            <div style="padding:10px 12px;">
+                                                <!-- Form nuovo locale — in cima -->
+                                                <div style="background:#D5F5E3;
+                                                            border-radius:6px;
+                                                            padding:8px;
+                                                            margin-bottom:8px;">
+                                                    <form asp-action="NuovoLocale"
+                                                          asp-controller="Configurazione"
+                                                          method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden"
+                                                               name="pianoId"
+                                                               value="@piano.Id" />
+                                                        <input type="hidden"
+                                                               name="tab"
+                                                               value="struttura" />
+                                                        <div class="d-flex gap-2">
+                                                            <input type="text"
+                                                                   name="nome"
+                                                                   class="form-control"
+                                                                   style="font-size:0.8rem;"
+                                                                   placeholder="Nome locale (es. Sala TAC) *"
+                                                                   required />
+                                                            <input type="text"
+                                                                   name="codice"
+                                                                   class="form-control"
+                                                                   style="font-size:0.8rem;width:100px;"
+                                                                   placeholder="Codice" />
+                                                            <button type="submit"
+                                                                    class="btn btn-secondary btn-sm"
+                                                                    style="white-space:nowrap;">
+                                                                <i class="bi bi-check"></i>
+                                                                Aggiungi
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+
+                                                <!-- Locali esistenti -->
+                                                @if (piano.Locali.Any())
+                                                {
+                                                    <div style="display:flex;
+                                                                flex-wrap:wrap;
+                                                                gap:6px;">
+                                                        @foreach (var locale in piano.Locali
+                                                            .OrderBy(l => l.Nome))
+                                                        {
+                                                            <div style="display:flex;
+                                                                        align-items:center;
+                                                                        gap:4px;
+                                                                        background:white;
+                                                                        border:1px solid var(--neutral-200);
+                                                                        border-radius:20px;
+                                                                        padding:3px 10px;
+                                                                        font-size:0.8rem;">
+                                                                <i class="bi bi-door-open"
+                                                                   style="color:var(--secondary);
+                                                                          font-size:0.75rem;">
+                                                                </i>
+                                                                @locale.Nome
+                                                                @if (!string.IsNullOrEmpty(locale.Codice))
+                                                                {
+                                                                    <span style="color:var(--neutral-400);
+                                                                                 font-size:0.7rem;">
+                                                                        (@locale.Codice)
+                                                                    </span>
+                                                                }
+                                                                <form asp-action="EliminaLocale"
+                                                                      asp-controller="Configurazione"
+                                                                      method="post"
+                                                                      style="display:inline;margin:0;">
+                                                                    @Html.AntiForgeryToken()
+                                                                    <input type="hidden"
+                                                                           name="id"
+                                                                           value="@locale.Id" />
+                                                                    <input type="hidden"
+                                                                           name="tab"
+                                                                           value="struttura" />
+                                                                    <button type="submit"
+                                                                            class="btn btn-ghost btn-icon"
+                                                                            style="padding:0 2px;
+                                                                                   font-size:0.7rem;"
+                                                                            data-confirm="Eliminare locale «@locale.Nome»?"
+                                                                            title="Elimina">
+                                                                        <i class="bi bi-x"
+                                                                           style="color:var(--danger);">
+                                                                        </i>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ═══ TAB: REPARTI ════════════════════════════════════════════════ -->
+<div class="tab-panel @(tabAttivo=="reparti"?"active":"")"
+     id="tab-reparti">
+    <div class="row g-4">
+        <div class="col-lg-8">
+
+            <!-- Form in cima -->
+            <div class="card mb-4"
+                 style="border:2px solid var(--primary);">
+                <div class="card-header"
+                     style="background:var(--primary);color:white;">
+                    <h3 class="card-title" style="color:white;">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Nuovo Reparto
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="NuovoReparto"
+                          asp-controller="Configurazione"
+                          method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="tab"
+                               value="reparti" />
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <input type="text" name="nome"
+                                       class="form-control"
+                                       placeholder="Nome reparto *"
+                                       required />
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" name="responsabile"
+                                       class="form-control"
+                                       placeholder="Responsabile" />
+                            </div>
+                            <div class="col-md-4">
+                                <input type="email" name="email"
+                                       class="form-control"
+                                       placeholder="Email" />
+                            </div>
+                            <div class="col-12 mt-2">
+                                <button type="submit"
+                                        class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Aggiungi Reparto
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista reparti -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-diagram-3 card-icon"></i>
+                        Reparti (@Model.Reparti.Count)
+                    </h3>
+                </div>
+                @if (!Model.Reparti.Any())
+                {
+                    <div class="empty-state" style="padding:30px;">
+                        <i class="bi bi-diagram-3 empty-state-icon"></i>
+                        <div class="empty-state-title">
+                            Nessun reparto
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <table class="table-radiologia w-100">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Responsabile</th>
+                                <th>Email</th>
+                                <th style="width:60px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Reparti)
+                            {
+                                <tr>
+                                    <td class="fw-600">@r.Nome</td>
+                                    <td style="font-size:0.85rem;">
+                                        @(r.Responsabile ?? "—")
+                                    </td>
+                                    <td style="font-size:0.85rem;">
+                                        @if (!string.IsNullOrEmpty(r.Email))
+                                        {
+                                            <a href="mailto:@r.Email">
+                                                @r.Email
+                                            </a>
+                                        }
+                                        else { <span>—</span> }
+                                    </td>
+                                    <td>
+                                        <form asp-action="EliminaReparto"
+                                              asp-controller="Configurazione"
+                                              method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id"
+                                                   value="@r.Id" />
+                                            <input type="hidden" name="tab"
+                                                   value="reparti" />
+                                            <button type="submit"
+                                                    class="btn btn-ghost btn-icon btn-sm"
+                                                    data-confirm="Eliminare reparto «@r.Nome»?"
+                                                    title="Elimina">
+                                                <i class="bi bi-trash3"
+                                                   style="color:var(--danger);">
+                                                </i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ TAB: COSTRUTTORI ════════════════════════════════════════════ -->
+<div class="tab-panel @(tabAttivo=="costruttori"?"active":"")"
+     id="tab-costruttori">
+
+    <!-- Form in cima -->
+    <div class="card mb-4"
+         style="border:2px solid var(--primary);">
+        <div class="card-header"
+             style="background:var(--primary);color:white;">
+            <h3 class="card-title" style="color:white;">
+                <i class="bi bi-plus-circle me-2"></i>
+                Nuovo Costruttore / Produttore
+            </h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="NuovoCostruttore"
+                  asp-controller="Configurazione" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tab" value="costruttori" />
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" name="nome"
+                               class="form-control"
+                               placeholder="Ragione sociale / Nome *"
+                               required />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="paese"
+                               class="form-control"
+                               placeholder="Paese" />
+                    </div>
+                    <div class="col-md-4">
+                        <input type="url" name="sitoWeb"
+                               class="form-control"
+                               placeholder="Sito web" />
+                    </div>
+                    <div class="col-12 mt-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i>
+                            Aggiungi Costruttore
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pulsanti collapse/expand -->
+    @if (Model.Costruttori.Any())
+    {
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-ghost btn-sm"
+                    onclick="expandAll('costr')">
+                <i class="bi bi-arrows-expand"></i>
+                Espandi tutti
+            </button>
+            <button class="btn btn-ghost btn-sm"
+                    onclick="collapseAll('costr')">
+                <i class="bi bi-arrows-collapse"></i>
+                Comprimi tutti
+            </button>
+        </div>
+    }
+
+    <div class="row g-3">
+        @foreach (var c in Model.Costruttori)
+        {
+            <div class="col-lg-6">
+                <div class="card"
+                     style="opacity:@(c.Attivo?"1":"0.6");">
+                    <!-- Header costruttore collassabile -->
+                    <div class="card-header"
+                         style="cursor:pointer;"
+                         onclick="toggleCollapse('costr-@c.Id')">
+                        <h3 class="card-title">
+                            <i class="bi bi-tools card-icon"></i>
+                            @c.Nome
+                            @if (!string.IsNullOrEmpty(c.Paese))
+                            {
+                                <span style="font-size:0.75rem;
+                                             color:var(--neutral-500);
+                                             font-weight:400;
+                                             margin-left:6px;">
+                                    @c.Paese
+                                </span>
+                            }
+                            <span style="font-size:0.75rem;
+                                         color:var(--neutral-400);
+                                         margin-left:6px;">
+                                (@c.Modelli.Count(m=>m.Attivo) modelli)
+                            </span>
+                        </h3>
+                        <div class="d-flex gap-1 align-items-center"
+                             onclick="event.stopPropagation()">
+                            <i class="bi bi-chevron-down collapse-icon"
+                               id="icon-costr-@c.Id"
+                               style="color:var(--neutral-500);
+                                      font-size:0.8rem;
+                                      transition:transform 0.25s;">
+                            </i>
+                            <!-- Toggle attivo -->
+                            <form asp-action="ToggleCostruttore"
+                                  asp-controller="Configurazione"
+                                  method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id"
+                                       value="@c.Id" />
+                                <input type="hidden" name="tab"
+                                       value="costruttori" />
+                                <button type="submit"
+                                        class="btn btn-ghost btn-icon btn-sm"
+                                        title="@(c.Attivo?"Disattiva":"Attiva")">
+                                    <i class="bi @(c.Attivo
+                                        ? "bi-toggle-on text-success"
+                                        : "bi-toggle-off")"></i>
+                                </button>
+                            </form>
+                            <!-- Elimina costruttore -->
+                            <form asp-action="EliminaCostruttore"
+                                  asp-controller="Configurazione"
+                                  method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id"
+                                       value="@c.Id" />
+                                <input type="hidden" name="tab"
+                                       value="costruttori" />
+                                <button type="submit"
+                                        class="btn btn-ghost btn-icon btn-sm"
+                                        data-confirm="Eliminare costruttore «@c.Nome» e tutti i suoi modelli?"
+                                        title="Elimina costruttore">
+                                    <i class="bi bi-trash3"
+                                       style="color:var(--danger);">
+                                    </i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Corpo costruttore collassabile -->
+                    <div class="costr-body" id="costr-@c.Id"
+                         style="display:none;">
+                        <!-- Form nuovo modello — in cima -->
+                        <div style="padding:12px 16px;
+                                    background:var(--neutral-50);
+                                    border-bottom:1px solid
+                                        var(--neutral-200);">
+                            <form asp-action="NuovoModello"
+                                  asp-controller="Configurazione"
+                                  method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden"
+                                       name="costruttoreId"
+                                       value="@c.Id" />
+                                <input type="hidden" name="tab"
+                                       value="costruttori" />
+                                <div class="row g-2">
+                                    <div class="col-7">
+                                        <input type="text" name="nome"
+                                               class="form-control"
+                                               style="font-size:0.85rem;"
+                                               placeholder="Nome modello *"
+                                               required />
+                                    </div>
+                                    <div class="col-5">
+                                        <input type="text"
+                                               name="tipologia"
+                                               class="form-control"
+                                               style="font-size:0.85rem;"
+                                               placeholder="Tipologia" />
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit"
+                                                class="btn btn-primary w-100 btn-sm">
+                                            <i class="bi bi-plus-circle"></i>
+                                            Aggiungi Modello
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Lista modelli -->
+                        <div class="card-body p-0">
+                            @if (!c.Modelli.Any(m => m.Attivo))
+                            {
+                                <div style="padding:12px 16px;
+                                            font-size:0.825rem;
+                                            color:var(--neutral-400);">
+                                    Nessun modello registrato
+                                </div>
+                            }
+                            @foreach (var m in c.Modelli
+                                .Where(m => m.Attivo)
+                                .OrderBy(m => m.Nome))
+                            {
+                                <div style="display:flex;align-items:center;
+                                            gap:8px;padding:8px 16px;
+                                            border-bottom:1px solid
+                                                var(--neutral-200);">
+                                    <div style="flex:1;font-size:0.85rem;">
+                                        <span class="fw-600">@m.Nome</span>
+                                        @if (!string.IsNullOrEmpty(m.Tipologia))
+                                        {
+                                            <span style="color:var(--neutral-500);
+                                                         font-size:0.775rem;
+                                                         margin-left:6px;">
+                                                @m.Tipologia
+                                            </span>
+                                        }
+                                    </div>
+                                    <form asp-action="EliminaModello"
+                                          asp-controller="Configurazione"
+                                          method="post"
+                                          style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id"
+                                               value="@m.Id" />
+                                        <input type="hidden" name="tab"
+                                               value="costruttori" />
+                                        <button type="submit"
+                                                class="btn btn-ghost btn-icon btn-sm"
+                                                data-confirm="Eliminare modello «@m.Nome»?"
+                                                title="Elimina modello">
+                                            <i class="bi bi-x"
+                                               style="color:var(--danger);">
+                                            </i>
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ═══ TAB: SOCIETÀ MANUTENZIONE ══════════════════════════════════ -->
+<div class="tab-panel @(tabAttivo=="societa"?"active":"")"
+     id="tab-societa">
+
+    <!-- Form in cima -->
+    <div class="card mb-4"
+         style="border:2px solid var(--primary);">
+        <div class="card-header"
+             style="background:var(--primary);color:white;">
+            <h3 class="card-title" style="color:white;">
+                <i class="bi bi-plus-circle me-2"></i>
+                Nuova Società di Manutenzione
+            </h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="NuovaSocieta"
+                  asp-controller="Configurazione" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tab" value="societa" />
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <input type="text" name="nome"
+                               class="form-control"
+                               placeholder="Ragione sociale *"
+                               required />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="numeroAssistenza"
+                               class="form-control"
+                               placeholder="Nr. Assistenza" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="numeroReperibilita"
+                               class="form-control"
+                               placeholder="Nr. Reperibilità" />
+                    </div>
+                    <div class="col-md-4">
+                        <input type="email" name="emailAssistenza"
+                               class="form-control"
+                               placeholder="Email assistenza" />
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="globalService"
+                               class="form-control"
+                               placeholder="Global Service" />
+                    </div>
+                    <div class="col-12 mt-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i>
+                            Aggiungi Società
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Griglia società -->
+    <div class="row g-3">
+        @foreach (var s in Model.SocietaManutenzione)
+        {
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-wrench-adjustable card-icon">
+                            </i>
+                            @s.Nome
+                        </h3>
+                        <div class="d-flex gap-1">
+                            <a href="/Configurazione/ModificaSocieta/@s.Id"
+                               class="btn btn-ghost btn-icon btn-sm"
+                               title="Modifica">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form asp-action="EliminaSocieta"
+                                  asp-controller="Configurazione"
+                                  method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id"
+                                       value="@s.Id" />
+                                <input type="hidden" name="tab"
+                                       value="societa" />
+                                <button type="submit"
+                                        class="btn btn-ghost btn-icon btn-sm"
+                                        data-confirm="Eliminare «@s.Nome»?"
+                                        title="Elimina">
+                                    <i class="bi bi-trash3"
+                                       style="color:var(--danger);">
+                                    </i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            @if (!string.IsNullOrEmpty(s.NumeroAssistenza))
+                            {
+                                <div class="col-12">
+                                    <div class="form-label">
+                                        Nr. Assistenza
+                                    </div>
+                                    <a href="tel:@s.NumeroAssistenza"
+                                       class="fw-600"
+                                       style="font-size:0.9rem;">
+                                        <i class="bi bi-telephone me-1
+                                                   text-primary"></i>
+                                        @s.NumeroAssistenza
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(
+                                s.NumeroReperibilita))
+                            {
+                                <div class="col-12">
+                                    <div class="form-label">
+                                        Reperibilità
+                                    </div>
+                                    <a href="tel:@s.NumeroReperibilita"
+                                       style="font-size:0.875rem;">
+                                        @s.NumeroReperibilita
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(s.EmailAssistenza))
+                            {
+                                <div class="col-12">
+                                    <div class="form-label">Email</div>
+                                    <a href="mailto:@s.EmailAssistenza"
+                                       style="font-size:0.85rem;">
+                                        @s.EmailAssistenza
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(s.GlobalService))
+                            {
+                                <div class="col-12">
+                                    <div class="form-label">
+                                        Global Service
+                                    </div>
+                                    <div style="font-size:0.85rem;">
+                                        @s.GlobalService
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (!Model.SocietaManutenzione.Any())
+        {
+            <div class="col-12">
+                <div class="empty-state">
+                    <i class="bi bi-wrench-adjustable
+                               empty-state-icon"></i>
+                    <div class="empty-state-title">
+                        Nessuna società registrata
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ═══ TAB: PROTOCOLLI ═════════════════════════════════════════════ -->
+<div class="tab-panel @(tabAttivo=="protocolli"?"active":"")"
+     id="tab-protocolli">
+
+    <!-- Form in cima -->
+    <div class="card mb-4"
+         style="border:2px solid var(--primary);">
+        <div class="card-header"
+             style="background:var(--primary);color:white;">
+            <h3 class="card-title" style="color:white;">
+                <i class="bi bi-plus-circle me-2"></i>
+                Nuovo Protocollo di Verifica
+            </h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="NuovoProtocollo"
+                  asp-controller="Configurazione" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tab" value="protocolli" />
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <input type="text" name="codice"
+                               class="form-control"
+                               placeholder="Codice *" required />
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="descrizione"
+                               class="form-control"
+                               placeholder="Descrizione *" required />
+                    </div>
+                    <div class="col-md-3">
+                        <select name="tipo" class="form-select"
+                                required>
+                            @foreach (var t in Enum.GetValues<RadiologiaAppNew.Enums.TipoProtocollo>())
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <input type="number" name="periodicitaMesi"
+                               class="form-control"
+                               placeholder="Mesi" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit"
+                                class="btn btn-primary w-100">
+                            <i class="bi bi-plus-circle"></i>
+                            Aggiungi
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista protocolli -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="bi bi-file-text card-icon"></i>
+                Protocolli (@Model.Protocolli.Count)
+            </h3>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Descrizione</th>
+                        <th>Tipo</th>
+                        <th>Periodicità</th>
+                        <th>Stato</th>
+                        <th style="width:100px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Protocolli)
+                    {
+                        <tr style="opacity:@(p.Attivo?"1":"0.5");">
+                            <td>
+                                <code style="font-size:0.8rem;
+                                             background:var(--neutral-100);
+                                             padding:2px 6px;
+                                             border-radius:4px;">
+                                    @p.Codice
+                                </code>
+                            </td>
+                            <td style="font-size:0.85rem;">
+                                @p.Descrizione
+                            </td>
+                            <td>
+                                <span style="font-size:0.8rem;
+                                             color:var(--primary);
+                                             font-weight:600;">
+                                    @p.Tipo
+                                </span>
+                            </td>
+                            <td style="font-size:0.85rem;">
+                                @(p.PeriodicitaMesi.HasValue
+                                    ? $"{p.PeriodicitaMesi} mesi"
+                                    : "—")
+                            </td>
+                            <td>
+                                <span class="badge-compliance
+                                    @(p.Attivo?"badge-ok":"badge-missing")">
+                                    @(p.Attivo ? "Attivo" : "Inattivo")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <form asp-action="ToggleProtocollo"
+                                          asp-controller="Configurazione"
+                                          method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id"
+                                               value="@p.Id" />
+                                        <input type="hidden" name="tab"
+                                               value="protocolli" />
+                                        <button type="submit"
+                                                class="btn btn-ghost btn-icon btn-sm"
+                                                title="@(p.Attivo?"Disattiva":"Attiva")">
+                                            <i class="bi @(p.Attivo
+                                                ? "bi-toggle-on text-success"
+                                                : "bi-toggle-off")"></i>
+                                        </button>
+                                    </form>
+                                    <form asp-action="EliminaProtocollo"
+                                          asp-controller="Configurazione"
+                                          method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id"
+                                               value="@p.Id" />
+                                        <input type="hidden" name="tab"
+                                               value="protocolli" />
+                                        <button type="submit"
+                                                class="btn btn-ghost btn-icon btn-sm"
+                                                data-confirm="Eliminare definitivamente il protocollo «@p.Codice»? L'operazione non è reversibile."
+                                                title="Elimina protocollo">
+                                            <i class="bi bi-trash3"
+                                               style="color:var(--danger);">
+                                            </i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// ─── TAB ─────────────────────────────────────────────────────────
+function switchTabConf(name, btn) {
+    document.querySelectorAll('.tab-btn')
+        .forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel')
+        .forEach(p => p.classList.remove('active'));
+    document.querySelector(`#tab-${name}`)
+        ?.classList.add('active');
+    (btn || event?.currentTarget)?.classList.add('active');
+    history.replaceState(null, '', `?tab=${name}`);
+}
+
+// ─── COLLAPSE SINGOLO ────────────────────────────────────────────
+function toggleCollapse(id) {
+    const body = document.getElementById(id);
+    const icon = document.getElementById(`icon-${id}`);
+    if (!body) return;
+    const isVisible = body.style.display !== 'none';
+    body.style.display = isVisible ? 'none' : 'block';
+    if (icon) icon.style.transform =
+        isVisible ? '' : 'rotate(180deg)';
+}
+
+// ─── COLLAPSE / EXPAND TUTTI ─────────────────────────────────────
+function expandAll(prefix) {
+    document.querySelectorAll(`[id^="${prefix}-"]`).forEach(el => {
+        if (!el.id.includes('icon')) {
+            el.style.display = 'block';
+        }
+    });
+    document.querySelectorAll(`[id^="icon-${prefix}-"]`).forEach(el => {
+        el.style.transform = 'rotate(180deg)';
+    });
+}
+
+function collapseAll(prefix) {
+    document.querySelectorAll(`[id^="${prefix}-"]`).forEach(el => {
+        if (!el.id.includes('icon')) {
+            el.style.display = 'none';
+        }
+    });
+    document.querySelectorAll(`[id^="icon-${prefix}-"]`).forEach(el => {
+        el.style.transform = '';
+    });
+}
+</script>
+}

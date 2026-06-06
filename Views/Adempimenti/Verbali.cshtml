@@ -1,0 +1,138 @@
+@model List<RadiologiaAppNew.Models.Verbale>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Verbali di Sopralluogo";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-journal-text me-2 text-primary"></i>
+            Verbali di Sopralluogo
+        </h1>
+        <p class="page-subtitle">@Model.Count verbali registrati</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="bi bi-table card-icon"></i>
+            Elenco Verbali
+        </h3>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-journal empty-state-icon"></i>
+            <div class="empty-state-title">Nessun verbale registrato</div>
+            <p class="empty-state-text">
+                I verbali vengono aggiunti dalla scheda
+                di ciascuna apparecchiatura.
+            </p>
+            <a href="/Apparecchiature" class="btn btn-primary btn-sm">
+                <i class="bi bi-hdd-rack"></i>
+                Vai alle Apparecchiature
+            </a>
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Apparecchiatura</th>
+                        <th>Data Sopralluogo</th>
+                        <th>Oggetto</th>
+                        <th>Non Conformità</th>
+                        <th>Stato</th>
+                        <th>Scadenza Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in Model)
+                    {
+                        <tr class="clickable"
+                            onclick="location.href='/Apparecchiature/Detail/@v.ApparecchiaturaId?tab=adempimenti'">
+                            <td>
+                                <div class="fw-600">
+                                    @v.Apparecchiatura?.Descrizione
+                                </div>
+                                <div style="font-size:0.775rem;
+                                            color:var(--neutral-500);">
+                                    @v.Apparecchiatura?.Codice
+                                </div>
+                            </td>
+                            <td>
+                                @v.DataSopralluogo.ToString("dd/MM/yyyy")
+                            </td>
+                            <td>
+                                <div style="font-size:0.85rem;">
+                                    @v.Oggetto
+                                </div>
+                                @if (!string.IsNullOrEmpty(v.Partecipanti))
+                                {
+                                    <div style="font-size:0.75rem;
+                                                color:var(--neutral-500);">
+                                        @v.Partecipanti
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(v.NonConformita))
+                                {
+                                    <span class="badge-compliance badge-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Presenti
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge-compliance badge-ok">
+                                        <i class="bi bi-check-circle"></i>
+                                        Nessuna
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var (vClass, vLabel) = v.Stato switch
+                                    {
+                                        "Chiuso" => ("badge-ok", "Chiuso"),
+                                        "In attesa azioni" =>
+                                            ("badge-warning", "In Attesa"),
+                                        _ => ("badge-todo", "Aperto")
+                                    };
+                                }
+                                <span class="badge-compliance @vClass">
+                                    @vLabel
+                                </span>
+                            </td>
+                            <td>
+                                @if (v.ScadenzaAzioni.HasValue)
+                                {
+                                    var gg = (v.ScadenzaAzioni.Value.Date
+                                              - DateTime.Today).Days;
+                                    <span style="font-size:0.85rem;
+                                                 color:@(gg < 0
+                                                     ? "var(--danger)"
+                                                     : gg <= 7
+                                                         ? "var(--warning)"
+                                                         : "inherit");">
+                                        @v.ScadenzaAzioni.Value
+                                            .ToString("dd/MM/yyyy")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--neutral-400);">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

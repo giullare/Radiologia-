@@ -1,0 +1,134 @@
+@model RadiologiaAppNew.Models.Verbale
+@{
+    Layout = "_Layout";
+    var app = ViewBag.Apparecchiatura as
+        RadiologiaAppNew.Models.Apparecchiatura;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-journal-text me-2 text-primary"></i>
+            Nuovo Verbale di Sopralluogo
+        </h1>
+        @if (app != null)
+        {
+            <p class="page-subtitle">@app.Codice — @app.Descrizione</p>
+        }
+    </div>
+    <div class="page-actions">
+        <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId?tab=adempimenti"
+           class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna indietro
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form asp-action="NuovoVerbale" asp-controller="Adempimenti"
+              method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ApparecchiaturaId" />
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-journal-text text-primary"></i>
+                    <h4 class="form-section-title">
+                        Dati Verbale di Sopralluogo
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <label asp-for="DataSopralluogo"
+                                   class="form-label"></label>
+                            <input asp-for="DataSopralluogo"
+                                   type="date" class="form-control" />
+                        </div>
+
+                        <div class="col-md-8">
+                            <label asp-for="Partecipanti"
+                                   class="form-label"></label>
+                            <input asp-for="Partecipanti"
+                                   class="form-control"
+                                   placeholder="Nomi dei partecipanti..." />
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Oggetto"
+                                   class="form-label"></label>
+                            <input asp-for="Oggetto"
+                                   class="form-control"
+                                   placeholder="Es. Sopralluogo periodico semestrale" />
+                            <span asp-validation-for="Oggetto"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Rilievi"
+                                   class="form-label"></label>
+                            <textarea asp-for="Rilievi"
+                                      class="form-control" rows="5"
+                                      placeholder="Descrivere i rilievi e le osservazioni effettuate durante il sopralluogo...">
+                            </textarea>
+                            <span asp-validation-for="Rilievi"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="NonConformita"
+                                   class="form-label"></label>
+                            <textarea asp-for="NonConformita"
+                                      class="form-control" rows="3"
+                                      placeholder="Eventuali non conformità rilevate (lascia vuoto se nessuna)...">
+                            </textarea>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label asp-for="AzioniCorrettive"
+                                   class="form-label"></label>
+                            <textarea asp-for="AzioniCorrettive"
+                                      class="form-control" rows="3"
+                                      placeholder="Azioni correttive da intraprendere...">
+                            </textarea>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="ScadenzaAzioni"
+                                   class="form-label"></label>
+                            <input asp-for="ScadenzaAzioni"
+                                   type="date" class="form-control" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Stato" class="form-label"></label>
+                            <select asp-for="Stato" class="form-select">
+                                <option value="Aperto">Aperto</option>
+                                <option value="In attesa azioni">
+                                    In Attesa Azioni
+                                </option>
+                                <option value="Chiuso">Chiuso</option>
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Salva Verbale
+                </button>
+                <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId?tab=adempimenti"
+                   class="btn btn-ghost">
+                    Annulla
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

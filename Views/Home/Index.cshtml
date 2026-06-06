@@ -1,0 +1,414 @@
+@model RadiologiaAppNew.ViewModels.Dashboard.DashboardViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- ═══ KPI CARDS ════════════════════════════════════════════════ -->
+<div class="kpi-grid">
+
+    <div class="kpi-card kpi-primary">
+        <div class="kpi-content">
+            <div class="kpi-number">@Model.TotaleApparecchiatureAttive</div>
+            <div class="kpi-label">Apparecchiature Attive</div>
+            <div class="kpi-sublabel">
+                @if (Model.ApparecchiatureInManutenzione > 0)
+                {
+                    <span class="text-warning">
+                        <i class="bi bi-tools"></i>
+                        @Model.ApparecchiatureInManutenzione in manutenzione
+                    </span>
+                }
+                else
+                {
+                    <span class="text-success">
+                        <i class="bi bi-check-circle"></i> Nessuna in manutenzione
+                    </span>
+                }
+            </div>
+        </div>
+        <i class="bi bi-hdd-rack kpi-icon"></i>
+    </div>
+
+    <a href="/Home/Scadenze" class="kpi-card kpi-danger" style="text-decoration:none">
+        <div class="kpi-content">
+            <div class="kpi-number">@Model.AlertCriticiTotali</div>
+            <div class="kpi-label">Alert Critici</div>
+            <div class="kpi-sublabel">
+                @Model.VerificheCQScadute CQ scaduti ·
+                @Model.NullaOstaInScadenza NO in scadenza
+            </div>
+        </div>
+        <i class="bi bi-exclamation-triangle kpi-icon"></i>
+    </a>
+
+    <a href="/Verifiche" class="kpi-card kpi-warning" style="text-decoration:none">
+        <div class="kpi-content">
+            <div class="kpi-number">@Model.VerificheCQInScadenza30gg</div>
+            <div class="kpi-label">CQ in Scadenza</div>
+            <div class="kpi-sublabel">Nei prossimi 30 giorni</div>
+        </div>
+        <i class="bi bi-clipboard2-check kpi-icon"></i>
+    </a>
+
+    <div class="kpi-card kpi-success">
+        <div class="kpi-content">
+            <div class="kpi-number">@Model.PercentualeCompliance<small style="font-size:1.2rem">%</small></div>
+            <div class="kpi-label">Compliance Generale</div>
+            <div class="kpi-sublabel">
+                <div style="background:var(--neutral-200);border-radius:4px;
+                            height:6px;margin-top:8px;overflow:hidden;">
+                    <div style="background:var(--success);height:100%;
+                                width:@Model.PercentualeCompliance%;
+                                border-radius:4px;transition:width 1s ease;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <i class="bi bi-shield-check kpi-icon"></i>
+    </div>
+
+    <a href="/Lu177" class="kpi-card kpi-secondary" style="text-decoration:none">
+        <div class="kpi-content">
+            <div class="kpi-number">@Model.PazientiLu177Attivi</div>
+            <div class="kpi-label">Pazienti Lu177 Attivi</div>
+            <div class="kpi-sublabel">In trattamento</div>
+        </div>
+        <i class="bi bi-person-heart kpi-icon"></i>
+    </a>
+
+</div>
+
+<!-- ═══ RIGA PRINCIPALE ══════════════════════════════════════════ -->
+<div class="row g-4 mb-4">
+
+    <!-- Scadenze imminenti -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-calendar-event card-icon"></i>
+                    Scadenze Imminenti
+                </h3>
+                <a href="/Home/Scadenze" class="btn btn-ghost btn-sm">
+                    Vedi tutte <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.ScadenzeImminenti.Any())
+                {
+                    <div class="empty-state" style="padding: 40px;">
+                        <i class="bi bi-calendar-check empty-state-icon"></i>
+                        <div class="empty-state-title">Nessuna scadenza imminente</div>
+                        <p class="empty-state-text">
+                            Tutte le verifiche sono in regola per i prossimi 30 giorni.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <table class="table-radiologia w-100">
+                        <thead>
+                            <tr>
+                                <th>Apparecchiatura</th>
+                                <th>Tipo</th>
+                                <th>Scadenza</th>
+                                <th>Stato</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model.ScadenzeImminenti)
+                            {
+                                <tr class="clickable"
+                                    onclick="location.href='/Apparecchiature/Detail/@s.ApparecchiaturaId'">
+                                    <td>
+                                        <span class="fw-600">@s.Apparecchiatura</span>
+                                    </td>
+                                    <td>
+                                        <span style="font-size:0.8rem;color:var(--neutral-500)">
+                                            @s.Tipo
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span style="font-size:0.85rem">
+                                            @s.DataScadenza.ToString("dd/MM/yyyy")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (s.GiorniMancanti < 0)
+                                        {
+                                            <span class="badge-compliance badge-danger">
+                                                <i class="bi bi-x-circle"></i>
+                                                Scaduta
+                                            </span>
+                                        }
+                                        else if (s.GiorniMancanti <= 7)
+                                        {
+                                            <span class="badge-compliance badge-danger">
+                                                <i class="bi bi-exclamation-circle"></i>
+                                                @s.GiorniMancanti gg
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-compliance badge-warning">
+                                                <i class="bi bi-clock"></i>
+                                                @s.GiorniMancanti gg
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafici -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-pie-chart card-icon"></i>
+                    Distribuzione Apparecchiature
+                </h3>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                @if ((bool)(ViewData["MostraGraficoAmbiti"] ?? false) == false)
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-bar-chart empty-state-icon"></i>
+                        <div class="empty-state-title">Nessun dato disponibile</div>
+                        <p class="empty-state-text">
+                            Aggiungi le prime apparecchiature per visualizzare le statistiche.
+                        </p>
+                        <a href="/Apparecchiature/Create" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i>
+                            Nuova Apparecchiatura
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <canvas id="chartAmbiti" style="max-height: 260px;"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══ RIGA SECONDARIA ══════════════════════════════════════════ -->
+<div class="row g-4">
+
+    <!-- Grafico CQ per mese -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-bar-chart card-icon"></i>
+                    Controlli di Qualità — @DateTime.Now.Year
+                </h3>
+            </div>
+            <div class="card-body">
+                @if (!Model.MesiLabels.Any())
+                {
+                    <div class="empty-state" style="padding:30px">
+                        <i class="bi bi-graph-up empty-state-icon"></i>
+                        <div class="empty-state-title">Nessuna verifica registrata</div>
+                    </div>
+                }
+                else
+                {
+                    <canvas id="chartCQ" style="height: 220px;"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Ultime verifiche -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-clock-history card-icon"></i>
+                    Ultime Verifiche
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.UltimeVerifiche.Any())
+                {
+                    <div class="empty-state" style="padding:30px">
+                        <i class="bi bi-clipboard2 empty-state-icon"></i>
+                        <div class="empty-state-title">Nessuna verifica</div>
+                    </div>
+                }
+                else
+                {
+                    <ul style="list-style:none;padding:0;margin:0;">
+                        @foreach (var v in Model.UltimeVerifiche)
+                        {
+                            <li style="padding: 12px 16px;
+                                       border-bottom: 1px solid var(--neutral-200);
+                                       cursor:pointer;"
+                                onclick="location.href='/Apparecchiature/Detail/@v.ApparecchiaturaId'"
+                                onmouseover="this.style.background='var(--neutral-50)'"
+                                onmouseout="this.style.background='white'">
+                                <div class="d-flex align-items-center gap-2">
+                                    @if (v.Esito == "Superato")
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    }
+                                    else if (v.Esito == "NonSuperato")
+                                    {
+                                        <i class="bi bi-x-circle-fill text-danger"></i>
+                                    }
+                                    else if (v.Esito == "ConRiserva")
+                                    {
+                                        <i class="bi bi-exclamation-circle-fill text-warning"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-clock-fill text-muted"></i>
+                                    }
+                                    <div style="flex:1;min-width:0;">
+                                        <div class="fw-600"
+                                             style="font-size:0.825rem;
+                                                    white-space:nowrap;
+                                                    overflow:hidden;
+                                                    text-overflow:ellipsis;">
+                                            @v.Apparecchiatura
+                                        </div>
+                                        <div style="font-size:0.75rem;
+                                                    color:var(--neutral-500);">
+                                            @v.TipoVerifica ·
+                                            @v.Data.ToString("dd/MM/yy")
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+// ─── GRAFICO AMBITI (TORTA) ──────────────────────────────────────
+@if (Model.TotaleApparecchiatureAttive > 0)
+{
+    <text>
+    const ctxAmbiti = document.getElementById('chartAmbiti');
+    if (ctxAmbiti) {
+        var nonClassificate = @Model.TotaleApparecchiatureAttive -
+    (@Model.CountRadiologia + @Model.CountInterventistica +
+     @Model.CountMedicinaNucleare + @Model.CountRadioterapia +
+     @Model.CountRM);
+        new Chart(ctxAmbiti, {
+            type: 'doughnut',
+            data: {
+                labels: ['Radiologia', 'Interventistica',
+                         'Med. Nucleare', 'Radioterapia', 'RM' ,
+                 'Non classificate'],
+                datasets: [{
+                    data: [
+                        @Model.CountRadiologia,
+                        @Model.CountInterventistica,
+                        @Model.CountMedicinaNucleare,
+                        @Model.CountRadioterapia,
+                        @Model.CountRM,
+                Math.max(0, nonClassificate)
+                    ],
+                    backgroundColor: [
+                        '#1B4F72', '#2E86C1', '#148F77',
+                        '#E67E22', '#8E44AD','#95A5A6'
+                    ],
+                    borderWidth: 3,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 12,
+                            font: { size: 11 },
+                            usePointStyle: true,
+                    filter: (item, data) =>
+                        data.datasets[0].data[item.index] > 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+    </text>
+}
+
+// ─── GRAFICO CQ PER MESE (BARRE) ────────────────────────────────
+@if (Model.MesiLabels.Any())
+{
+    <text>
+    const ctxCQ = document.getElementById('chartCQ');
+    if (ctxCQ) {
+        new Chart(ctxCQ, {
+            type: 'bar',
+            data: {
+                labels: [@Html.Raw(string.Join(",",
+                    Model.MesiLabels.Select(m => $"'{m}'")))],
+                datasets: [
+                    {
+                        label: 'Superati',
+                        data: [@string.Join(",", Model.CQSuperati)],
+                        backgroundColor: 'rgba(39,174,96,0.8)',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    },
+                    {
+                        label: 'Non Superati',
+                        data: [@string.Join(",", Model.CQNonSuperati)],
+                        backgroundColor: 'rgba(192,57,43,0.8)',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { font: { size: 11 }, usePointStyle: true }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: { size: 11 }
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                }
+            }
+        });
+    }
+    </text>
+}
+</script>
+}

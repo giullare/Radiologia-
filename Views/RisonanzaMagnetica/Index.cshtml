@@ -1,0 +1,215 @@
+@model List<RadiologiaAppNew.Models.Apparecchiatura>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Risonanza Magnetica";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-magnet me-2 text-primary"></i>
+            Modulo 2 — Risonanza Magnetica
+        </h1>
+        <p class="page-subtitle">
+            @Model.Count apparecchiature RM registrate
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Apparecchiature/Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            Nuova RM
+        </a>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card">
+        <div class="empty-state">
+            <i class="bi bi-magnet empty-state-icon"></i>
+            <div class="empty-state-title">
+                Nessuna apparecchiatura RM registrata
+            </div>
+            <p class="empty-state-text">
+                Aggiungi la prima apparecchiatura RM selezionando
+                "Modulo: Risonanza Magnetica" durante la creazione.
+            </p>
+            <a href="/Apparecchiature/Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                Nuova Apparecchiatura RM
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var a in Model)
+        {
+            var ultimaCQ = a.RecordVerifiche
+                .OrderByDescending(v => v.DataInizio)
+                .FirstOrDefault();
+            var prossima = a.RecordVerifiche
+                .Where(v => v.ProssimaVerificaData.HasValue)
+                .OrderBy(v => v.ProssimaVerificaData)
+                .FirstOrDefault()?.ProssimaVerificaData;
+            var gg = prossima.HasValue
+                ? (prossima.Value.Date - DateTime.Today).Days
+                : (int?)null;
+
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100"
+                     style="cursor:pointer;transition:var(--transition);"
+                     onclick="location.href='/Apparecchiature/Detail/@a.Id'"
+                     onmouseover="this.style.boxShadow='var(--shadow-md)'"
+                     onmouseout="this.style.boxShadow='var(--shadow-sm)'">
+
+                    <!-- Header card -->
+                    <div style="background:linear-gradient(135deg,
+                                    var(--primary-dark),var(--primary));
+                                padding:20px;border-radius:12px 12px 0 0;">
+                        <div class="d-flex justify-content-between
+                                    align-items-start">
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);
+                                            font-size:0.75rem;
+                                            font-weight:600;
+                                            text-transform:uppercase;
+                                            letter-spacing:0.05em;">
+                                    @a.Codice
+                                </div>
+                                <div style="color:white;font-weight:700;
+                                            font-size:1rem;margin-top:4px;">
+                                    @a.Descrizione
+                                </div>
+                            </div>
+                            <i class="bi bi-magnet"
+                               style="color:rgba(255,255,255,0.3);
+                                      font-size:1.8rem;"></i>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="form-label">Costruttore</div>
+                                <div class="fw-600"
+                                     style="font-size:0.85rem;">
+                                    @a.Costruttore
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-label">Modello</div>
+                                <div class="fw-600"
+                                     style="font-size:0.85rem;">
+                                    @a.Modello
+                                </div>
+                            </div>
+                            @if (a.IntensitaCampoTesla.HasValue)
+                            {
+                                <div class="col-6">
+                                    <div class="form-label">
+                                        Intensità Campo
+                                    </div>
+                                    <div class="fw-700"
+                                         style="color:var(--primary);
+                                                font-size:1.1rem;">
+                                        @a.IntensitaCampoTesla T
+                                    </div>
+                                </div>
+                            }
+                            @if (a.Reparto != null)
+                            {
+                                <div class="col-6">
+                                    <div class="form-label">Reparto</div>
+                                    <div style="font-size:0.85rem;">
+                                        @a.Reparto.Nome
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <hr class="divider" />
+
+                        <!-- Stato prossimo controllo -->
+                        <div class="d-flex justify-content-between
+                                    align-items-center">
+                            <div>
+                                <div class="form-label">
+                                    Prossimo Controllo
+                                </div>
+                                @if (prossima.HasValue)
+                                {
+                                    <div class="fw-600"
+                                         style="font-size:0.85rem;
+                                                color:@(gg < 0
+                                                    ? "var(--danger)"
+                                                    : gg <= 30
+                                                        ? "var(--warning)"
+                                                        : "inherit");">
+                                        @prossima.Value.ToString("dd/MM/yyyy")
+                                    </div>
+                                    if (gg < 0)
+                                    {
+                                        <div style="font-size:0.75rem;
+                                                    color:var(--danger);">
+                                            Scaduto da @Math.Abs(gg!.Value) gg
+                                        </div>
+                                    }
+                                    else if (gg <= 30)
+                                    {
+                                        <div style="font-size:0.75rem;
+                                                    color:var(--warning);">
+                                            Tra @gg giorni
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div style="font-size:0.85rem;
+                                                color:var(--neutral-400);">
+                                        Nessun controllo
+                                    </div>
+                                }
+                            </div>
+
+                            @{
+                                var (stClass, stLabel) = a.Stato switch
+                                {
+                                    RadiologiaAppNew.Enums
+                                        .StatoApparecchiatura.Attiva =>
+                                        ("stato-attiva", "Attiva"),
+                                    RadiologiaAppNew.Enums
+                                        .StatoApparecchiatura.InManutenzione =>
+                                        ("stato-in-manutenzione",
+                                         "Manutenzione"),
+                                    _ => ("stato-cessata", a.Stato.ToString())
+                                };
+                            }
+                            <span class="stato-badge @stClass">
+                                @stLabel
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="d-flex gap-2">
+                            <a href="/Apparecchiature/Detail/@a.Id"
+                               class="btn btn-outline btn-sm flex-fill"
+                               onclick="event.stopPropagation()">
+                                <i class="bi bi-eye"></i> Scheda
+                            </a>
+                            <a href="/Verifiche/Create/@a.Id"
+                               class="btn btn-primary btn-sm flex-fill"
+                               onclick="event.stopPropagation()">
+                                <i class="bi bi-plus-circle"></i>
+                                Verifica
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+    </div>
+}

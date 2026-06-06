@@ -1,0 +1,272 @@
+@model RadiologiaAppNew.Models.DatoEmatologico
+@{
+    Layout = "_Layout";
+    var paz = ViewBag.Paziente as RadiologiaAppNew.Models.PazienteLu177;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-droplet me-2 text-primary"></i>
+            Nuovo Dato Ematologico
+        </h1>
+        @if (paz != null)
+        {
+            <p class="page-subtitle">
+                @paz.Cognome @paz.Nome — @paz.CodicePaziente
+            </p>
+        }
+    </div>
+    <div class="page-actions">
+        <a href="/Lu177/Detail/@Model.PazienteId"
+           class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna al paziente
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <form asp-action="NuovoEmatologico"
+              asp-controller="Lu177" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PazienteId" />
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-calendar3 text-primary"></i>
+                    <h4 class="form-section-title">
+                        Timing e Data Prelievo
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="DataPrelievo"
+                                   class="form-label"></label>
+                            <input asp-for="DataPrelievo"
+                                   type="date" class="form-control" />
+                            <span asp-validation-for="DataPrelievo"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Timing"
+                                   class="form-label"></label>
+                            <select asp-for="Timing" class="form-select">
+                                <option value="">— Seleziona —</option>
+                                @if (paz != null)
+                                {
+                                    <option value="Pre-ciclo 1">
+                                        Pre-ciclo 1
+                                    </option>
+                                    @for (int i = 1;
+                                          i <= (paz.NCicliPianificati ?? 6);
+                                          i++)
+                                    {
+                                        <option value="Post-ciclo @i">
+                                            Post-ciclo @i
+                                        </option>
+                                        if (i < (paz.NCicliPianificati ?? 6))
+                                        {
+                                            <option value="Pre-ciclo @(i+1)">
+                                                Pre-ciclo @(i+1)
+                                            </option>
+                                        }
+                                    }
+                                }
+                                <option value="Follow-up 3 mesi">
+                                    Follow-up 3 mesi
+                                </option>
+                                <option value="Follow-up 6 mesi">
+                                    Follow-up 6 mesi
+                                </option>
+                                <option value="Follow-up 12 mesi">
+                                    Follow-up 12 mesi
+                                </option>
+                            </select>
+                            <span asp-validation-for="Timing"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="TossicitaEmatologica"
+                                   class="form-label"></label>
+                            <select asp-for="TossicitaEmatologica"
+                                    class="form-select">
+                                <option value="">— Seleziona —</option>
+                                <option value="G0">G0 — Nessuna</option>
+                                <option value="G1">G1 — Lieve</option>
+                                <option value="G2">G2 — Moderata</option>
+                                <option value="G3">G3 — Severa</option>
+                                <option value="G4">G4 — Vita a rischio</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-droplet text-primary"></i>
+                    <h4 class="form-section-title">Emocromo</h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label asp-for="WbcX10_9L"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="WbcX10_9L"
+                                       type="number" step="0.01"
+                                       class="form-control" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.75rem;">
+                                    ×10⁹/L
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="HgbGdl"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="HgbGdl"
+                                       type="number" step="0.1"
+                                       class="form-control" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.75rem;">
+                                    g/dL
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="PltX10_9L"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="PltX10_9L"
+                                       type="number" step="1"
+                                       class="form-control" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.75rem;">
+                                    ×10⁹/L
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="NeutrofiliX10_9L"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="NeutrofiliX10_9L"
+                                       type="number" step="0.01"
+                                       class="form-control" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.75rem;">
+                                    ×10⁹/L
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-activity text-primary"></i>
+                    <h4 class="form-section-title">
+                        Chimica Clinica e Marcatori
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label asp-for="CreatininaMgDl"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="CreatininaMgDl"
+                                       type="number" step="0.01"
+                                       class="form-control" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.75rem;">
+                                    mg/dL
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="EgfrMlMin"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="EgfrMlMin"
+                                       type="number" step="0.1"
+                                       class="form-control" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.75rem;">
+                                    mL/min
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="PsaNgMl"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="PsaNgMl"
+                                       type="number" step="0.001"
+                                       class="form-control" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.75rem;">
+                                    ng/mL
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="CromograninaA"
+                                   class="form-label"></label>
+                            <input asp-for="CromograninaA"
+                                   type="number" step="0.01"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Note"
+                                   class="form-label"></label>
+                            <textarea asp-for="Note"
+                                      class="form-control" rows="2"
+                                      placeholder="Note cliniche aggiuntive...">
+                            </textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Salva Dato Ematologico
+                </button>
+                <a href="/Lu177/Detail/@Model.PazienteId"
+                   class="btn btn-ghost">
+                    Annulla
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

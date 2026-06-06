@@ -1,0 +1,391 @@
+@model RadiologiaAppNew.ViewModels.Apparecchiature.ApparecchiaturaListViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Catalogo Apparecchiature";
+}
+
+<!-- ═══ PAGE HEADER ══════════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-hdd-rack me-2 text-primary"></i>
+            Catalogo Apparecchiature
+        </h1>
+        <p class="page-subtitle">
+            @Model.TotaleRisultati apparecchiatur@(Model.TotaleRisultati == 1 ? "a" : "e") trovat@(Model.TotaleRisultati == 1 ? "a" : "e")
+            @if (Model.HaFiltriAttivi)
+            {
+                <span> — filtri attivi</span>
+            }
+        </p>
+    </div>
+    <div class="page-actions">
+        @if (User.IsInRole("ADMIN_ORG") || User.IsInRole("EFM") || User.IsInRole("EDR"))
+        {
+            <a href="/Apparecchiature/Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                Nuova Apparecchiatura
+            </a>
+        }
+        <a href="/Apparecchiature?stato=Cessata" class="btn btn-ghost">
+            <i class="bi bi-archive"></i>
+            Cessate
+        </a>
+        <a href="/Apparecchiature/ExportCsv?stato=@Model.StatoFiltro&ambito=@Model.AmbitoFiltro"
+   class="btn btn-ghost">
+    <i class="bi bi-download"></i>
+    Export CSV
+</a>
+    </div>
+</div>
+
+<!-- ═══ FILTRI ═══════════════════════════════════════════════════ -->
+<div class="card mb-4">
+    <div class="card-body" style="padding: 16px 20px;">
+        <form method="get" action="/Apparecchiature" id="formFiltri">
+            <div class="row g-3 align-items-end">
+
+                <!-- Search -->
+                <div class="col-lg-4">
+                    <label class="form-label">Cerca</label>
+                    <div style="position:relative;">
+                        <i class="bi bi-search"
+                           style="position:absolute;left:10px;top:50%;
+                                  transform:translateY(-50%);
+                                  color:var(--neutral-500);font-size:0.85rem;"></i>
+                        <input type="text"
+                               name="search"
+                               value="@Model.SearchText"
+                               class="form-control"
+                               style="padding-left:32px;"
+                               placeholder="Codice, descrizione, modello, costruttore..."
+                               autocomplete="off" />
+                    </div>
+                </div>
+
+                <!-- Stato -->
+                <div class="col-lg-2">
+                    <label class="form-label">Stato</label>
+                    <select name="stato" class="form-select"
+                            onchange="document.getElementById('formFiltri').submit()">
+                         <!-- <option value="">Tutti (attive)</option>
+                       <option value="Attiva" selected="@(Model.StatoFiltro == "Attiva")">
+    Attive
+</option> --> <option value="">Tutti</option>
+                         <option value="Attiva" selected="@(Model.StatoFiltro == "Attiva")">Attiva</option>
+                        <option value="InInstallazione" selected="@(Model.StatoFiltro == "InInstallazione")">
+    In Installazione
+</option>
+
+<option value="InManutenzione" selected="@(Model.StatoFiltro == "InManutenzione")">
+    In Manutenzione
+</option>
+
+<option value="Cessata" selected="@(Model.StatoFiltro == "Cessata")">
+    Cessate
+</option>
+
+                    </select>
+                </div>
+
+                <!-- Ambito -->
+                <div class="col-lg-2">
+                    <label class="form-label">Ambito</label>
+                    <select name="ambito" class="form-select"
+                            onchange="document.getElementById('formFiltri').submit()">
+                        <option value="">Tutti</option>
+                      <option value="Radiologia" selected="@(Model.AmbitoFiltro == "Radiologia")">
+    Radiologia
+</option>
+
+<option value="RadiologiaInterventistica" selected="@(Model.AmbitoFiltro == "RadiologiaInterventistica")">
+    Interventistica
+</option>
+
+<option value="MedicinaNucleare" selected="@(Model.AmbitoFiltro == "MedicinaNucleare")">
+    Medicina Nucleare
+</option>
+
+<option value="Radioterapia" selected="@(Model.AmbitoFiltro == "Radioterapia")">
+    Radioterapia
+</option>
+
+                    </select>
+                </div>
+
+                <!-- Reparto -->
+                <div class="col-lg-2">
+                    <label class="form-label">Reparto</label>
+                    <select name="reparto" class="form-select"
+                            onchange="document.getElementById('formFiltri').submit()">
+                        <option value="">Tutti i reparti</option>
+                        @foreach (var r in Model.Reparti)
+                        {
+                            <option value="@r.Id" selected="@(Model.RepartoFiltro == r.Id)">
+    @r.Nome
+</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Bottoni -->
+                <div class="col-lg-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-search"></i>
+                        Cerca
+                    </button>
+                    @if (Model.HaFiltriAttivi)
+                    {
+                        <a href="/Apparecchiature" class="btn btn-ghost"
+                           title="Rimuovi filtri">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    }
+                </div>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ═══ TABELLA ══════════════════════════════════════════════════ -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="bi bi-table card-icon"></i>
+            Elenco Apparecchiature
+        </h3>
+        <div class="d-flex gap-2 align-items-center">
+            <span style="font-size:0.8rem;color:var(--neutral-500);">
+                Pagina @Model.PaginaCorrente di @Model.TotalePagine
+            </span>
+        </div>
+    </div>
+
+    @if (!Model.Apparecchiature.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-hdd-rack empty-state-icon"></i>
+            <div class="empty-state-title">Nessuna apparecchiatura trovata</div>
+            <p class="empty-state-text">
+                @if (Model.HaFiltriAttivi)
+                {
+                    <span>Nessun risultato per i filtri selezionati.
+                        <a href="/Apparecchiature">Rimuovi i filtri</a>
+                    </span>
+                }
+                else
+                {
+                    <span>Non ci sono ancora apparecchiature registrate.</span>
+                }
+            </p>
+            @if (User.IsInRole("ADMIN_ORG") || User.IsInRole("EFM") || User.IsInRole("EDR"))
+            {
+                <a href="/Apparecchiature/Create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Registra la prima apparecchiatura
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Apparecchiatura</th>
+                        <th>Tipologia</th>
+                        <th>Reparto / Locale</th>
+                        <th>Stato</th>
+                        <th>Compliance</th>
+                        <th>Prossimo CQ</th>
+                        <th style="width:100px;">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model.Apparecchiature)
+                    {
+                        <tr class="clickable"
+                            onclick="location.href='/Apparecchiature/Detail/@a.Id'">
+
+                            <td>
+                                <code style="font-size:0.8rem;
+                                             background:var(--neutral-100);
+                                             padding:2px 6px;
+                                             border-radius:4px;">
+                                    @a.Codice
+                                </code>
+                            </td>
+
+                            <td>
+                                <div class="fw-600">@a.Descrizione</div>
+                                <div style="font-size:0.775rem;
+                                            color:var(--neutral-500);">
+                                    @a.Costruttore — @a.Modello
+                                </div>
+                            </td>
+
+                            <td>
+                                <span style="font-size:0.825rem;">@a.Tipologia</span>
+                                @if (a.AmbitoIntervento.HasValue)
+                                {
+                                    <div style="font-size:0.75rem;
+                                                color:var(--neutral-500);">
+                                        @a.AmbitoIntervento.ToString()
+                                    </div>
+                                }
+                            </td>
+
+                            <td>
+                                @if (!string.IsNullOrEmpty(a.Reparto))
+                                {
+                                    <div style="font-size:0.825rem;">
+                                        <i class="bi bi-building me-1"
+                                           style="color:var(--neutral-400)"></i>
+                                        @a.Reparto
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(a.Locale))
+                                {
+                                    <div style="font-size:0.775rem;
+                                                color:var(--neutral-500);">
+                                        <i class="bi bi-door-open me-1"></i>
+                                        @a.Locale
+                                    </div>
+                                }
+                            </td>
+
+                            <td>
+                                @{
+                                    var (statoClass, statoIcon, statoLabel) = a.Stato switch
+                                    {
+                                        RadiologiaAppNew.Enums.StatoApparecchiatura.Attiva =>
+                                            ("stato-attiva", "bi-check-circle-fill", "Attiva"),
+                                        RadiologiaAppNew.Enums.StatoApparecchiatura.InInstallazione =>
+                                            ("stato-in-installazione", "bi-tools", "In Installazione"),
+                                        RadiologiaAppNew.Enums.StatoApparecchiatura.InManutenzione =>
+                                            ("stato-in-manutenzione", "bi-wrench", "In Manutenzione"),
+                                        RadiologiaAppNew.Enums.StatoApparecchiatura.Cessata =>
+                                            ("stato-cessata", "bi-archive", "Cessata"),
+                                        _ => ("stato-cessata", "bi-circle", a.Stato.ToString())
+                                    };
+                                }
+                                <span class="stato-badge @statoClass">
+                                    <i class="bi @statoIcon"></i>
+                                    @statoLabel
+                                </span>
+                            </td>
+
+                            <td>
+                                @{
+                                    var (compClass, compIcon, compLabel) = a.ComplianceStato switch
+                                    {
+                                        "ok"      => ("badge-ok",      "bi-check-circle", "In Regola"),
+                                        "warning" => ("badge-warning", "bi-clock",         "In Scadenza"),
+                                        "danger"  => ("badge-danger",  "bi-x-circle",      "Scaduto"),
+                                        _         => ("badge-missing", "bi-dash-circle",   "Da verificare")
+                                    };
+                                }
+                                <span class="badge-compliance @compClass">
+                                    <i class="bi @compIcon"></i>
+                                    @compLabel
+                                </span>
+                            </td>
+
+                            <td>
+                                @if (a.ProssimaVerifica.HasValue)
+                                {
+                                    var giorni = (a.ProssimaVerifica.Value.Date - DateTime.Today).Days;
+                                    <span style="font-size:0.825rem;
+                                                 color:@(giorni < 0 ? "var(--danger)" :
+                                                          giorni <= 30 ? "var(--warning)" :
+                                                          "var(--neutral-700)");">
+                                        @a.ProssimaVerifica.Value.ToString("dd/MM/yyyy")
+                                    </span>
+                                    if (giorni < 0)
+                                    {
+                                        <div style="font-size:0.7rem;color:var(--danger);">
+                                            Scaduta da @Math.Abs(giorni) gg
+                                        </div>
+                                    }
+                                    else if (giorni <= 30)
+                                    {
+                                        <div style="font-size:0.7rem;color:var(--warning);">
+                                            Tra @giorni giorni
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="font-size:0.8rem;
+                                                 color:var(--neutral-400);">—</span>
+                                }
+                            </td>
+
+                            <td onclick="event.stopPropagation()">
+                                <div class="d-flex gap-1">
+                                    <a href="/Apparecchiature/Detail/@a.Id"
+                                       class="btn btn-ghost btn-icon btn-sm"
+                                       title="Visualizza scheda"
+                                       data-bs-toggle="tooltip">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole("ADMIN_ORG") ||
+                                         User.IsInRole("EFM") ||
+                                         User.IsInRole("EDR"))
+                                    {
+                                        <a href="/Apparecchiature/Edit/@a.Id"
+                                           class="btn btn-ghost btn-icon btn-sm"
+                                           title="Modifica"
+                                           data-bs-toggle="tooltip">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginazione -->
+        @if (Model.TotalePagine > 1)
+        {
+            <div class="card-footer">
+                <div class="pagination-radiologia">
+
+                    @if (Model.PaginaCorrente > 1)
+                    {
+                        <a href="?pagina=@(Model.PaginaCorrente - 1)&search=@Model.SearchText&stato=@Model.StatoFiltro&ambito=@Model.AmbitoFiltro&reparto=@Model.RepartoFiltro"
+                           class="page-btn">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    }
+
+                    @for (int p = Math.Max(1, Model.PaginaCorrente - 2);
+                          p <= Math.Min(Model.TotalePagine, Model.PaginaCorrente + 2);
+                          p++)
+                    {
+                        <a href="?pagina=@p&search=@Model.SearchText&stato=@Model.StatoFiltro&ambito=@Model.AmbitoFiltro&reparto=@Model.RepartoFiltro"
+                           class="page-btn @(p == Model.PaginaCorrente ? "active" : "")">
+                            @p
+                        </a>
+                    }
+
+                    @if (Model.PaginaCorrente < Model.TotalePagine)
+                    {
+                        <a href="?pagina=@(Model.PaginaCorrente + 1)&search=@Model.SearchText&stato=@Model.StatoFiltro&ambito=@Model.AmbitoFiltro&reparto=@Model.RepartoFiltro"
+                           class="page-btn">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    }
+
+                </div>
+            </div>
+        }
+    }
+</div>

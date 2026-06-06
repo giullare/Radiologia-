@@ -1,0 +1,1169 @@
+@model RadiologiaAppNew.ViewModels.Apparecchiature.ApparecchiaturaDetailViewModel
+@{
+    Layout = "_Layout";
+    var app = Model.Apparecchiatura;
+    ViewData["Title"] = app.Descrizione;
+}
+
+<!-- ═══ PAGE HEADER ══════════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <code style="font-size:0.8rem;background:var(--neutral-100);
+                         padding:2px 8px;border-radius:4px;">
+                @app.Codice
+            </code>
+            @{
+                var (statoClass, statoLabel) = app.Stato switch
+                {
+                    RadiologiaAppNew.Enums.StatoApparecchiatura.Attiva =>
+                        ("stato-attiva", "Attiva"),
+                    RadiologiaAppNew.Enums.StatoApparecchiatura.InInstallazione =>
+                        ("stato-in-installazione", "In Installazione"),
+                    RadiologiaAppNew.Enums.StatoApparecchiatura.InManutenzione =>
+                        ("stato-in-manutenzione", "In Manutenzione"),
+                    RadiologiaAppNew.Enums.StatoApparecchiatura.Cessata =>
+                        ("stato-cessata", "Cessata"),
+                    _ => ("stato-cessata", app.Stato.ToString())
+                };
+            }
+            <span class="stato-badge @statoClass">@statoLabel</span>
+        </div>
+        <h1 class="page-title">@app.Descrizione</h1>
+        <p class="page-subtitle">
+            @app.Costruttore — @app.Modello
+            @if (app.Reparto != null)
+            {
+                <span> · @app.Reparto.Nome</span>
+            }
+        </p>
+    </div>
+    <div class="page-actions">
+        @if (User.IsInRole("ADMIN_ORG") || User.IsInRole("EFM") || User.IsInRole("EDR"))
+        {
+            <a href="/Apparecchiature/Edit/@app.Id" class="btn btn-outline">
+                <i class="bi bi-pencil"></i>
+                Modifica
+            </a>
+        }
+        <a href="/Verifiche/Create/@app.Id" class="btn btn-primary">
+            <i class="bi bi-clipboard2-plus"></i>
+            Nuova Verifica
+        </a>
+    </div>
+</div>
+
+<!-- ═══ TAB NAVIGATION ═══════════════════════════════════════════ -->
+<div class="tabs-radiologia">
+    <button class="tab-btn @(Model.TabAttiva == "anagrafica" ? "active" : "")"
+            onclick="switchTab('anagrafica')">
+        <i class="bi bi-info-circle"></i>
+        Anagrafica
+    </button>
+    <button class="tab-btn @(Model.TabAttiva == "compliance" ? "active" : "")"
+            onclick="switchTab('compliance')">
+        <i class="bi bi-shield-check"></i>
+        Compliance
+        @{
+            var critici = Model.ItemsCompliance.Count(i => i.Stato == "danger");
+            var warning = Model.ItemsCompliance.Count(i => i.Stato == "warning");
+        }
+        @if (critici > 0)
+        {
+            <span style="background:var(--danger);color:white;
+                         border-radius:10px;padding:1px 6px;
+                         font-size:0.7rem;font-weight:700;">
+                @critici
+            </span>
+        }
+        else if (warning > 0)
+        {
+            <span style="background:var(--warning);color:white;
+                         border-radius:10px;padding:1px 6px;
+                         font-size:0.7rem;font-weight:700;">
+                @warning
+            </span>
+        }
+    </button>
+    <button class="tab-btn @(Model.TabAttiva == "verifiche" ? "active" : "")"
+            onclick="switchTab('verifiche')">
+        <i class="bi bi-clipboard2-check"></i>
+        Verifiche CQ
+        <span style="background:var(--neutral-200);color:var(--neutral-700);
+                     border-radius:10px;padding:1px 6px;font-size:0.7rem;">
+            @Model.VerificheCQ.Count
+        </span>
+    </button>
+    <button class="tab-btn @(Model.TabAttiva == "adempimenti" ? "active" : "")"
+            onclick="switchTab('adempimenti')">
+        <i class="bi bi-file-earmark-text"></i>
+        Adempimenti EDR
+    </button>
+    <button class="tab-btn @(Model.TabAttiva == "documenti" ? "active" : "")"
+            onclick="switchTab('documenti')">
+        <i class="bi bi-paperclip"></i>
+        Documenti
+        <span style="background:var(--neutral-200);color:var(--neutral-700);
+                     border-radius:10px;padding:1px 6px;font-size:0.7rem;">
+            @Model.FileAllegati.Count
+        </span>
+    </button>
+    <button class="tab-btn @(Model.TabAttiva == "statistiche" ? "active" : "")"
+            onclick="switchTab('statistiche')">
+        <i class="bi bi-bar-chart"></i>
+        Statistiche
+    </button>
+</div>
+
+<!-- ═══ TAB: ANAGRAFICA ══════════════════════════════════════════ -->
+<div class="tab-panel @(Model.TabAttiva == "anagrafica" ? "active" : "")"
+     id="tab-anagrafica">
+    <div class="row g-4">
+
+        <!-- Dati identificativi -->
+        <div class="col-lg-8">
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-card-list text-primary"></i>
+                    <h4 class="form-section-title">Dati Identificativi</h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-label">Modulo</div>
+                            <div class="fw-600">@app.Modulo</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-label">Ambito</div>
+                            <div class="fw-600">
+                                @(app.AmbitoIntervento?.ToString() ?? "RM")
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-label">Tipologia</div>
+                            <div class="fw-600">@app.Tipologia</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-label">Matricola</div>
+                            <div class="fw-600">@app.Matricola</div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(app.SerialNumber))
+                        {
+                            <div class="col-md-6">
+                                <div class="form-label">Numero Seriale</div>
+                                <div class="fw-600">@app.SerialNumber</div>
+                            </div>
+                        }
+                        <div class="col-md-6">
+                            <div class="form-label">Data Accettazione</div>
+                            <div class="fw-600">
+                                @(app.DataAccettazione.HasValue
+                                    ? app.DataAccettazione.Value.ToString("dd/MM/yyyy")
+                                    : "—")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parametri radiologici -->
+            @if (app.CorrenteMaxMa.HasValue || app.TensioneMaxKvolt.HasValue ||
+                 app.IntensitaCampoTesla.HasValue)
+            {
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="bi bi-lightning-charge text-primary"></i>
+                        <h4 class="form-section-title">Parametri Tecnici</h4>
+                    </div>
+                    <div class="form-section-body">
+                        <div class="row g-3">
+                            @if (app.CorrenteMaxMa.HasValue)
+                            {
+                                <div class="col-md-4">
+                                    <div class="form-label">Corrente Max</div>
+                                    <div class="fw-600">@app.CorrenteMaxMa mA</div>
+                                </div>
+                            }
+                            @if (app.TensioneMaxKvolt.HasValue)
+                            {
+                                <div class="col-md-4">
+                                    <div class="form-label">Tensione Max</div>
+                                    <div class="fw-600">@app.TensioneMaxKvolt kV</div>
+                                </div>
+                            }
+                            @if (app.EnergiaMaxKev.HasValue)
+                            {
+                                <div class="col-md-4">
+                                    <div class="form-label">Energia Max</div>
+                                    <div class="fw-600">@app.EnergiaMaxKev keV</div>
+                                </div>
+                            }
+                            @if (app.IntensitaCampoTesla.HasValue)
+                            {
+                                <div class="col-md-4">
+                                    <div class="form-label">Intensità Campo</div>
+                                    <div class="fw-600">@app.IntensitaCampoTesla T</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(app.TipoMagnete))
+                            {
+                                <div class="col-md-4">
+                                    <div class="form-label">Tipo Magnete</div>
+                                    <div class="fw-600">@app.TipoMagnete</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Assistenza -->
+            @if (!string.IsNullOrEmpty(app.SocietaManutenzione))
+            {
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="bi bi-tools text-primary"></i>
+                        <h4 class="form-section-title">Assistenza e Manutenzione</h4>
+                    </div>
+                    <div class="form-section-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-label">Società Manutenzione</div>
+                                <div class="fw-600">@app.SocietaManutenzione</div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(app.TecnicoRiferimento))
+                            {
+                                <div class="col-md-6">
+                                    <div class="form-label">Tecnico Riferimento</div>
+                                    <div class="fw-600">@app.TecnicoRiferimento</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(app.NumeroAssistenza))
+                            {
+                                <div class="col-md-6">
+                                    <div class="form-label">Nr. Assistenza</div>
+                                    <div class="fw-600">
+                                        <a href="tel:@app.NumeroAssistenza">
+                                            @app.NumeroAssistenza
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(app.EmailAssistenza))
+                            {
+                                <div class="col-md-6">
+                                    <div class="form-label">Email Assistenza</div>
+                                    <div class="fw-600">
+                                        <a href="mailto:@app.EmailAssistenza">
+                                            @app.EmailAssistenza
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Colonna destra -->
+        <div class="col-lg-4">
+
+            <!-- Collocazione -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-geo-alt card-icon"></i>
+                        Collocazione
+                    </h3>
+                </div>
+                <div class="card-body">
+                    @if (app.Reparto != null)
+                    {
+                        <div class="mb-2">
+                            <div class="form-label">Reparto</div>
+                            <div class="fw-600">@app.Reparto.Nome</div>
+                            @if (!string.IsNullOrEmpty(app.Caposala))
+                            {
+                                <div style="font-size:0.8rem;color:var(--neutral-500)">
+                                    Ref: @app.Caposala
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (app.Locale != null)
+                    {
+                        <div class="mb-2">
+                            <div class="form-label">Locale</div>
+                            <div class="fw-600">@app.Locale.Nome</div>
+                            @if (!string.IsNullOrEmpty(app.Locale.Codice))
+                            {
+                                <div style="font-size:0.8rem;color:var(--neutral-500)">
+                                    Cod: @app.Locale.Codice
+                                </div>
+                            }
+                        </div>
+                    }
+                    <hr class="divider" />
+                    <div class="d-flex gap-3">
+                        <div>
+                            <div class="form-label">LAN</div>
+                            <span class="badge-compliance @(app.LanCollegata ? "badge-ok" : "badge-missing")">
+                                @(app.LanCollegata ? "Sì" : "No")
+                            </span>
+                        </div>
+                        <div>
+                            <div class="form-label">MedSquare</div>
+                            <span class="badge-compliance @(app.MedsquareInstallato ? "badge-ok" : "badge-missing")">
+                                @(app.MedsquareInstallato ? "Sì" : "No")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+           <!-- Figure responsabili -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="bi bi-people card-icon"></i>
+            Figure Responsabili
+        </h3>
+    </div>
+    <div class="card-body p-0">
+        @{
+            var tutteFigure = Model.FigureRIR
+                .Concat(Model.FigureEFM)
+                .Concat(Model.FigureEDR)
+                .Concat(Model.FigureMA)
+                .ToList();
+        }
+        @if (!tutteFigure.Any())
+        {
+            <div style="padding:16px;text-align:center;
+                        color:var(--neutral-500);
+                        font-size:0.85rem;">
+                Nessuna figura assegnata
+            </div>
+        }
+        @foreach (var f in tutteFigure)
+        {
+            <div style="padding:10px 16px;
+                        border-bottom:1px solid var(--neutral-200);
+                        display:flex;align-items:center;gap:10px;">
+                <div style="width:32px;height:32px;border-radius:50%;
+                            background:var(--primary);color:white;
+                            display:flex;align-items:center;
+                            justify-content:center;font-size:0.75rem;
+                            font-weight:700;flex-shrink:0;">
+                    @f.Nome[0]@f.Cognome[0]
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div class="fw-600" style="font-size:0.85rem;">
+                        @f.Nome @f.Cognome
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--neutral-500);">
+                        @f.Ruolo
+                        @if (!string.IsNullOrEmpty(f.GradoAbilitazione))
+                        {
+                            <span> — @f.GradoAbilitazione° grado</span>
+                        }
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(f.Email))
+                {
+                    <a href="mailto:@f.Email"
+                       class="btn btn-ghost btn-icon btn-sm"
+                       title="@f.Email"
+                       onclick="event.stopPropagation()">
+                        <i class="bi bi-envelope"></i>
+                    </a>
+                }
+                @if (User.IsInRole("ADMIN_ORG") ||
+                     User.IsInRole("EFM") ||
+                     User.IsInRole("EDR"))
+                {
+                    <form asp-action="EliminaFigura"
+                          asp-controller="Apparecchiature"
+                          method="post"
+                          style="display:inline;"
+                          onclick="event.stopPropagation()">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id"
+                               value="@f.Id" />
+                        <input type="hidden"
+                               name="apparecchiaturaId"
+                               value="@app.Id" />
+                        <button type="submit"
+                                class="btn btn-ghost btn-icon btn-sm"
+                                data-confirm="Rimuovere @f.Nome @f.Cognome (@f.Ruolo)?"
+                                title="Rimuovi figura">
+                            <i class="bi bi-x-lg"
+                               style="color:var(--danger);"></i>
+                        </button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+
+    @if (User.IsInRole("ADMIN_ORG") ||
+         User.IsInRole("EFM") ||
+         User.IsInRole("EDR"))
+    {
+        <div class="card-footer">
+            <button class="btn btn-ghost btn-sm w-100"
+                    type="button"
+                    onclick="toggleFormFigura()">
+                <i class="bi bi-plus-circle"></i>
+                Aggiungi Figura Responsabile
+            </button>
+
+            <div id="formFigura" style="display:none;margin-top:12px;">
+                <form asp-action="AggiungiFigura"
+                      asp-controller="Apparecchiature"
+                      method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ApparecchiaturaId"
+                           value="@app.Id" />
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <select name="Ruolo"
+                                    class="form-select"
+                                    style="font-size:0.85rem;"
+                                    required>
+                                <option value="">— Ruolo —</option>
+                                <option value="RIR">RIR</option>
+                                <option value="EFM">EFM</option>
+                                <option value="EdR">EdR</option>
+                                <option value="MA">MA</option>
+                                <option value="ES">ES (RM)</option>
+                                <option value="MR">MR (RM)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <select name="GradoAbilitazione"
+                                    class="form-select"
+                                    style="font-size:0.85rem;">
+                                <option value="">— Grado EDR —</option>
+                                <option value="1">1° grado</option>
+                                <option value="2">2° grado</option>
+                                <option value="3">3° grado</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="Nome"
+                                   class="form-control"
+                                   style="font-size:0.85rem;"
+                                   placeholder="Nome *" required />
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="Cognome"
+                                   class="form-control"
+                                   style="font-size:0.85rem;"
+                                   placeholder="Cognome *" required />
+                        </div>
+                        <div class="col-6">
+                            <input type="email" name="Email"
+                                   class="form-control"
+                                   style="font-size:0.85rem;"
+                                   placeholder="Email" />
+                        </div>
+                        <div class="col-6">
+                            <input type="text" name="Telefono"
+                                   class="form-control"
+                                   style="font-size:0.85rem;"
+                                   placeholder="Telefono" />
+                        </div>
+                        <div class="col-6">
+                            <input type="date" name="ValidoDal"
+                                   class="form-control"
+                                   style="font-size:0.85rem;"
+                                   value="@DateTime.Today
+                                       .ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-6">
+                            <button type="submit"
+                                    class="btn btn-primary w-100 btn-sm">
+                                <i class="bi bi-check-circle"></i>
+                                Salva
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+            <!-- Adempimenti STRIMS/INAIL -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-building-check card-icon"></i>
+                        Registrazioni
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="form-label">STRIMS</div>
+                        <span class="badge-compliance
+                            @(app.StatoStrims == RadiologiaAppNew.Enums.StatoAdempimento.Registrato
+                                ? "badge-ok" : "badge-todo")">
+                            @app.StatoStrims
+                        </span>
+                        @if (app.DataRegistrazioneStrims.HasValue)
+                        {
+                            <div style="font-size:0.775rem;color:var(--neutral-500);
+                                        margin-top:4px;">
+                                @app.DataRegistrazioneStrims.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
+                    </div>
+                    <div>
+                        <div class="form-label">INAIL</div>
+                        <span class="badge-compliance
+                            @(app.StatoInail == RadiologiaAppNew.Enums.StatoAdempimento.Registrato
+                                ? "badge-ok" : "badge-todo")">
+                            @app.StatoInail
+                        </span>
+                        @if (app.DataRegistrazioneInail.HasValue)
+                        {
+                            <div style="font-size:0.775rem;color:var(--neutral-500);
+                                        margin-top:4px;">
+                                @app.DataRegistrazioneInail.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ═══ TAB: COMPLIANCE ══════════════════════════════════════════ -->
+<div class="tab-panel @(Model.TabAttiva == "compliance" ? "active" : "")"
+     id="tab-compliance">
+
+    <div class="alert-radiologia alert-info mb-4">
+        <i class="bi bi-info-circle alert-icon"></i>
+        <div>
+            Pannello di controllo degli adempimenti normativi per questa apparecchiatura.
+            Gli stati vengono aggiornati automaticamente in base ai dati inseriti.
+        </div>
+    </div>
+
+    <!-- Riepilogo -->
+    <div class="kpi-grid mb-4" style="grid-template-columns:repeat(4,1fr)">
+        @{
+            var cOk      = Model.ItemsCompliance.Count(i => i.Stato == "ok");
+            var cWarn    = Model.ItemsCompliance.Count(i => i.Stato == "warning");
+            var cDanger  = Model.ItemsCompliance.Count(i => i.Stato == "danger");
+            var cMissing = Model.ItemsCompliance.Count(i =>
+                i.Stato == "missing" || i.Stato == "todo");
+        }
+        <div class="kpi-card kpi-success" style="padding:14px 18px;">
+            <div class="kpi-content">
+                <div class="kpi-number" style="font-size:1.8rem;">@cOk</div>
+                <div class="kpi-label">In Regola</div>
+            </div>
+            <i class="bi bi-check-circle kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-warning" style="padding:14px 18px;">
+            <div class="kpi-content">
+                <div class="kpi-number" style="font-size:1.8rem;">@cWarn</div>
+                <div class="kpi-label">In Scadenza</div>
+            </div>
+            <i class="bi bi-clock kpi-icon"></i>
+        </div>
+        <div class="kpi-card kpi-danger" style="padding:14px 18px;">
+            <div class="kpi-content">
+                <div class="kpi-number" style="font-size:1.8rem;">@cDanger</div>
+                <div class="kpi-label">Critici</div>
+            </div>
+            <i class="bi bi-x-circle kpi-icon"></i>
+        </div>
+        <div class="kpi-card" style="padding:14px 18px;">
+            <div class="kpi-content">
+                <div class="kpi-number" style="font-size:1.8rem;">@cMissing</div>
+                <div class="kpi-label">Da Completare</div>
+            </div>
+            <i class="bi bi-dash-circle kpi-icon"></i>
+        </div>
+    </div>
+
+    <div class="compliance-grid">
+        @foreach (var item in Model.ItemsCompliance)
+        {
+            <div class="compliance-item">
+                <div class="compliance-dot @item.Stato"></div>
+                <div class="compliance-info">
+                    <div class="compliance-label">
+                        <i class="bi @item.Icona me-1"></i>
+                        @item.Label
+                    </div>
+                    <div class="compliance-detail">@item.Dettaglio</div>
+                </div>
+                @{
+                    var (badgeClass, badgeLabel) = item.Stato switch
+                    {
+                        "ok"      => ("badge-ok",      "In Regola"),
+                        "warning" => ("badge-warning", "In Scadenza"),
+                        "danger"  => ("badge-danger",  "Critico"),
+                        "todo"    => ("badge-todo",    "Da Fare"),
+                        _         => ("badge-missing", "Mancante")
+                    };
+                }
+                <span class="badge-compliance @badgeClass"
+                      style="flex-shrink:0;">
+                    @badgeLabel
+                </span>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ═══ TAB: VERIFICHE CQ ════════════════════════════════════════ -->
+<div class="tab-panel @(Model.TabAttiva == "verifiche" ? "active" : "")"
+     id="tab-verifiche">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-700" style="margin:0;">Storico Verifiche</h4>
+        <a href="/Verifiche/Create/@app.Id" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle"></i>
+            Nuova Verifica
+        </a>
+    </div>
+
+    @if (!Model.VerificheCQ.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-clipboard2 empty-state-icon"></i>
+            <div class="empty-state-title">Nessuna verifica registrata</div>
+            <p class="empty-state-text">
+                Registra la prima verifica di collaudo o controllo di qualità.
+            </p>
+            <a href="/Verifiche/Create/@app.Id" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i>
+                Aggiungi Verifica
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Data Esecuzione</th>
+                        <th>Esito</th>
+                        <th>Prossima Verifica</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+    @foreach (var v in Model.VerificheCQ)
+    {
+        <tr>
+            <td>
+                <span class="fw-600" style="font-size:0.85rem;">
+                    @v.Tipo
+                </span>
+                @if (v.Anno.HasValue)
+                {
+                    <div style="font-size:0.75rem;color:var(--neutral-500);">
+                        Anno @v.Anno
+                    </div>
+                }
+            </td>
+            <td>
+                @v.DataInizio.ToString("dd/MM/yyyy")
+                @if (v.DataFine.HasValue)
+                {
+                    <span style="color:var(--neutral-400);">
+                        → @v.DataFine.Value.ToString("dd/MM/yyyy")
+                    </span>
+                }
+            </td>
+            <td>
+                @{
+                    string esitoTabClass;
+                    string esitoTabIcon;
+                    if (v.Esito == EsitoVerifica.Superato)
+                    {
+                        esitoTabClass = "badge-ok";
+                        esitoTabIcon  = "bi-check-circle";
+                    }
+                    else if (v.Esito == EsitoVerifica.NonSuperato)
+                    {
+                        esitoTabClass = "badge-danger";
+                        esitoTabIcon  = "bi-x-circle";
+                    }
+                    else if (v.Esito == EsitoVerifica.ConRiserva)
+                    {
+                        esitoTabClass = "badge-warning";
+                        esitoTabIcon  = "bi-exclamation-circle";
+                    }
+                    else
+                    {
+                        esitoTabClass = "badge-missing";
+                        esitoTabIcon  = "bi-clock";
+                    }
+                }
+                <span class="badge-compliance @esitoTabClass">
+                    <i class="bi @esitoTabIcon"></i>
+                    @v.Esito
+                </span>
+            </td>
+            <td>
+                @if (v.ProssimaVerificaData.HasValue)
+                {
+                    var gg = (v.ProssimaVerificaData.Value.Date
+                              - DateTime.Today).Days;
+                    <span style="color:@(gg < 0 ? "var(--danger)"
+                                        : gg <= 30 ? "var(--warning)"
+                                        : "inherit");">
+                        @v.ProssimaVerificaData.Value.ToString("dd/MM/yyyy")
+                    </span>
+                }
+                else
+                {
+                    <span style="color:var(--neutral-400);">—</span>
+                }
+            </td>
+            <td>
+                <span style="font-size:0.8rem;color:var(--neutral-500);">
+                    @(v.Note?.Length > 60
+                        ? v.Note[..60] + "..."
+                        : v.Note ?? "—")
+                </span>
+            </td>
+        </tr>
+    }
+</tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- ═══ TAB: ADEMPIMENTI EDR ════════════════════════════════════ -->
+<div class="tab-panel @(Model.TabAttiva == "adempimenti" ? "active" : "")"
+     id="tab-adempimenti">
+    <div class="row g-4">
+
+        <!-- Notifiche Pratica -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-send card-icon"></i>
+                        Notifiche di Pratica
+                    </h3>
+                    <a href="/Adempimenti/NuovaNotifica/@app.Id"
+                       class="btn btn-ghost btn-sm">
+                        <i class="bi bi-plus"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.NotichePratica.Any())
+                    {
+                        <div style="padding:20px;text-align:center;
+                                    color:var(--neutral-500);font-size:0.85rem;">
+                            Nessuna notifica registrata
+                        </div>
+                    }
+                    @foreach (var np in Model.NotichePratica)
+                    {
+                        <div style="padding:12px 16px;
+                                    border-bottom:1px solid var(--neutral-200);">
+                            <div class="fw-600" style="font-size:0.85rem;">
+                                Prot. @np.NumeroProtocolloPec
+                            </div>
+                            <div style="font-size:0.775rem;color:var(--neutral-500);">
+                                @np.DataNotifica.ToString("dd/MM/yyyy") —
+                                @np.EnteDestinatario
+                            </div>
+                            @if (np.InviatoRspp)
+                            {
+                                <span class="badge-compliance badge-ok"
+                                      style="margin-top:4px;font-size:0.7rem;">
+                                    <i class="bi bi-check"></i> Inviato RSPP
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Nulla Osta -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-shield-check card-icon"></i>
+                        Nulla Osta
+                    </h3>
+                    <a href="/Adempimenti/NuovoNullaOsta/@app.Id"
+                       class="btn btn-ghost btn-sm">
+                        <i class="bi bi-plus"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.NullaOsta.Any())
+                    {
+                        <div style="padding:20px;text-align:center;
+                                    color:var(--neutral-500);font-size:0.85rem;">
+                            Nessun Nulla Osta registrato
+                        </div>
+                    }
+                    @foreach (var no in Model.NullaOsta)
+                    {
+                        <div style="padding:12px 16px;
+                                    border-bottom:1px solid var(--neutral-200);">
+                            <div class="d-flex justify-content-between">
+                                <div class="fw-600" style="font-size:0.85rem;">
+                                    NO @no.Tipo — @no.Numero
+                                </div>
+                                @{
+                                    var noClass = no.Stato switch
+                                    {
+                                        RadiologiaAppNew.Enums.StatoNullaOsta.Valido =>
+                                            "badge-ok",
+                                        RadiologiaAppNew.Enums.StatoNullaOsta.InScadenza =>
+                                            "badge-warning",
+                                        RadiologiaAppNew.Enums.StatoNullaOsta.Scaduto =>
+                                            "badge-danger",
+                                        _ => "badge-missing"
+                                    };
+                                }
+                                <span class="badge-compliance @noClass"
+                                      style="font-size:0.7rem;">
+                                    @no.Stato
+                                </span>
+                            </div>
+                            <div style="font-size:0.775rem;color:var(--neutral-500);">
+                                @no.EnteRilascio —
+                                @no.DataRilascio.ToString("dd/MM/yyyy")
+                                @if (no.DataScadenza.HasValue)
+                                {
+                                    <span> → @no.DataScadenza.Value.ToString("dd/MM/yyyy")</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Verbali -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-journal-text card-icon"></i>
+                        Verbali di Sopralluogo
+                    </h3>
+                    <a href="/Adempimenti/NuovoVerbale/@app.Id"
+                       class="btn btn-ghost btn-sm">
+                        <i class="bi bi-plus"></i> Nuovo Verbale
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.Verbali.Any())
+                    {
+                        <div style="padding:20px;text-align:center;
+                                    color:var(--neutral-500);font-size:0.85rem;">
+                            Nessun verbale registrato
+                        </div>
+                    }
+                    @foreach (var v in Model.Verbali)
+                    {
+                        <div style="padding:14px 16px;
+                                    border-bottom:1px solid var(--neutral-200);">
+                            <div class="d-flex justify-content-between
+                                        align-items-start">
+                                <div>
+                                    <div class="fw-600" style="font-size:0.875rem;">
+                                        @v.DataSopralluogo.ToString("dd/MM/yyyy") —
+                                        @v.Oggetto
+                                    </div>
+                                    <div style="font-size:0.8rem;
+                                                color:var(--neutral-500);
+                                                margin-top:2px;">
+                                        @(v.Rilievi.Length > 100
+                                            ? v.Rilievi[..100] + "..."
+                                            : v.Rilievi)
+                                    </div>
+                                </div>
+                                @{
+                                    var vClass = v.Stato switch
+                                    {
+                                        "Chiuso" => "badge-ok",
+                                        "In attesa azioni" => "badge-warning",
+                                        _ => "badge-todo"
+                                    };
+                                }
+                                <span class="badge-compliance @vClass"
+                                      style="flex-shrink:0;font-size:0.7rem;">
+                                    @v.Stato
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ TAB: DOCUMENTI ══════════════════════════════════════════ -->
+<div class="tab-panel @(Model.TabAttiva == "documenti" ? "active" : "")"
+     id="tab-documenti">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-700" style="margin:0;">
+            Documenti Allegati (@Model.FileAllegati.Count)
+        </h4>
+        <a href="/Documenti/Upload/@app.Id" class="btn btn-primary btn-sm">
+            <i class="bi bi-upload"></i>
+            Carica Documento
+        </a>
+    </div>
+
+    @if (!Model.FileAllegati.Any())
+    {
+        <div class="upload-area"
+             onclick="location.href='/Documenti/Upload/@app.Id'">
+            <i class="bi bi-cloud-upload upload-icon"></i>
+            <div class="upload-text">
+                Nessun documento allegato.
+                Clicca per caricare il primo documento.
+            </div>
+            <div class="upload-hint">
+                PDF, Word, Excel, immagini — max 50 MB
+            </div>
+        </div>
+    }
+    else
+    {
+        <ul class="file-list">
+            @foreach (var f in Model.FileAllegati)
+            {
+                var ext = System.IO.Path.GetExtension(f.NomeOriginale)
+                          .ToLower().TrimStart('.');
+                var iconClass = ext switch
+                {
+                    "pdf"  => "bi-file-earmark-pdf file-item-icon pdf",
+                    "xlsx" or "xls" =>
+                        "bi-file-earmark-excel file-item-icon excel",
+                    "docx" or "doc" =>
+                        "bi-file-earmark-word file-item-icon word",
+                    "jpg" or "jpeg" or "png" =>
+                        "bi-file-earmark-image file-item-icon image",
+                    _ => "bi-file-earmark file-item-icon other"
+                };
+
+                <li class="file-item">
+                    <i class="bi @iconClass"></i>
+                    <div class="file-item-info">
+                        <div class="file-item-name">@f.NomeOriginale</div>
+                        <div class="file-item-meta">
+                            @f.Categoria ·
+                            @(f.DimensioneBytes / 1024) KB ·
+                            @f.UploadedAt.ToString("dd/MM/yyyy HH:mm")
+                            @if (f.Versione > 1)
+                            {
+                                <span class="badge-compliance badge-todo"
+                                      style="font-size:0.65rem;padding:1px 5px;">
+                                    v@f.Versione
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <a href="/Documenti/Download/@f.Id"
+                       class="btn btn-ghost btn-icon btn-sm"
+                       title="Scarica"
+                       onclick="event.stopPropagation()">
+                        <i class="bi bi-download"></i>
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<!-- ═══ TAB: STATISTICHE ════════════════════════════════════════ -->
+<div class="tab-panel @(Model.TabAttiva == "statistiche" ? "active" : "")"
+     id="tab-statistiche">
+
+    @if (!Model.VerificheCQ.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-bar-chart empty-state-icon"></i>
+            <div class="empty-state-title">Nessun dato disponibile</div>
+            <p class="empty-state-text">
+                Registra le prime verifiche per visualizzare le statistiche.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-bar-chart card-icon"></i>
+                            Esiti Verifiche per Anno
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartEsitiAnno"
+                                style="height:220px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-pie-chart card-icon"></i>
+                            Distribuzione Esiti
+                        </h3>
+                    </div>
+                    <div class="card-body d-flex align-items-center
+                                justify-content-center">
+                        <canvas id="chartDistEsiti"
+                                style="max-height:220px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+// ─── TAB SWITCH ──────────────────────────────────────────────────
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b =>
+        b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p =>
+        p.classList.remove('active'));
+
+    document.querySelector(`#tab-${name}`)?.classList.add('active');
+    event.currentTarget.classList.add('active');
+
+    history.replaceState(null, '',
+        `?tab=${name}`);
+}
+
+// ─── GRAFICI STATISTICHE ─────────────────────────────────────────
+@if (Model.VerificheCQ.Any())
+{
+    var anni = Model.VerificheCQ
+        .Where(v => v.Anno.HasValue)
+        .GroupBy(v => v.Anno!.Value)
+        .OrderBy(g => g.Key)
+        .ToList();
+
+    <text>
+    // Grafico esiti per anno
+    const ctxAnno = document.getElementById('chartEsitiAnno');
+    if (ctxAnno) {
+        new Chart(ctxAnno, {
+            type: 'bar',
+            data: {
+                labels: [@Html.Raw(string.Join(",",
+                    anni.Select(g => $"'{g.Key}'")))],
+                datasets: [
+                    {
+                        label: 'Superati',
+                        data: [@string.Join(",",
+                            anni.Select(g => g.Count(v =>
+                                v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.Superato)))],
+                        backgroundColor: 'rgba(39,174,96,0.8)',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Non Superati',
+                        data: [@string.Join(",",
+                            anni.Select(g => g.Count(v =>
+                                v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.NonSuperato)))],
+                        backgroundColor: 'rgba(192,57,43,0.8)',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Con Riserva',
+                        data: [@string.Join(",",
+                            anni.Select(g => g.Count(v =>
+                                v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.ConRiserva)))],
+                        backgroundColor: 'rgba(243,156,18,0.8)',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                },
+                plugins: {
+                    legend: { position: 'top',
+                              labels: { usePointStyle: true,
+                                        font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    // Grafico distribuzione esiti (torta)
+    const ctxDist = document.getElementById('chartDistEsiti');
+    if (ctxDist) {
+        new Chart(ctxDist, {
+            type: 'doughnut',
+            data: {
+                labels: ['Superati', 'Non Superati', 'Con Riserva', 'In Corso'],
+                datasets: [{
+                    data: [
+                        @Model.VerificheCQ.Count(v =>
+                            v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.Superato),
+                        @Model.VerificheCQ.Count(v =>
+                            v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.NonSuperato),
+                        @Model.VerificheCQ.Count(v =>
+                            v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.ConRiserva),
+                        @Model.VerificheCQ.Count(v =>
+                            v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.InCorso)
+                    ],
+                    backgroundColor: [
+                        '#27AE60','#C0392B','#F39C12','#64748B'
+                    ],
+                    borderWidth: 3,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '60%',
+                plugins: {
+                    legend: { position: 'bottom',
+                              labels: { usePointStyle: true,
+                                        font: { size: 11 } } }
+                }
+            }
+        });
+    }
+    </text>
+}
+function toggleFormFigura() {
+    const f = document.getElementById('formFigura');
+    if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+}

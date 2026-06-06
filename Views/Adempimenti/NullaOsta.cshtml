@@ -1,0 +1,139 @@
+@model List<RadiologiaAppNew.Models.NullaOsta>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Nulla Osta";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-shield-check me-2 text-primary"></i>
+            Nulla Osta
+        </h1>
+        <p class="page-subtitle">@Model.Count NO registrati</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="bi bi-table card-icon"></i>
+            Elenco Nulla Osta
+        </h3>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-shield empty-state-icon"></i>
+            <div class="empty-state-title">Nessun Nulla Osta registrato</div>
+            <p class="empty-state-text">
+                I Nulla Osta vengono aggiunti dalla scheda
+                di ciascuna apparecchiatura.
+            </p>
+            <a href="/Apparecchiature" class="btn btn-primary btn-sm">
+                <i class="bi bi-hdd-rack"></i>
+                Vai alle Apparecchiature
+            </a>
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Apparecchiatura</th>
+                        <th>Tipo</th>
+                        <th>Numero NO</th>
+                        <th>Ente Rilascio</th>
+                        <th>Data Rilascio</th>
+                        <th>Scadenza</th>
+                        <th>Stato</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var n in Model)
+                    {
+                        <tr class="clickable"
+                            onclick="location.href='/Apparecchiature/Detail/@n.ApparecchiaturaId?tab=adempimenti'">
+                            <td>
+                                <div class="fw-600">
+                                    @n.Apparecchiatura?.Descrizione
+                                </div>
+                                <div style="font-size:0.775rem;
+                                            color:var(--neutral-500);">
+                                    @n.Apparecchiatura?.Codice
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-compliance badge-todo"
+                                      style="font-size:0.75rem;">
+                                    @n.Tipo
+                                </span>
+                            </td>
+                            <td>
+                                <code style="font-size:0.8rem;
+                                             background:var(--neutral-100);
+                                             padding:2px 6px;
+                                             border-radius:4px;">
+                                    @n.Numero
+                                </code>
+                            </td>
+                            <td style="font-size:0.85rem;">
+                                @n.EnteRilascio
+                            </td>
+                            <td>@n.DataRilascio.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @if (n.DataScadenza.HasValue)
+                                {
+                                    var gg = (n.DataScadenza.Value.Date
+                                              - DateTime.Today).Days;
+                                    <span style="font-size:0.85rem;
+                                                 color:@(gg < 0
+                                                     ? "var(--danger)"
+                                                     : gg <= 30
+                                                         ? "var(--warning)"
+                                                         : "inherit");">
+                                        @n.DataScadenza.Value
+                                            .ToString("dd/MM/yyyy")
+                                    </span>
+                                    if (gg < 0)
+                                    {
+                                        <div style="font-size:0.7rem;
+                                                    color:var(--danger);">
+                                            Scaduto da @Math.Abs(gg) gg
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="color:var(--neutral-400);">
+                                        Indeterminato
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var (noClass, noLabel) =
+                                        n.Stato switch
+                                    {
+                                        RadiologiaAppNew.Enums.StatoNullaOsta.Valido =>
+                                            ("badge-ok", "Valido"),
+                                        RadiologiaAppNew.Enums.StatoNullaOsta.InScadenza =>
+                                            ("badge-warning", "In Scadenza"),
+                                        RadiologiaAppNew.Enums.StatoNullaOsta.Scaduto =>
+                                            ("badge-danger", "Scaduto"),
+                                        _ => ("badge-missing", "In Rinnovo")
+                                    };
+                                }
+                                <span class="badge-compliance @noClass">
+                                    @noLabel
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

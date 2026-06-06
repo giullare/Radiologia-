@@ -1,0 +1,209 @@
+@model RadiologiaAppNew.Controllers.ModificaUtenteVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Modifica Utente";
+    var ruoliSistema = ViewBag.RuoliSistema as string[]
+                       ?? Array.Empty<string>();
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-person-gear me-2 text-primary"></i>
+            Modifica Utente
+        </h1>
+        <p class="page-subtitle">@Model.Email</p>
+    </div>
+    <div class="page-actions">
+        <a href="/Utenti" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna alla lista
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form asp-action="Edit" asp-controller="Utenti" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-radiologia alert-danger mb-4">
+                    <i class="bi bi-exclamation-circle alert-icon"></i>
+                    <div>
+                        @foreach (var e in ViewData.ModelState.Values
+                            .SelectMany(v => v.Errors))
+                        {
+                            <div>@e.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Dati personali -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-person text-primary"></i>
+                    <h4 class="form-section-title">Dati Personali</h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label asp-for="Nome" class="form-label"></label>
+                            <input asp-for="Nome" class="form-control" />
+                            <span asp-validation-for="Nome"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-7">
+                            <label asp-for="Cognome"
+                                   class="form-label"></label>
+                            <input asp-for="Cognome" class="form-control" />
+                            <span asp-validation-for="Cognome"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input value="@Model.Email"
+                                   class="form-control"
+                                   disabled
+                                   style="background:var(--neutral-100);" />
+                            <div class="form-text">
+                                L'email non può essere modificata
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Telefono"
+                                   class="form-label"></label>
+                            <input asp-for="Telefono" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mt-2">
+                                <input asp-for="Attivo"
+                                       type="checkbox"
+                                       class="form-check-input"
+                                       style="width:2.5em;height:1.3em;" />
+                                <label asp-for="Attivo"
+                                       class="form-check-label ms-2">
+                                    Account Attivo
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset password -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-lock text-primary"></i>
+                    <h4 class="form-section-title">
+                        Reset Password (opzionale)
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="NuovaPassword"
+                                   class="form-label"></label>
+                            <input asp-for="NuovaPassword"
+                                   type="password" class="form-control"
+                                   placeholder="Lascia vuoto per non cambiare" />
+                            <div class="form-text">
+                                Min. 8 caratteri. Lascia vuoto per
+                                mantenere la password attuale.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ruoli -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-shield-lock text-primary"></i>
+                    <h4 class="form-section-title">Ruoli e Permessi</h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-2">
+                        @foreach (var ruolo in ruoliSistema)
+                        {
+                            var selezionato = Model.RuoliSelezionati
+                                .Contains(ruolo);
+                            var desc = ruolo switch
+                            {
+                                "ADMIN_ORG"  => "Amministratore completo",
+                                "EFM"        => "Esperto Fisica Medica",
+                                "EDR"        => "Esperto Radioprotezione",
+                                "RIR"        => "Resp. Impianto Radiologico",
+                                "SFM"        => "Specialista Fisica Medica",
+                                "MA"         => "Medico Autorizzato (RM)",
+                                "ES"         => "Esperto Sicurezza (RM)",
+                                "MR"         => "Medico Responsabile (RM)",
+                                "RQ"         => "Responsabile Qualità",
+                                "OPERATORE"  => "Operatore (inserimento dati)",
+                                "READER"     => "Sola lettura",
+                                _            => ruolo
+                            };
+                            <div class="col-md-6">
+                                <div style="display:flex;
+                                            align-items:flex-start;
+                                            gap:10px;padding:10px 12px;
+                                            border:1.5px solid @(selezionato
+                                                ? "var(--primary)"
+                                                : "var(--neutral-200)");
+                                            border-radius:8px;cursor:pointer;
+                                            background:@(selezionato
+                                                ? "rgba(27,79,114,0.04)"
+                                                : "white");"
+                                     onclick="toggleRuolo('@ruolo', this)">
+                                    <input type="checkbox"
+                                           name="RuoliSelezionati"
+                                           value="@ruolo"
+                                           id="ruolo_@ruolo"
+                                           style="margin-top:2px;
+                                                  cursor:pointer;"
+                                           @(selezionato ? "checked" : "") />
+                                    <div>
+                                        <div class="fw-600"
+                                             style="font-size:0.85rem;">
+                                            @ruolo
+                                        </div>
+                                        <div style="font-size:0.775rem;
+                                                    color:var(--neutral-500);">
+                                            @desc
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Salva Modifiche
+                </button>
+                <a href="/Utenti" class="btn btn-ghost">Annulla</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function toggleRuolo(ruolo, container) {
+    const cb = document.getElementById('ruolo_' + ruolo);
+    if (event.target === cb) return;
+    cb.checked = !cb.checked;
+    container.style.borderColor = cb.checked
+        ? 'var(--primary)' : 'var(--neutral-200)';
+    container.style.background  = cb.checked
+        ? 'rgba(27,79,114,0.04)' : 'white';
+}
+</script>
+}

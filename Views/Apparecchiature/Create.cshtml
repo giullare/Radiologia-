@@ -1,0 +1,1028 @@
+@model RadiologiaAppNew.Models.Apparecchiatura
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Nuova Apparecchiatura";
+}
+
+<!-- ═══ PAGE HEADER ══════════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-plus-circle me-2 text-primary"></i>
+            Nuova Apparecchiatura
+        </h1>
+        <p class="page-subtitle">
+            Compila tutti i campi per registrare una nuova apparecchiatura
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Apparecchiature" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i>
+            Torna al catalogo
+        </a>
+    </div>
+</div>
+
+<!-- ═══ WIZARD STEPS ═════════════════════════════════════════════ -->
+<div class="wizard-steps mb-4">
+    <div class="wizard-step active" id="step-ind-1">
+        <div class="step-circle">1</div>
+        <div class="step-label">Dati Base</div>
+    </div>
+    <div class="wizard-step" id="step-ind-2">
+        <div class="step-circle">2</div>
+        <div class="step-label">Parametri Tecnici</div>
+    </div>
+    <div class="wizard-step" id="step-ind-3">
+        <div class="step-circle">3</div>
+        <div class="step-label">Collocazione</div>
+    </div>
+    <div class="wizard-step" id="step-ind-4">
+        <div class="step-circle">4</div>
+        <div class="step-label">Assistenza</div>
+    </div>
+    <div class="wizard-step" id="step-ind-5">
+        <div class="step-circle">5</div>
+        <div class="step-label">Adempimenti</div>
+    </div>
+    <div class="wizard-step" id="step-ind-6">
+        <div class="step-circle">6</div>
+        <div class="step-label">Riepilogo</div>
+    </div>
+</div>
+
+<!-- ═══ FORM ══════════════════════════════════════════════════════ -->
+<form asp-action="Create" asp-controller="Apparecchiature"
+      method="post" id="formCreate" novalidate>
+    @Html.AntiForgeryToken()
+
+    <!-- Errori globali -->
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert-radiologia alert-danger mb-4">
+            <i class="bi bi-exclamation-circle alert-icon"></i>
+            <div>
+                <strong>Correggi i seguenti errori:</strong>
+                <ul style="margin:6px 0 0;padding-left:16px;">
+                    @foreach (var error in ViewData.ModelState.Values
+                        .SelectMany(v => v.Errors))
+                    {
+                        <li style="font-size:0.85rem;">@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- ══ STEP 1 — Dati Base ════════════════════════════════════ -->
+    <div class="wizard-panel active" id="panel-1">
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="bi bi-card-list text-primary"></i>
+                <h4 class="form-section-title">Dati Identificativi</h4>
+            </div>
+            <div class="form-section-body">
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label asp-for="Codice" class="form-label"></label>
+                        <input asp-for="Codice" class="form-control"
+                               placeholder="Es. TAC-001"
+                               oninput="aggiornaRiepilogo()" />
+                        <span asp-validation-for="Codice"
+                              class="text-danger" style="font-size:0.775rem"></span>
+                        <div class="form-text">
+                            Codice univoco interno all'organizzazione
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label asp-for="Descrizione" class="form-label"></label>
+                        <input asp-for="Descrizione" class="form-control"
+                               placeholder="Es. TAC 128 strati — Sala Radiologia 1"
+                               oninput="aggiornaRiepilogo()" />
+                        <span asp-validation-for="Descrizione"
+                              class="text-danger" style="font-size:0.775rem"></span>
+                    </div>
+
+                    <div class="col-md-4">
+    <label asp-for="Modulo" class="form-label"></label>
+    <select asp-for="Modulo" class="form-select"
+            id="selectModulo" onchange="onModuloChange()">
+        <option value="">— Seleziona —</option>
+        <option value="Radiologica">
+            Radiologica — Radiologia / MN / Radioterapia
+        </option>
+        <option value="RM">
+            Risonanza Magnetica (DM 01/21)
+        </option>
+    </select>
+    <div class="form-text">
+        Per Medicina Nucleare: scegli "Radiologica"
+        poi seleziona l'ambito
+    </div>
+</div>
+
+                    <div class="col-md-4" id="divAmbito">
+                        <label asp-for="AmbitoIntervento" class="form-label"></label>
+                        <select asp-for="AmbitoIntervento" class="form-select"
+        id="selectAmbito" onchange="onAmbitoChange()">
+
+    <option value="">— Seleziona —</option>
+
+    @if (Model.Modulo == TipoModulo.Radiologica)
+    {
+        <option value="Radiologia">Radiologia Diagnostica</option>
+        <option value="RadiologiaInterventistica">Radiologia Interventistica</option>
+        <option value="MedicinaNucleare">Medicina Nucleare</option>
+        <option value="Radioterapia">Radioterapia</option>
+    }
+
+    @if (Model.Modulo == TipoModulo.RM)
+    {
+        <option value="RM">RM</option>
+    }
+
+</select>
+                        <span asp-validation-for="AmbitoIntervento"
+                              class="text-danger" style="font-size:0.775rem"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Tipologia" class="form-label"></label>
+                        <select asp-for="Tipologia" class="form-select"
+                                id="selectTipologia">
+                            <option value="">— Prima seleziona Ambito —</option>
+                        </select>
+                        <span asp-validation-for="Tipologia"
+                              class="text-danger" style="font-size:0.775rem"></span>
+                    </div>
+
+                    <div class="col-md-4">
+    <label class="form-label">Costruttore / Produttore</label>
+    <select name="Costruttore" class="form-select"
+            id="selectCostruttore"
+            onchange="onCostruttoreChange()">
+        <option value="">— Seleziona —</option>
+        @if (ViewBag.Costruttori != null)
+        {
+            foreach (var c in (List<RadiologiaAppNew.Models.Costruttore>)ViewBag.Costruttori)
+            {
+                <option value="@c.Nome"
+                        data-id="@c.Id"
+                       selected="@(Model.Costruttore == c.Nome)">
+                    @c.Nome
+                </option>
+            }
+        }
+    </select>
+   
+</div>
+
+<div class="col-md-4">
+    <label class="form-label">Modello</label>
+    <select name="Modello" class="form-select"
+            id="selectModello">
+        <option value="@Model.Modello">@Model.Modello</option>
+    </select>
+    <input type="text" name="ModelloManuale"
+           id="inputModelloManuale"
+           class="form-control mt-2"
+           style="display:none;"
+           placeholder="Nome modello..." />
+</div>
+
+
+                    <div class="col-md-4">
+                        <label asp-for="Matricola" class="form-label"></label>
+                        <input asp-for="Matricola" class="form-control"
+                               placeholder="Matricola identificativa" />
+                        <span asp-validation-for="Matricola"
+                              class="text-danger" style="font-size:0.775rem"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="SerialNumber" class="form-label"></label>
+                        <input asp-for="SerialNumber" class="form-control"
+                               placeholder="Numero seriale (opzionale)" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Stato" class="form-label"></label>
+                        <select asp-for="Stato" class="form-select">
+                            <option value="InInstallazione">In Installazione</option>
+                            <option value="Attiva">Attiva</option>
+                            <option value="InManutenzione">In Manutenzione</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="DataAccettazione" class="form-label"></label>
+                        <input asp-for="DataAccettazione" type="date"
+                               class="form-control" />
+                        <div class="form-text">Data del collaudo con esito positivo</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="button" class="btn btn-primary"
+                    onclick="vaiStep(2)">
+                Avanti — Parametri Tecnici
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ══ STEP 2 — Parametri Tecnici ════════════════════════════ -->
+    <div class="wizard-panel" id="panel-2">
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="bi bi-lightning-charge text-primary"></i>
+                <h4 class="form-section-title">Parametri Radiologici</h4>
+            </div>
+            <div class="form-section-body">
+                <div class="row g-3">
+
+                    <!-- Campi per apparecchiature ionizzanti -->
+                    <div id="campiIonizzanti">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label asp-for="CorrenteMaxMa" class="form-label"></label>
+                                <div class="input-group">
+                                    <input asp-for="CorrenteMaxMa"
+                                           type="number" step="0.1"
+                                           class="form-control"
+                                           placeholder="Es. 800" />
+                                    <span class="input-group-text"
+                                          style="border:1.5px solid var(--neutral-200);
+                                                 border-left:none;
+                                                 background:var(--neutral-50);
+                                                 font-size:0.85rem;">mA</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="TensioneMaxKvolt" class="form-label"></label>
+                                <div class="input-group">
+                                    <input asp-for="TensioneMaxKvolt"
+                                           type="number" step="0.1"
+                                           class="form-control"
+                                           placeholder="Es. 140" />
+                                    <span class="input-group-text"
+                                          style="border:1.5px solid var(--neutral-200);
+                                                 border-left:none;
+                                                 background:var(--neutral-50);
+                                                 font-size:0.85rem;">kV</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="EnergiaMaxKev" class="form-label"></label>
+                                <div class="input-group">
+                                    <input asp-for="EnergiaMaxKev"
+                                           type="number" step="0.1"
+                                           class="form-control"
+                                           placeholder="Es. 140" />
+                                    <span class="input-group-text"
+                                          style="border:1.5px solid var(--neutral-200);
+                                                 border-left:none;
+                                                 background:var(--neutral-50);
+                                                 font-size:0.85rem;">keV</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campi per RM -->
+                    <div id="campiRM" style="display:none;">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label asp-for="IntensitaCampoTesla"
+                                       class="form-label"></label>
+                                <div class="input-group">
+                                    <input asp-for="IntensitaCampoTesla"
+                                           type="number" step="0.1"
+                                           class="form-control"
+                                           placeholder="Es. 1.5 o 3.0" />
+                                    <span class="input-group-text"
+                                          style="border:1.5px solid var(--neutral-200);
+                                                 border-left:none;
+                                                 background:var(--neutral-50);
+                                                 font-size:0.85rem;">T</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="TipoMagnete" class="form-label"></label>
+                                <select asp-for="TipoMagnete" class="form-select">
+                                    <option value="">— Seleziona —</option>
+                                    <option value="Superconduttore">Superconduttore</option>
+                                    <option value="Permanente">Permanente</option>
+                                    <option value="Resistivo">Resistivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <hr class="divider" />
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mt-2">
+                                    <input asp-for="LanCollegata"
+                                           class="form-check-input"
+                                           type="checkbox"
+                                           style="width:2.5em;height:1.3em;" />
+                                    <label asp-for="LanCollegata"
+                                           class="form-check-label ms-2">
+                                        Collegata in Rete (LAN)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mt-2">
+                                    <input asp-for="MedsquareInstallato"
+                                           class="form-check-input"
+                                           type="checkbox"
+                                           style="width:2.5em;height:1.3em;" />
+                                    <label asp-for="MedsquareInstallato"
+                                           class="form-check-label ms-2">
+                                        Software MedSquare Installato
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+            <button type="button" class="btn btn-ghost"
+                    onclick="vaiStep(1)">
+                <i class="bi bi-arrow-left"></i> Indietro
+            </button>
+            <button type="button" class="btn btn-primary"
+                    onclick="vaiStep(3)">
+                Avanti — Collocazione
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ══ STEP 3 — Collocazione ═════════════════════════════════ -->
+    <div class="wizard-panel" id="panel-3">
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="bi bi-geo-alt text-primary"></i>
+                <h4 class="form-section-title">
+                    Collocazione Fisica
+                </h4>
+            </div>
+            <div class="form-section-body">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Reparto</label>
+                        <select asp-for="RepartoId" class="form-select"
+                                asp-items="ViewBag.Reparti">
+                            <option value="">— Seleziona reparto —</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Caposala" class="form-label"></label>
+                        <input asp-for="Caposala" class="form-control"
+                               placeholder="Nome referente / caposala" />
+                    </div>
+
+                    <div class="col-12">
+                        <hr class="divider" />
+                        <p style="font-size:0.85rem;color:var(--neutral-500);
+                                  margin-bottom:12px;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Seleziona la posizione esatta
+                            (Sito → Edificio → Piano → Locale)
+                        </p>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Sito / Presidio</label>
+                        <select class="form-select" id="selectSito"
+                                asp-items="ViewBag.Siti"
+                                onchange="caricaImmobili(this.value)">
+                            <option value="">— Seleziona —</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Edificio</label>
+                        <select class="form-select" id="selectImmobile"
+                                onchange="caricaPiani(this.value)" disabled>
+                            <option value="">— Prima seleziona Sito —</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Piano</label>
+                        <select class="form-select" id="selectPiano"
+                                onchange="caricaLocali(this.value)" disabled>
+                            <option value="">— Prima seleziona Edificio —</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Locale / Stanza</label>
+                        <select asp-for="LocaleId" class="form-select"
+                                id="selectLocale" disabled>
+                            <option value="">— Prima seleziona Piano —</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="DescrizioneZoneClassificate"
+                               class="form-label"></label>
+                        <textarea asp-for="DescrizioneZoneClassificate"
+                                  class="form-control" rows="3"
+                                  placeholder="Descrivi le zone classificate, schermature e segnaletica...">
+                        </textarea>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+            <button type="button" class="btn btn-ghost"
+                    onclick="vaiStep(2)">
+                <i class="bi bi-arrow-left"></i> Indietro
+            </button>
+            <button type="button" class="btn btn-primary"
+                    onclick="vaiStep(4)">
+                Avanti — Assistenza
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ══ STEP 4 — Assistenza ════════════════════════════════════ -->
+    <div class="wizard-panel" id="panel-4">
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="bi bi-tools text-primary"></i>
+                <h4 class="form-section-title">
+                    Assistenza e Manutenzione
+                </h4>
+            </div>
+            <div class="form-section-body">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+    <label class="form-label">Società di Manutenzione</label>
+    <select name="SocietaManutenzione" class="form-select"
+            id="selectSocieta"
+            onchange="onSocietaChange()">
+        <option value="">— Nessuna —</option>
+        @if (ViewBag.SocietaManutenzione != null)
+        {
+            foreach (var s in (List<RadiologiaAppNew.Models.SocietaManutenzione>)ViewBag.SocietaManutenzione)
+            {
+                <option value="@s.Nome"
+                        data-tel="@s.NumeroAssistenza"
+                        data-email="@s.EmailAssistenza"
+                        selected="@(Model.SocietaManutenzione == s.Nome)">
+                    @s.Nome
+                </option>
+            }
+        }
+        <option value="__altro__">Altra (inserisci manualmente)</option>
+    </select>
+</div>
+
+                    <div class="col-md-6">
+                        <label asp-for="TecnicoRiferimento"
+                               class="form-label"></label>
+                        <input asp-for="TecnicoRiferimento"
+                               class="form-control"
+                               placeholder="Nome e cognome tecnico" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="NumeroAssistenza"
+                               class="form-label"></label>
+                        <input asp-for="NumeroAssistenza"
+                               class="form-control"
+                               placeholder="Es. 800-123456" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="GlobalService"
+                               class="form-label"></label>
+                        <input asp-for="GlobalService"
+                               class="form-control"
+                               placeholder="Contratto global service" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="EmailAssistenza"
+                               class="form-label"></label>
+                        <input asp-for="EmailAssistenza"
+                               type="email" class="form-control"
+                               placeholder="assistenza@esempio.it" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="SapId" class="form-label"></label>
+                        <input asp-for="SapId" class="form-control"
+                               placeholder="ID bene in SAP (opzionale)" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="SiapDescrizione"
+                               class="form-label"></label>
+                        <input asp-for="SiapDescrizione"
+                               class="form-control"
+                               placeholder="Descrizione SIAP (opzionale)" />
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+            <button type="button" class="btn btn-ghost"
+                    onclick="vaiStep(3)">
+                <i class="bi bi-arrow-left"></i> Indietro
+            </button>
+            <button type="button" class="btn btn-primary"
+                    onclick="vaiStep(5)">
+                Avanti — Adempimenti
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ══ STEP 5 — Adempimenti ══════════════════════════════════ -->
+    <div class="wizard-panel" id="panel-5">
+        <div class="row g-4">
+
+            <div class="col-md-6">
+                <div class="form-section h-100">
+                    <div class="form-section-header">
+                        <i class="bi bi-database-check text-primary"></i>
+                        <h4 class="form-section-title">STRIMS</h4>
+                    </div>
+                    <div class="form-section-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="StatoStrims"
+                                       class="form-label"></label>
+                                <select asp-for="StatoStrims"
+                                        class="form-select">
+                                    <option value="DaRegistrare">
+                                        Da Registrare
+                                    </option>
+                                    <option value="Registrato">
+                                        Già Registrato
+                                    </option>
+                                    <option value="NonApplicabile">
+                                        Non Applicabile
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="StrimsIdApparecchiatura"
+                                       class="form-label"></label>
+                                <input asp-for="StrimsIdApparecchiatura"
+                                       class="form-control"
+                                       placeholder="ID assegnato da STRIMS" />
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="DataRegistrazioneStrims"
+                                       class="form-label"></label>
+                                <input asp-for="DataRegistrazioneStrims"
+                                       type="date" class="form-control" />
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input asp-for="StrimsNpCaricata"
+                                           type="checkbox"
+                                           class="form-check-input" />
+                                    <label asp-for="StrimsNpCaricata"
+                                           class="form-check-label"
+                                           style="font-size:0.875rem;">
+                                        Notifica di Pratica caricata
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-section h-100">
+                    <div class="form-section-header">
+                        <i class="bi bi-building-check text-primary"></i>
+                        <h4 class="form-section-title">INAIL</h4>
+                    </div>
+                    <div class="form-section-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="StatoInail"
+                                       class="form-label"></label>
+                                <select asp-for="StatoInail"
+                                        class="form-select">
+                                    <option value="DaRegistrare">
+                                        Da Registrare
+                                    </option>
+                                    <option value="Registrato">
+                                        Già Registrato
+                                    </option>
+                                    <option value="NonApplicabile">
+                                        Non Applicabile
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="NumeroPraticaInail"
+                                       class="form-label"></label>
+                                <input asp-for="NumeroPraticaInail"
+                                       class="form-control"
+                                       placeholder="Numero pratica INAIL" />
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="DataRegistrazioneInail"
+                                       class="form-label"></label>
+                                <input asp-for="DataRegistrazioneInail"
+                                       type="date" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+            <button type="button" class="btn btn-ghost"
+                    onclick="vaiStep(4)">
+                <i class="bi bi-arrow-left"></i> Indietro
+            </button>
+            <button type="button" class="btn btn-primary"
+                    onclick="vaiStep(6)">
+                Avanti — Riepilogo
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ══ STEP 6 — Riepilogo ════════════════════════════════════ -->
+    <div class="wizard-panel" id="panel-6">
+        <div class="alert-radiologia alert-info mb-4">
+            <i class="bi bi-info-circle alert-icon"></i>
+            <div>
+                Verifica i dati inseriti prima di salvare.
+                Puoi tornare indietro per modificare qualsiasi campo.
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-clipboard-check card-icon"></i>
+                    Riepilogo Apparecchiatura
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="form-label">Codice</div>
+                        <div class="fw-700" id="riepilogo-codice">—</div>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="form-label">Descrizione</div>
+                        <div class="fw-700" id="riepilogo-descrizione">—</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-label">Costruttore</div>
+                        <div id="riepilogo-costruttore">—</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-label">Modello</div>
+                        <div id="riepilogo-modello">—</div>
+                    </div>
+
+
+                    <div class="col-md-4">
+                        <div class="form-label">Tipologia</div>
+                        <div id="riepilogo-tipologia">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3">
+            <button type="button" class="btn btn-ghost"
+                    onclick="vaiStep(5)">
+                <i class="bi bi-arrow-left"></i> Indietro
+            </button>
+            <button type="submit" class="btn btn-secondary btn-lg">
+                <i class="bi bi-check-circle"></i>
+                Salva Apparecchiatura
+            </button>
+        </div>
+    </div>
+
+</form>
+
+@section Scripts {
+<script>
+let stepCorrente = 1;
+const totaleStep = 6;
+
+// ─── NAVIGAZIONE STEP ────────────────────────────────────────────
+function vaiStep(n) {
+    document.querySelectorAll('.wizard-panel').forEach(p =>
+        p.classList.remove('active'));
+    document.querySelectorAll('.wizard-step').forEach((s, i) => {
+        s.classList.remove('active', 'complete');
+        if (i + 1 < n)  s.classList.add('complete');
+        if (i + 1 === n) s.classList.add('active');
+    });
+    document.getElementById(`panel-${n}`)?.classList.add('active');
+    stepCorrente = n;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (n === 6) aggiornaRiepilogo();
+}
+
+// ─── RIEPILOGO ───────────────────────────────────────────────────
+function aggiornaRiepilogo() {
+    const get = id => document.getElementById(id)?.value || '—';
+    const setR = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val || '—';
+    };
+    setR('riepilogo-codice',       get('Codice'));
+    setR('riepilogo-descrizione',  get('Descrizione'));
+    setR('riepilogo-costruttore',  get('Costruttore'));
+    setR('riepilogo-modello',      get('Modello'));
+    setR('riepilogo-tipologia',
+        document.getElementById('selectTipologia')?.value || '—');
+}
+
+// ─── MODULO CHANGE ───────────────────────────────────────────────
+function onModuloChange() {
+    const modulo = document.getElementById('selectModulo')?.value;
+    const selAmbito = document.getElementById('selectAmbito');
+    const selTipo   = document.getElementById('selectTipologia'); // ✅ NUOVO
+    const campiRM   = document.getElementById('campiRM');
+    const campiIon  = document.getElementById('campiIonizzanti');
+
+
+// ✅ SALVA VALORI ATTUALI
+    const oldAmbito = selAmbito.value;
+    const oldTipo   = selTipo.value;
+
+
+ // reset AMBITO
+    selAmbito.innerHTML = '<option value="">— Seleziona —</option>';
+    selAmbito.value = "";
+
+ // ✅ reset TIPOLOGIA (FIX)
+    selTipo.innerHTML = '<option value="">— Prima seleziona Ambito —</option>';
+    selTipo.value = "";
+
+    if (modulo === 'Radiologica') {
+        campiRM.style.display  = 'none';
+        campiIon.style.display = 'block';
+        [
+            ['Radiologia', 'Radiologia Diagnostica'],
+            ['RadiologiaInterventistica', 'Radiologia Interventistica'],
+            ['MedicinaNucleare', 'Medicina Nucleare'],
+            ['Radioterapia', 'Radioterapia']
+        ].forEach(([val, label]) => {
+            //const opt = new Option(label, val);
+            //selAmbito.add(opt);
+             selAmbito.add(new Option(label, val));
+        });
+        
+
+// ✅ RIPRISTINA AMBITO se esiste
+   if (oldAmbito && [...selAmbito.options].some(o => o.value === oldAmbito)) {
+    selAmbito.value = oldAmbito;
+} else {
+    selAmbito.value = "";
+}
+
+
+    //   NUOVO: trigger automatico per cascata
+        selAmbito.dispatchEvent(new Event('change'));
+
+        
+// ✅ DOPO caricamento tipologia → la rimetti
+    setTimeout(() => {
+       if (oldTipo && [...selTipo.options].some(o => o.value === oldTipo)) {
+    selTipo.value = oldTipo;
+} else {
+    selTipo.value = "";
+}
+    }, 200); // piccolo delay AJAX
+
+
+    } else if (modulo === 'RM') {
+    campiRM.style.display  = 'block';
+    campiIon.style.display = 'none';
+
+    //const selAmbito = document.getElementById('selectAmbito');
+    selAmbito.innerHTML = '';
+    selAmbito.add(new Option('RM', 'RM'));
+    selAmbito.value = 'RM';
+
+    caricaTipologiePerAmbito('RM');
+
+    
+// ✅ ripristina tipologia
+    setTimeout(() => {
+        if (oldTipo) {
+            selTipo.value = oldTipo;
+        }
+    }, 200);
+
+}
+}
+
+// ─── AMBITO CHANGE ───────────────────────────────────────────────
+async function onAmbitoChange() {
+    const selAmbito = document.getElementById('selectAmbito');
+    const selTipo   = document.getElementById('selectTipologia');
+
+    const ambito = selAmbito?.value;
+
+    // ✅ Reset sempre la Tipologia quando cambia Ambito
+    selTipo.innerHTML = '<option value="">— Seleziona tipologia —</option>';
+    selTipo.value = "";
+
+    if (!ambito) return;
+
+    // ✅ Attendi caricamento tipologie
+    await caricaTipologiePerAmbito(ambito);
+}
+
+// ─── AJAX — TIPOLOGIE ────────────────────────────────────────────
+async function caricaTipologiePerAmbito(ambito) {
+    const sel = document.getElementById('selectTipologia');
+
+    // ✅ Stato loading
+    sel.innerHTML = '<option value="">Caricamento...</option>';
+
+    try {
+        const res  = await fetch(`/Apparecchiature/GetTipologiePerAmbito?ambito=${ambito}`);
+        const data = await res.json();
+
+        // ✅ Placeholder corretto
+        sel.innerHTML = '<option value="">— Seleziona tipologia —</option>';
+
+        // ✅ Popola select
+        data.forEach(t => sel.add(new Option(t, t)));
+
+        return true;
+
+    } catch (error) {
+        console.error('Errore caricamento tipologie:', error);
+
+        sel.innerHTML = '<option value="">Errore caricamento</option>';
+        return false;
+    }
+}
+
+
+// ─── AJAX — COLLOCAZIONE ─────────────────────────────────────────
+async function caricaImmobili(sitoId) {
+    const sel = document.getElementById('selectImmobile');
+    resetSelect(sel, '— Prima seleziona Edificio —');
+    resetSelect(document.getElementById('selectPiano'),
+                '— Prima seleziona Piano —');
+    resetSelect(document.getElementById('selectLocale'),
+                '— Prima seleziona Locale —');
+
+    if (!sitoId) return;
+    sel.disabled = true;
+    try {
+        const res  = await fetch(
+            `/Apparecchiature/GetImmobiliPerSito?sitoId=${sitoId}`);
+        const data = await res.json();
+        sel.innerHTML =
+            '<option value="">— Seleziona edificio —</option>';
+        data.forEach(i => sel.add(new Option(i.nome, i.id)));
+        sel.disabled = false;
+    } catch { sel.disabled = false; }
+}
+
+async function caricaPiani(immobileId) {
+    const sel = document.getElementById('selectPiano');
+    resetSelect(sel, '— Prima seleziona Piano —');
+    resetSelect(document.getElementById('selectLocale'),
+                '— Prima seleziona Locale —');
+
+    if (!immobileId) return;
+    try {
+        const res  = await fetch(
+            `/Apparecchiature/GetPianiPerImmobile?immobileId=${immobileId}`);
+        const data = await res.json();
+        sel.innerHTML = '<option value="">— Seleziona piano —</option>';
+        data.forEach(p => sel.add(new Option(p.nome, p.id)));
+        sel.disabled = false;
+    } catch {}
+}
+
+async function caricaLocali(pianoId) {
+    const sel = document.getElementById('selectLocale');
+    resetSelect(sel, '— Prima seleziona Locale —');
+
+    if (!pianoId) return;
+    try {
+        const res  = await fetch(
+            `/Apparecchiature/GetLocaliPerPiano?pianoId=${pianoId}`);
+        const data = await res.json();
+        sel.innerHTML = '<option value="">— Seleziona locale —</option>';
+        data.forEach(l => sel.add(new Option(l.nome, l.id)));
+        sel.disabled = false;
+    } catch {}
+}
+
+function resetSelect(sel, placeholder) {
+    if (!sel) return;
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+    sel.disabled  = true;
+}
+// ✅ INIT AL LOAD (SEMPLIFICATO E CORRETTO)
+window.addEventListener("DOMContentLoaded", async () => {
+
+    const ambito = document.getElementById('selectAmbito')?.value;
+    const tipo   = '@(Model.Tipologia ?? "")';
+
+    if (!ambito) return;
+
+    // ✅ Carica le tipologie solo
+    await caricaTipologiePerAmbito(ambito);
+
+    // ✅ Ripristina la tipologia
+    if (tipo) {
+        document.getElementById('selectTipologia').value = tipo;
+    }
+});
+
+async function onCostruttoreChange() {
+    const sel  = document.getElementById('selectCostruttore');
+    const val  = sel?.value;
+    const man  = document.getElementById('inputCostrutoreManuale');
+    const selM = document.getElementById('selectModello');
+
+    if (val === '__altro__') {
+        if (man) man.style.display = 'block';
+        return;
+    }
+    if (man) man.style.display = 'none';
+
+    const opt  = sel?.options[sel.selectedIndex];
+    const cId  = opt?.getAttribute('data-id');
+
+    if (cId && selM) {
+        selM.innerHTML =
+            '<option value="">Caricamento...</option>';
+        try {
+            const res  = await fetch(
+                `/Apparecchiature/GetModelliPerCostruttore?costruttoreId=${cId}`);
+            const data = await res.json();
+            selM.innerHTML =
+                '<option value="">— Seleziona modello —</option>';
+            data.forEach(m => {
+                const o = new Option(m.nome, m.nome);
+                selM.appendChild(o);
+            });
+            //selM.add(new Option('Altro (manuale)', '__altro__'));
+        } catch {
+            selM.innerHTML =
+                '<option value="">Errore caricamento</option>';
+        }
+    }
+}
+
+function onSocietaChange() {
+    const sel   = document.getElementById('selectSocieta');
+    const opt   = sel?.options[sel.selectedIndex];
+    const tel   = opt?.getAttribute('data-tel') || '';
+    const email = opt?.getAttribute('data-email') || '';
+
+    // Auto-popola i campi contatto
+    const inpTel = document.getElementById('NumeroAssistenza');
+    const inpEmail = document.getElementById('EmailAssistenza');
+    if (inpTel && tel) inpTel.value = tel;
+    if (inpEmail && email) inpEmail.value = email;
+}
+
+</script>
+}

@@ -1,0 +1,322 @@
+@model List<RadiologiaAppNew.Models.PazienteLu177>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Pazienti Terapia Lu177";
+    var stato       = ViewData["StatoFiltro"] as string;
+    var indicazione = ViewData["IndicazioneFiltro"] as string;
+    var search      = ViewData["SearchText"] as string;
+    var pagina      = (int)(ViewData["PaginaCorrente"] ?? 1);
+    var totPagine   = (int)(ViewData["TotalePagine"] ?? 1);
+    var totRis      = (int)(ViewData["TotaleRisultati"] ?? 0);
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-person-heart me-2 text-primary"></i>
+            Modulo 4 — Terapia Metabolica Lu177
+        </h1>
+        <p class="page-subtitle">@totRis pazient@(totRis==1?"e":"i") registrat@(totRis==1?"o":"i")</p>
+    </div>
+    <div class="page-actions">
+        <a href="/Lu177/Statistiche" class="btn btn-ghost">
+            <i class="bi bi-bar-chart"></i>
+            Statistiche Cliniche
+        </a>
+        @if (User.IsInRole("ADMIN_ORG") || User.IsInRole("EFM") ||
+             User.IsInRole("EDR"))
+        {
+            <a href="/Lu177/Create" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i>
+                Nuovo Paziente
+            </a>
+        }
+        <a href="/Lu177/ExportCsv" class="btn btn-ghost">
+    <i class="bi bi-download"></i>
+    Export CSV
+</a>
+    </div>
+</div>
+
+<!-- KPI -->
+<div class="kpi-grid mb-4" style="grid-template-columns:repeat(4,1fr)">
+    @{
+        var inTrat  = Model.Count(p =>
+            p.StatoPaziente == RadiologiaAppNew.Enums.StatoPaziente.InTrattamento);
+        var conclusi = Model.Count(p =>
+            p.StatoPaziente == RadiologiaAppNew.Enums.StatoPaziente.Concluso);
+        var psma     = Model.Count(p => p.Indicazione == "PSMA_LU177");
+        var dotatate = Model.Count(p => p.Indicazione == "DOTATATE_LU177");
+        var totCicli = Model.Sum(p => p.CicliTrattamento.Count);
+    }
+    <div class="kpi-card kpi-primary">
+        <div class="kpi-content">
+            <div class="kpi-number">@inTrat</div>
+            <div class="kpi-label">In Trattamento</div>
+        </div>
+        <i class="bi bi-person-heart kpi-icon"></i>
+    </div>
+    <div class="kpi-card kpi-success">
+        <div class="kpi-content">
+            <div class="kpi-number">@conclusi</div>
+            <div class="kpi-label">Conclusi</div>
+        </div>
+        <i class="bi bi-check-circle kpi-icon"></i>
+    </div>
+    <div class="kpi-card kpi-secondary">
+        <div class="kpi-content">
+            <div class="kpi-number">@psma</div>
+            <div class="kpi-label">PSMA Lu177</div>
+        </div>
+        <i class="bi bi-radioactive kpi-icon"></i>
+    </div>
+    <div class="kpi-card" style="border-left-color:var(--accent)">
+        <div class="kpi-content">
+            <div class="kpi-number">@totCicli</div>
+            <div class="kpi-label">Cicli Totali</div>
+        </div>
+        <i class="bi bi-arrow-repeat kpi-icon"></i>
+    </div>
+</div>
+
+<!-- Filtri -->
+<div class="card mb-4">
+    <div class="card-body" style="padding:16px 20px;">
+        <form method="get" action="/Lu177" id="formFiltri">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-4">
+                    <label class="form-label">Cerca</label>
+                    <div style="position:relative;">
+                        <i class="bi bi-search"
+                           style="position:absolute;left:10px;top:50%;
+                                  transform:translateY(-50%);
+                                  color:var(--neutral-500);
+                                  font-size:0.85rem;"></i>
+                        <input type="text" name="search"
+                               value="@search"
+                               class="form-control"
+                               style="padding-left:32px;"
+                               placeholder="Cognome, nome, codice paziente..."
+                               autocomplete="off" />
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label">Stato</label>
+                    <select name="stato" class="form-select"
+                            onchange="document.getElementById('formFiltri').submit()">
+                        <option value="">Tutti</option>
+                        <option value="InTrattamento"
+        selected="@(stato == "InTrattamento")">
+    In Trattamento
+</option>
+
+<option value="Concluso"
+        selected="@(stato == "Concluso")">
+    Concluso
+</option>
+
+<option value="Deceduto"
+        selected="@(stato == "Deceduto")">
+    Deceduto
+</option>
+                        <option value="PersoFollowUp"
+        selected="@(stato == "PersoFollowUp")">
+    Perso Follow-Up
+</option>
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label">Indicazione</label>
+                    <select name="indicazione" class="form-select"
+                            onchange="document.getElementById('formFiltri').submit()">
+                        <option value="">Tutte</option>
+                        <option value="PSMA_LU177"
+        selected='@(indicazione == "PSMA_LU177")'>
+    PSMA Lu177
+</option>
+                        <option value="DOTATATE_LU177"
+        selected="@(indicazione == "DOTATATE_LU177")">
+    DOTATATE Lu177
+</option>
+
+<option value="ALTRO"
+        selected="@(indicazione == "ALTRO")">
+    Altro
+</option>
+                    </select>
+                </div>
+                <div class="col-lg-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-search"></i> Cerca
+                    </button>
+                    @if (!string.IsNullOrEmpty(search) ||
+                         !string.IsNullOrEmpty(stato) ||
+                         !string.IsNullOrEmpty(indicazione))
+                    {
+                        <a href="/Lu177" class="btn btn-ghost"
+                           title="Rimuovi filtri">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabella -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="bi bi-table card-icon"></i>
+            Elenco Pazienti
+        </h3>
+        <span style="font-size:0.8rem;color:var(--neutral-500);">
+            Pagina @pagina di @totPagine
+        </span>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-person-heart empty-state-icon"></i>
+            <div class="empty-state-title">Nessun paziente trovato</div>
+            <p class="empty-state-text">
+                Nessun paziente corrisponde ai filtri selezionati.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Paziente</th>
+                        <th>Codice</th>
+                        <th>Indicazione</th>
+                        <th>Cicli</th>
+                        <th>Ultimo Ciclo</th>
+                        <th>Stato</th>
+                        <th style="width:80px;">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        var ultimoCiclo = p.CicliTrattamento
+                            .OrderByDescending(c => c.DataSomministrazione)
+                            .FirstOrDefault();
+
+                        <tr class="clickable"
+                            onclick="location.href='/Lu177/Detail/@p.Id'">
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width:34px;height:34px;
+                                                border-radius:50%;
+                                                background:var(--primary);
+                                                color:white;display:flex;
+                                                align-items:center;
+                                                justify-content:center;
+                                                font-size:0.75rem;
+                                                font-weight:700;
+                                                flex-shrink:0;">
+                                        @p.Cognome[0]@p.Nome[0]
+                                    </div>
+                                    <div>
+                                        <div class="fw-600">
+                                            @p.Cognome @p.Nome
+                                        </div>
+                                        <div style="font-size:0.775rem;
+                                                    color:var(--neutral-500);">
+                                            @p.DataNascita.ToString("dd/MM/yyyy")
+                                            (@(DateTime.Today.Year - p.DataNascita.Year) anni)
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <code style="font-size:0.8rem;
+                                             background:var(--neutral-100);
+                                             padding:2px 6px;
+                                             border-radius:4px;">
+                                    @p.CodicePaziente
+                                </code>
+                            </td>
+                            <td>
+                                <span class="badge-compliance
+                                    @(p.Indicazione == "PSMA_LU177"
+                                        ? "badge-todo" : "badge-ok")"
+                                      style="font-size:0.75rem;">
+                                    @p.Indicazione.Replace("_LU177","")
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-700"
+                                      style="font-size:1.1rem;
+                                             color:var(--primary);">
+                                    @p.CicliTrattamento.Count
+                                </span>
+                                @if (p.NCicliPianificati.HasValue)
+                                {
+                                    <span style="font-size:0.75rem;
+                                                 color:var(--neutral-500);">
+                                        / @p.NCicliPianificati
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @if (ultimoCiclo != null)
+                                {
+                                    <span style="font-size:0.85rem;">
+                                        @ultimoCiclo.DataSomministrazione
+                                            .ToString("dd/MM/yyyy")
+                                    </span>
+                                    <div style="font-size:0.75rem;
+                                                color:var(--neutral-500);">
+                                        Ciclo @ultimoCiclo.NumeroCiclo
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--neutral-400);">
+                                        Nessun ciclo
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var (pClass, pLabel) =
+                                        p.StatoPaziente switch
+                                    {
+                                        RadiologiaAppNew.Enums.StatoPaziente
+                                            .InTrattamento =>
+                                            ("badge-ok", "In Trattamento"),
+                                        RadiologiaAppNew.Enums.StatoPaziente
+                                            .Concluso =>
+                                            ("badge-missing", "Concluso"),
+                                        RadiologiaAppNew.Enums.StatoPaziente
+                                            .Deceduto =>
+                                            ("badge-danger", "Deceduto"),
+                                        _ => ("badge-warning", "Perso FU")
+                                    };
+                                }
+                                <span class="badge-compliance @pClass"
+                                      style="font-size:0.75rem;">
+                                    @pLabel
+                                </span>
+                            </td>
+                            <td onclick="event.stopPropagation()">
+                                <a href="/Lu177/Detail/@p.Id"
+                                   class="btn btn-ghost btn-icon btn-sm"
+                                   title="Visualizza">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

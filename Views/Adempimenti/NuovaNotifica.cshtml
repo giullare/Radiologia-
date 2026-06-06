@@ -1,0 +1,132 @@
+@model RadiologiaAppNew.Models.NotificaPratica
+@{
+    Layout = "_Layout";
+    var app = ViewBag.Apparecchiatura as
+        RadiologiaAppNew.Models.Apparecchiatura;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-send me-2 text-primary"></i>
+            Nuova Notifica di Pratica
+        </h1>
+        @if (app != null)
+        {
+            <p class="page-subtitle">
+                @app.Codice — @app.Descrizione
+            </p>
+        }
+    </div>
+    <div class="page-actions">
+        <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId?tab=adempimenti"
+           class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna indietro
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form asp-action="NuovaNotifica" asp-controller="Adempimenti"
+              method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ApparecchiaturaId" />
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-send text-primary"></i>
+                    <h4 class="form-section-title">
+                        Dati Notifica di Pratica
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label asp-for="NumeroProtocolloPec"
+                                   class="form-label"></label>
+                            <input asp-for="NumeroProtocolloPec"
+                                   class="form-control"
+                                   placeholder="Es. PROT-2025-001234" />
+                            <span asp-validation-for="NumeroProtocolloPec"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="DataNotifica"
+                                   class="form-label"></label>
+                            <input asp-for="DataNotifica"
+                                   type="date" class="form-control" />
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="EnteDestinatario"
+                                   class="form-label"></label>
+                            <input asp-for="EnteDestinatario"
+                                   class="form-control"
+                                   placeholder="Es. ASL NA1 Centro" />
+                            <span asp-validation-for="EnteDestinatario"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input asp-for="InviatoRspp"
+                                       type="checkbox"
+                                       class="form-check-input"
+                                       style="width:2.5em;height:1.3em;" />
+                                <label asp-for="InviatoRspp"
+                                       class="form-check-label ms-2">
+                                    Documento di Valutazione Rischio
+                                    inviato all'RSPP
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="divDataRspp">
+                            <label asp-for="DataInvioRspp"
+                                   class="form-label"></label>
+                            <input asp-for="DataInvioRspp"
+                                   type="date" class="form-control" />
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Note" class="form-label"></label>
+                            <textarea asp-for="Note"
+                                      class="form-control" rows="3"
+                                      placeholder="Note aggiuntive...">
+                            </textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert-radiologia alert-info">
+                                <i class="bi bi-info-circle alert-icon"></i>
+                                <div style="font-size:0.85rem;">
+                                    Dopo aver salvato, ricordati di caricare
+                                    il documento di notifica e la ricevuta PEC
+                                    tramite il tab <strong>Documenti</strong>
+                                    della scheda apparecchiatura.
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Salva Notifica
+                </button>
+                <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId?tab=adempimenti"
+                   class="btn btn-ghost">
+                    Annulla
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

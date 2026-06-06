@@ -1,0 +1,202 @@
+@model RadiologiaAppNew.Models.CicloTrattamento
+@{
+    Layout = "_Layout";
+    var paz = ViewBag.Paziente as RadiologiaAppNew.Models.PazienteLu177;
+    var num = (int)(ViewBag.NumeroCiclo ?? 1);
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-plus-circle me-2 text-primary"></i>
+            Ciclo #@num — Somministrazione Lu177
+        </h1>
+        @if (paz != null)
+        {
+            <p class="page-subtitle">
+                @paz.Cognome @paz.Nome — @paz.CodicePaziente
+            </p>
+        }
+    </div>
+    <div class="page-actions">
+        <a href="/Lu177/Detail/@Model.PazienteId"
+           class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna al paziente
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form asp-action="NuovoCiclo" asp-controller="Lu177"
+              method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PazienteId" />
+            <input type="hidden" asp-for="NumeroCiclo" />
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-radioactive text-primary"></i>
+                    <h4 class="form-section-title">
+                        Dati Somministrazione
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="DataSomministrazione"
+                                   class="form-label"></label>
+                            <input asp-for="DataSomministrazione"
+                                   type="date" class="form-control" />
+                            <span asp-validation-for="DataSomministrazione"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="OraSomministrazione"
+                                   class="form-label"></label>
+                            <input asp-for="OraSomministrazione"
+                                   type="time" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="PesoPazienteCicloKg"
+                                   class="form-label"></label>
+                            <input asp-for="PesoPazienteCicloKg"
+                                   type="number" step="0.1"
+                                   class="form-control" />
+                            <span asp-validation-for="PesoPazienteCicloKg"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="AttivitaSomministrataGbq"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="AttivitaSomministrataGbq"
+                                       type="number" step="0.001"
+                                       class="form-control"
+                                       oninput="calcolaEffettiva()" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.85rem;">GBq</span>
+                            </div>
+                            <span asp-validation-for="AttivitaSomministrataGbq"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="AttivitaResiduaSiringaGbq"
+                                   class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="AttivitaResiduaSiringaGbq"
+                                       type="number" step="0.001"
+                                       class="form-control"
+                                       oninput="calcolaEffettiva()" />
+                                <span class="input-group-text"
+                                      style="border:1.5px solid var(--neutral-200);
+                                             border-left:none;
+                                             background:var(--neutral-50);
+                                             font-size:0.85rem;">GBq</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                Attività Effettiva (calcolata)
+                            </label>
+                            <div style="background:var(--neutral-100);
+                                        border:1.5px solid var(--neutral-200);
+                                        border-radius:8px;
+                                        padding:9px 12px;
+                                        font-weight:700;
+                                        color:var(--secondary);
+                                        font-size:1rem;"
+                                 id="attivitaEffettiva">
+                                — GBq
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="LottoRadiofarmaco"
+                                   class="form-label"></label>
+                            <input asp-for="LottoRadiofarmaco"
+                                   class="form-control" />
+                            <span asp-validation-for="LottoRadiofarmaco"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="FornitoreRadiofarmaco"
+                                   class="form-label"></label>
+                            <input asp-for="FornitoreRadiofarmaco"
+                                   class="form-control"
+                                   placeholder="Es. AAA, ITG, IQVIA..." />
+                            <span asp-validation-for="FornitoreRadiofarmaco"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="EsitoCiclo"
+                                   class="form-label"></label>
+                            <select asp-for="EsitoCiclo"
+                                    class="form-select">
+                                <option value="Completato">Completato</option>
+                                <option value="Ridotto">Ridotto</option>
+                                <option value="Sospeso">Sospeso</option>
+                                <option value="Interrotto">Interrotto</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="InfermiereSomministratore"
+                                   class="form-label"></label>
+                            <input asp-for="InfermiereSomministratore"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="NoteCliniche"
+                                   class="form-label"></label>
+                            <textarea asp-for="NoteCliniche"
+                                      class="form-control" rows="2"
+                                      placeholder="Note cliniche...">
+                            </textarea>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="EffettiAvversi"
+                                   class="form-label"></label>
+                            <textarea asp-for="EffettiAvversi"
+                                      class="form-control" rows="2"
+                                      placeholder="Effetti avversi osservati...">
+                            </textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Registra Ciclo #@num
+                </button>
+                <a href="/Lu177/Detail/@Model.PazienteId"
+                   class="btn btn-ghost">Annulla</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function calcolaEffettiva() {
+    const somm = parseFloat(
+        document.getElementById('AttivitaSomministrataGbq')?.value || '0');
+    const res  = parseFloat(
+        document.getElementById('AttivitaResiduaSiringaGbq')?.value || '0');
+    const eff  = document.getElementById('attivitaEffettiva');
+    if (eff) {
+        const val = somm - res;
+        eff.textContent = (val >= 0 ? val.toFixed(3) : '—') + ' GBq';
+        eff.style.color = val > 0 ? 'var(--secondary)' : 'var(--danger)';
+    }
+}
+</script>
+}

@@ -1,0 +1,109 @@
+@model List<RadiologiaAppNew.Models.NotificaPratica>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Notifiche di Pratica";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-send me-2 text-primary"></i>
+            Notifiche di Pratica
+        </h1>
+        <p class="page-subtitle">@Model.Count notifiche registrate</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="bi bi-table card-icon"></i>
+            Elenco Notifiche
+        </h3>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-send empty-state-icon"></i>
+            <div class="empty-state-title">
+                Nessuna notifica registrata
+            </div>
+            <p class="empty-state-text">
+                Le notifiche di pratica vengono aggiunte dalla
+                scheda di ciascuna apparecchiatura.
+            </p>
+            <a href="/Apparecchiature" class="btn btn-primary btn-sm">
+                <i class="bi bi-hdd-rack"></i>
+                Vai alle Apparecchiature
+            </a>
+        </div>
+    }
+    else
+    {
+        <div style="overflow-x:auto;">
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Apparecchiatura</th>
+                        <th>Protocollo PEC</th>
+                        <th>Data Notifica</th>
+                        <th>Ente Destinatario</th>
+                        <th>RSPP</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var n in Model)
+                    {
+                        <tr class="clickable"
+                            onclick="location.href='/Apparecchiature/Detail/@n.ApparecchiaturaId?tab=adempimenti'">
+                            <td>
+                                <div class="fw-600">
+                                    @n.Apparecchiatura?.Descrizione
+                                </div>
+                                <div style="font-size:0.775rem;
+                                            color:var(--neutral-500);">
+                                    @n.Apparecchiatura?.Codice
+                                </div>
+                            </td>
+                            <td>
+                                <code style="font-size:0.8rem;
+                                             background:var(--neutral-100);
+                                             padding:2px 6px;
+                                             border-radius:4px;">
+                                    @n.NumeroProtocolloPec
+                                </code>
+                            </td>
+                            <td>@n.DataNotifica.ToString("dd/MM/yyyy")</td>
+                            <td>@n.EnteDestinatario</td>
+                            <td>
+                                @if (n.InviatoRspp)
+                                {
+                                    <span class="badge-compliance badge-ok">
+                                        <i class="bi bi-check-circle"></i>
+                                        Inviato
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge-compliance badge-todo">
+                                        <i class="bi bi-clock"></i>
+                                        Da inviare
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <span style="font-size:0.8rem;
+                                             color:var(--neutral-500);">
+                                    @(n.Note?.Length > 50
+                                        ? n.Note[..50] + "..."
+                                        : n.Note ?? "—")
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,541 @@
+@model RadiologiaAppNew.ViewModels.Verifiche.VerificaDetailViewModel
+@{
+    Layout = "_Layout";
+    var v = Model.Verifica;
+    ViewData["Title"] = $"Verifica — {Model.ApparecchiaturaDescrizione}";
+}
+
+<!-- ═══ PAGE HEADER ══════════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            @{
+                var (tipoColor, tipoIcon) = v.Tipo switch
+                {
+                    RadiologiaAppNew.Enums.TipoProtocollo.Accettazione =>
+                        ("var(--primary)", "bi-check2-circle"),
+                    RadiologiaAppNew.Enums.TipoProtocollo.Periodico =>
+                        ("var(--secondary)", "bi-arrow-repeat"),
+                    RadiologiaAppNew.Enums.TipoProtocollo.Ldr =>
+                        ("var(--accent)", "bi-graph-up"),
+                    RadiologiaAppNew.Enums.TipoProtocollo.PostManutenzione =>
+                        ("var(--warning)", "bi-wrench"),
+                    _ => ("var(--neutral-500)", "bi-clipboard2")
+                };
+            }
+            <span style="background:var(--neutral-100);
+                         color:@tipoColor;font-weight:700;
+                         font-size:0.8rem;padding:3px 10px;
+                         border-radius:20px;border:1px solid currentColor;">
+                <i class="bi @tipoIcon me-1"></i>@v.Tipo
+            </span>
+
+            @{
+                var (esitoClass, esitoLabel) = v.Esito switch
+                {
+                    RadiologiaAppNew.Enums.EsitoVerifica.Superato =>
+                        ("badge-ok", "Superato"),
+                    RadiologiaAppNew.Enums.EsitoVerifica.NonSuperato =>
+                        ("badge-danger", "Non Superato"),
+                    RadiologiaAppNew.Enums.EsitoVerifica.ConRiserva =>
+                        ("badge-warning", "Con Riserva"),
+                    _ => ("badge-missing", "In Corso")
+                };
+            }
+            <span class="badge-compliance @esitoClass">@esitoLabel</span>
+        </div>
+
+        <h1 class="page-title">@Model.ApparecchiaturaDescrizione</h1>
+        <p class="page-subtitle">
+            @(Model.Protocollo?.Codice ?? "—") ·
+            @v.DataInizio.ToString("dd/MM/yyyy")
+            @if (v.Anno.HasValue)
+            {
+                <span> · Anno @v.Anno</span>
+            }
+        </p>
+    </div>
+    <div class="page-actions">
+        @if (User.IsInRole("ADMIN_ORG") || User.IsInRole("EFM") ||
+             User.IsInRole("EDR") || User.IsInRole("SFM"))
+        {
+            <a href="/Verifiche/Edit/@v.Id" class="btn btn-outline">
+                <i class="bi bi-pencil"></i> Modifica
+            </a>
+        }
+        <a href="/Apparecchiature/Detail/@v.ApparecchiaturaId?tab=verifiche"
+           class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i>
+            Scheda Apparecchiatura
+        </a>
+    </div>
+</div>
+
+<!-- ═══ ALERT PROSSIMA VERIFICA ══════════════════════════════════ -->
+@if (v.ProssimaVerificaData.HasValue && Model.GiorniAllaScadenza.HasValue)
+{
+    var gg = Model.GiorniAllaScadenza.Value;
+    if (gg < 0)
+    {
+        <div class="alert-radiologia alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle alert-icon"></i>
+            <div>
+                <strong>Prossima verifica scaduta!</strong>
+                La verifica successiva era prevista per il
+                @v.ProssimaVerificaData.Value.ToString("dd/MM/yyyy")
+                (@Math.Abs(gg) giorni fa).
+                È necessario pianificare una nuova verifica.
+            </div>
+        </div>
+    }
+    else if (gg <= 30)
+    {
+        <div class="alert-radiologia alert-warning mb-4">
+            <i class="bi bi-clock alert-icon"></i>
+            <div>
+                <strong>Prossima verifica imminente.</strong>
+                La verifica successiva è prevista per il
+                @v.ProssimaVerificaData.Value.ToString("dd/MM/yyyy")
+                (tra @gg giorni).
+            </div>
+        </div>
+    }
+}
+
+<!-- ═══ CONTENUTO ════════════════════════════════════════════════ -->
+<div class="row g-4">
+
+    <!-- Colonna sinistra: dettagli verifica -->
+    <div class="col-lg-8">
+
+        <!-- Dati principali -->
+        <div class="form-section mb-4">
+            <div class="form-section-header">
+                <i class="bi bi-clipboard2 text-primary"></i>
+                <h4 class="form-section-title">Dati Verifica</h4>
+            </div>
+            <div class="form-section-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-label">Tipo Verifica</div>
+                        <div class="fw-600">@v.Tipo</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-label">Protocollo</div>
+                        <div class="fw-600">
+                            @(Model.Protocollo?.Codice ?? "—")
+                            @if (Model.Protocollo?.Revisione != null)
+                            {
+                                <span style="font-size:0.775rem;
+                                             color:var(--neutral-500);">
+                                    (@Model.Protocollo.Revisione)
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-label">Esito</div>
+                        <span class="badge-compliance @esitoClass">
+                            @esitoLabel
+                        </span>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-label">Data Inizio</div>
+                        <div class="fw-600">
+                            @v.DataInizio.ToString("dd/MM/yyyy")
+                        </div>
+                    </div>
+                    @if (v.DataFine.HasValue)
+                    {
+                        <div class="col-md-4">
+                            <div class="form-label">Data Fine</div>
+                            <div class="fw-600">
+                                @v.DataFine.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+                    }
+                    @if (v.Anno.HasValue)
+                    {
+                        <div class="col-md-2">
+                            <div class="form-label">Anno</div>
+                            <div class="fw-600">@v.Anno</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(v.Semestre))
+                    {
+                        <div class="col-md-2">
+                            <div class="form-label">Semestre</div>
+                            <div class="fw-600">@v.Semestre</div>
+                        </div>
+                    }
+                    @if (v.ProssimaVerificaData.HasValue)
+                    {
+                        <div class="col-md-4">
+                            <div class="form-label">Prossima Verifica</div>
+                            <div class="fw-600"
+                                 style="color:@(Model.GiorniAllaScadenza < 0
+                                     ? "var(--danger)"
+                                     : Model.GiorniAllaScadenza <= 30
+                                         ? "var(--warning)" : "inherit")">
+                                @v.ProssimaVerificaData.Value
+                                    .ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(v.Note))
+                    {
+                        <div class="col-12">
+                            <div class="form-label">Note</div>
+                            <div style="background:var(--neutral-50);
+                                        border:1px solid var(--neutral-200);
+                                        border-radius:8px;padding:12px;
+                                        font-size:0.875rem;
+                                        white-space:pre-wrap;">
+                                @v.Note
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Guasto (se presente) -->
+        @if (!string.IsNullOrEmpty(v.InfoGuasto))
+        {
+            <div class="form-section mb-4"
+                 style="border-color:var(--warning);">
+                <div class="form-section-header"
+                     style="background:#FEF9E7;">
+                    <i class="bi bi-tools text-warning"></i>
+                    <h4 class="form-section-title"
+                        style="color:var(--warning);">
+                        Informazioni Guasto
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        @if (!string.IsNullOrEmpty(v.TipoGuasto))
+                        {
+                            <div class="col-md-3">
+                                <div class="form-label">Tipo Guasto</div>
+                                <span class="badge-compliance badge-warning">
+                                    @v.TipoGuasto
+                                </span>
+                            </div>
+                        }
+                        <div class="col-12">
+                            <div class="form-label">Descrizione</div>
+                            <div style="background:#FEF9E7;
+                                        border:1px solid #F9E79F;
+                                        border-radius:8px;padding:12px;
+                                        font-size:0.875rem;">
+                                @v.InfoGuasto
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Benestare (se presente) -->
+        @if (v.BenestareQualitaTecnicaData.HasValue ||
+             v.BenestareCliniciData.HasValue)
+        {
+            <div class="form-section mb-4"
+                 style="border-color:var(--success);">
+                <div class="form-section-header"
+                     style="background:#D5F5E3;">
+                    <i class="bi bi-patch-check text-success"></i>
+                    <h4 class="form-section-title"
+                        style="color:var(--success);">
+                        Benestare
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        @if (v.BenestareQualitaTecnicaData.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="form-label">
+                                    Benestare Qualità Tecnica
+                                </div>
+                                <div class="fw-600">
+                                    @v.BenestareQualitaTecnicaData.Value
+                                        .ToString("dd/MM/yyyy")
+                                    @if (!string.IsNullOrEmpty(
+                                        v.BenestareQualitaTecnicaBy))
+                                    {
+                                        <span style="font-size:0.8rem;
+                                                     color:var(--neutral-500);">
+                                            — @v.BenestareQualitaTecnicaBy
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        @if (v.BenestareCliniciData.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="form-label">
+                                    Benestare Clinico
+                                </div>
+                                <div class="fw-600">
+                                    @v.BenestareCliniciData.Value
+                                        .ToString("dd/MM/yyyy")
+                                    @if (!string.IsNullOrEmpty(
+                                        v.BenestareClinicoBy))
+                                    {
+                                        <span style="font-size:0.8rem;
+                                                     color:var(--neutral-500);">
+                                            — @v.BenestareClinicoBy
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Manutenzione (se presente) -->
+        @if (!string.IsNullOrEmpty(v.TipoInterventoManutenzione))
+        {
+            <div class="form-section mb-4">
+                <div class="form-section-header"
+                     style="background:#EBF5FB;">
+                    <i class="bi bi-wrench text-primary"></i>
+                    <h4 class="form-section-title">
+                        Intervento Manutenzione
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-label">Tipo Intervento</div>
+                            <div class="fw-600">
+                                @v.TipoInterventoManutenzione
+                            </div>
+                        </div>
+                        @if (v.DataInterventoManutenzione.HasValue)
+                        {
+                            <div class="col-md-3">
+                                <div class="form-label">Data Intervento</div>
+                                <div class="fw-600">
+                                    @v.DataInterventoManutenzione.Value
+                                        .ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(v.SocietaManutenzione))
+                        {
+                            <div class="col-md-6">
+                                <div class="form-label">Società</div>
+                                <div class="fw-600">
+                                    @v.SocietaManutenzione
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(v.TecnicoManutentore))
+                        {
+                            <div class="col-md-6">
+                                <div class="form-label">Tecnico</div>
+                                <div class="fw-600">
+                                    @v.TecnicoManutentore
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Documenti allegati -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-paperclip card-icon"></i>
+                    Documenti Allegati
+                    (@Model.FileAllegati.Count)
+                </h3>
+                <a href="/Documenti/Upload/verifica/@v.Id"
+                   class="btn btn-primary btn-sm">
+                    <i class="bi bi-upload"></i>
+                    Carica
+                </a>
+            </div>
+            <div class="card-body @(Model.FileAllegati.Any() ? "p-0" : "")">
+                @if (!Model.FileAllegati.Any())
+                {
+                    <div class="upload-area"
+                         onclick="location.href='/Documenti/Upload/verifica/@v.Id'">
+                        <i class="bi bi-cloud-upload upload-icon"></i>
+                        <div class="upload-text">
+                            Carica il report della verifica
+                        </div>
+                        <div class="upload-hint">
+                            PDF, Excel, Word — max 50 MB
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <ul class="file-list" style="padding:12px;">
+                        @foreach (var f in Model.FileAllegati)
+                        {
+                            var ext = System.IO.Path.GetExtension(
+                                f.NomeOriginale).ToLower().TrimStart('.');
+                            var ic = ext switch
+                            {
+                                "pdf" => "bi-file-earmark-pdf pdf",
+                                "xlsx" or "xls" =>
+                                    "bi-file-earmark-excel excel",
+                                "docx" or "doc" =>
+                                    "bi-file-earmark-word word",
+                                "jpg" or "jpeg" or "png" =>
+                                    "bi-file-earmark-image image",
+                                _ => "bi-file-earmark other"
+                            };
+                            <li class="file-item">
+                                <i class="bi @ic file-item-icon"></i>
+                                <div class="file-item-info">
+                                    <div class="file-item-name">
+                                        @f.NomeOriginale
+                                    </div>
+                                    <div class="file-item-meta">
+                                        @f.Categoria ·
+                                        @(f.DimensioneBytes / 1024) KB ·
+                                        @f.UploadedAt.ToString("dd/MM/yyyy")
+                                    </div>
+                                </div>
+                                <a href="/Documenti/Download/@f.Id"
+                                   class="btn btn-ghost btn-icon btn-sm"
+                                   title="Scarica">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Colonna destra: azioni e info -->
+    <div class="col-lg-4">
+
+        <!-- Azioni rapide -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-lightning card-icon"></i>
+                    Azioni Rapide
+                </h3>
+            </div>
+            <div class="card-body d-flex flex-column gap-2">
+                @if (User.IsInRole("ADMIN_ORG") || User.IsInRole("EFM") ||
+                     User.IsInRole("EDR") || User.IsInRole("SFM"))
+                {
+                    <a href="/Verifiche/Edit/@v.Id"
+                       class="btn btn-outline w-100">
+                        <i class="bi bi-pencil"></i>
+                        Modifica Verifica
+                    </a>
+                    <a href="/Verifiche/Create/@v.ApparecchiaturaId"
+                       class="btn btn-primary w-100">
+                        <i class="bi bi-plus-circle"></i>
+                        Nuova Verifica Stessa App.
+                    </a>
+                }
+                <a href="/Apparecchiature/Detail/@v.ApparecchiaturaId?tab=verifiche"
+                   class="btn btn-ghost w-100">
+                    <i class="bi bi-hdd-rack"></i>
+                    Tutte le Verifiche App.
+                </a>
+                @if (User.IsInRole("ADMIN_ORG"))
+                {
+                    <hr class="divider" />
+                    <form asp-action="Delete" asp-controller="Verifiche"
+                          method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@v.Id" />
+                        <button type="submit"
+                                class="btn btn-danger w-100"
+                                data-confirm="Sei sicuro di voler eliminare questa verifica? L'operazione non è reversibile.">
+                            <i class="bi bi-trash"></i>
+                            Elimina Verifica
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <!-- Protocollo info -->
+        @if (Model.Protocollo != null)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-file-text card-icon"></i>
+                        Protocollo
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="fw-700 mb-1">
+                        @Model.Protocollo.Codice
+                    </div>
+                    <div style="font-size:0.85rem;
+                                color:var(--neutral-700);
+                                margin-bottom:8px;">
+                        @Model.Protocollo.Descrizione
+                    </div>
+                    <div style="font-size:0.8rem;
+                                color:var(--neutral-500);">
+                        @Model.Protocollo.Revisione ·
+                        Vigore dal
+                        @Model.Protocollo.DataEntrataVigore
+                            .ToString("dd/MM/yyyy")
+                    </div>
+                    @if (Model.Protocollo.PeriodicitaMesi.HasValue)
+                    {
+                        <div class="mt-2">
+                            <span class="badge-compliance badge-todo">
+                                <i class="bi bi-arrow-repeat"></i>
+                                Ogni @Model.Protocollo.PeriodicitaMesi mesi
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Scadenza card -->
+        @if (v.ProssimaVerificaData.HasValue)
+        {
+            var gg = Model.GiorniAllaScadenza!.Value;
+            var (scadClass, scadLabel) =
+                gg < 0    ? ("kpi-danger",  "Scaduta") :
+                gg <= 7   ? ("kpi-danger",  "Urgente") :
+                gg <= 30  ? ("kpi-warning", "In Scadenza") :
+                            ("kpi-success", "In Regola");
+
+            <div class="kpi-card @scadClass">
+                <div class="kpi-content">
+                    <div class="kpi-number"
+                         style="font-size:1.6rem;">
+                        @(gg < 0 ? $"-{Math.Abs(gg)}" : gg.ToString())
+                    </div>
+                    <div class="kpi-label">
+                        @(gg < 0 ? "giorni di ritardo" : "giorni alla scadenza")
+                    </div>
+                    <div class="kpi-sublabel">
+                        @v.ProssimaVerificaData.Value.ToString("dd/MM/yyyy")
+                    </div>
+                </div>
+                <i class="bi bi-calendar-event kpi-icon"></i>
+            </div>
+        }
+
+    </div>
+</div>

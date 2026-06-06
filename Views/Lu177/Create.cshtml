@@ -1,0 +1,273 @@
+@model RadiologiaAppNew.Models.PazienteLu177
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Nuovo Paziente Lu177";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-person-plus me-2 text-primary"></i>
+            Nuovo Paziente Lu177
+        </h1>
+    </div>
+    <div class="page-actions">
+        <a href="/Lu177" class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna alla lista
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <form asp-action="Create" asp-controller="Lu177" method="post">
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-radiologia alert-danger mb-4">
+                    <i class="bi bi-exclamation-circle alert-icon"></i>
+                    <div>
+                        @foreach (var e in ViewData.ModelState.Values
+                            .SelectMany(v => v.Errors))
+                        {
+                            <div>@e.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Anagrafica -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-person text-primary"></i>
+                    <h4 class="form-section-title">
+                        Dati Anagrafici
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label asp-for="CodicePaziente"
+                                   class="form-label"></label>
+                            <input asp-for="CodicePaziente"
+                                   class="form-control"
+                                   placeholder="Es. LU2025-001" />
+                            <span asp-validation-for="CodicePaziente"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="Cognome"
+                                   class="form-label"></label>
+                            <input asp-for="Cognome"
+                                   class="form-control" />
+                            <span asp-validation-for="Cognome"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Nome"
+                                   class="form-label"></label>
+                            <input asp-for="Nome"
+                                   class="form-control" />
+                            <span asp-validation-for="Nome"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="DataNascita"
+                                   class="form-label"></label>
+                            <input asp-for="DataNascita"
+                                   type="date" class="form-control" />
+                            <span asp-validation-for="DataNascita"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="Sesso"
+                                   class="form-label"></label>
+                            <select asp-for="Sesso"
+                                    class="form-select">
+                                <option value="M">M</option>
+                                <option value="F">F</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="CodiceFiscale"
+                                   class="form-label"></label>
+                            <input asp-for="CodiceFiscale"
+                                   class="form-control"
+                                   style="text-transform:uppercase;" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="NumeroNosologico"
+                                   class="form-label"></label>
+                            <input asp-for="NumeroNosologico"
+                                   class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clinica -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-clipboard-pulse text-primary"></i>
+                    <h4 class="form-section-title">
+                        Dati Clinici
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="MedicoInviante"
+                                   class="form-label"></label>
+                            <input asp-for="MedicoInviante"
+                                   class="form-control"
+                                   placeholder="Dr. Nome Cognome" />
+                            <span asp-validation-for="MedicoInviante"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="RepartoInviante"
+                                   class="form-label"></label>
+                            <input asp-for="RepartoInviante"
+                                   class="form-control"
+                                   placeholder="Es. Oncologia" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Indicazione"
+                                   class="form-label"></label>
+                            <select asp-for="Indicazione"
+                                    class="form-select">
+                                <option value="PSMA_LU177">
+                                    PSMA Lu177 (Ca Prostatico)
+                                </option>
+                                <option value="DOTATATE_LU177">
+                                    DOTATATE Lu177 (NET)
+                                </option>
+                                <option value="ALTRO">Altro</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="DiagnosiPrincipale"
+                                   class="form-label"></label>
+                            <textarea asp-for="DiagnosiPrincipale"
+                                      class="form-control" rows="2"
+                                      placeholder="Diagnosi oncologica principale...">
+                            </textarea>
+                            <span asp-validation-for="DiagnosiPrincipale"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="PesoKg"
+                                   class="form-label"></label>
+                            <input asp-for="PesoKg"
+                                   type="number" step="0.1"
+                                   class="form-control"
+                                   placeholder="kg" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="AltezzaCm"
+                                   class="form-label"></label>
+                            <input asp-for="AltezzaCm"
+                                   type="number" step="0.1"
+                                   class="form-control"
+                                   placeholder="cm" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="EgfrMlMin"
+                                   class="form-label"></label>
+                            <input asp-for="EgfrMlMin"
+                                   type="number" step="0.1"
+                                   class="form-control"
+                                   placeholder="mL/min/1.73m²" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Piano terapeutico -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-journal-medical text-primary"></i>
+                    <h4 class="form-section-title">
+                        Piano Terapeutico
+                    </h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="ProtocolloTerapeutico"
+                                   class="form-label"></label>
+                            <select asp-for="ProtocolloTerapeutico"
+                                    class="form-select">
+                                <option value="">— Seleziona —</option>
+                                <option value="VISION">
+                                    VISION (PSMA)
+                                </option>
+                                <option value="NETTER-1">
+                                    NETTER-1 (NET)
+                                </option>
+                                <option value="TheraP">TheraP</option>
+                                <option value="Custom">
+                                    Personalizzato
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="NCicliPianificati"
+                                   class="form-label"></label>
+                            <input asp-for="NCicliPianificati"
+                                   type="number" class="form-control"
+                                   placeholder="Es. 4" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="AttivitaPerCicloGbq"
+                                   class="form-label"></label>
+                            <input asp-for="AttivitaPerCicloGbq"
+                                   type="number" step="0.1"
+                                   class="form-control"
+                                   placeholder="GBq" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="IntervallSettimane"
+                                   class="form-label"></label>
+                            <input asp-for="IntervallSettimane"
+                                   type="number" class="form-control"
+                                   placeholder="Es. 6" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="DataInizioTrattamento"
+                                   class="form-label"></label>
+                            <input asp-for="DataInizioTrattamento"
+                                   type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="StatoPaziente"
+                                   class="form-label"></label>
+                            <select asp-for="StatoPaziente"
+                                    class="form-select">
+                                <option value="InTrattamento">
+                                    In Trattamento
+                                </option>
+                                <option value="Concluso">Concluso</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Registra Paziente
+                </button>
+                <a href="/Lu177" class="btn btn-ghost">Annulla</a>
+            </div>
+        </form>
+    </div>
+</div>

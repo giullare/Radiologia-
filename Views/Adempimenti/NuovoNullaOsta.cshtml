@@ -1,0 +1,121 @@
+@model RadiologiaAppNew.Models.NullaOsta
+@{
+    Layout = "_Layout";
+    var app = ViewBag.Apparecchiatura as
+        RadiologiaAppNew.Models.Apparecchiatura;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-shield-check me-2 text-primary"></i>
+            Nuovo Nulla Osta
+        </h1>
+        @if (app != null)
+        {
+            <p class="page-subtitle">@app.Codice — @app.Descrizione</p>
+        }
+    </div>
+    <div class="page-actions">
+        <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId?tab=adempimenti"
+           class="btn btn-ghost">
+            <i class="bi bi-arrow-left"></i> Torna indietro
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form asp-action="NuovoNullaOsta" asp-controller="Adempimenti"
+              method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ApparecchiaturaId" />
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-shield-check text-primary"></i>
+                    <h4 class="form-section-title">Dati Nulla Osta</h4>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-3">
+                            <label asp-for="Tipo" class="form-label"></label>
+                            <select asp-for="Tipo" class="form-select">
+                                <option value="TipoA">Tipo A</option>
+                                <option value="TipoB">Tipo B</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label asp-for="Numero" class="form-label"></label>
+                            <input asp-for="Numero" class="form-control"
+                                   placeholder="Es. NO/2025/001234" />
+                            <span asp-validation-for="Numero"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="EnteRilascio"
+                                   class="form-label"></label>
+                            <input asp-for="EnteRilascio"
+                                   class="form-control"
+                                   placeholder="Ente che ha rilasciato il NO" />
+                            <span asp-validation-for="EnteRilascio"
+                                  class="text-danger"
+                                  style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="DataRilascio"
+                                   class="form-label"></label>
+                            <input asp-for="DataRilascio"
+                                   type="date" class="form-control" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="DataScadenza"
+                                   class="form-label"></label>
+                            <input asp-for="DataScadenza"
+                                   type="date" class="form-control" />
+                            <div class="form-text">
+                                Lascia vuoto se il NO è a tempo indeterminato
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Stato" class="form-label"></label>
+                            <select asp-for="Stato" class="form-select">
+                                <option value="Valido">Valido</option>
+                                <option value="InScadenza">In Scadenza</option>
+                                <option value="Scaduto">Scaduto</option>
+                                <option value="InRinnovo">In Rinnovo</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Note" class="form-label"></label>
+                            <textarea asp-for="Note"
+                                      class="form-control" rows="2"
+                                      placeholder="Note aggiuntive...">
+                            </textarea>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Salva Nulla Osta
+                </button>
+                <a href="/Apparecchiature/Detail/@Model.ApparecchiaturaId?tab=adempimenti"
+                   class="btn btn-ghost">
+                    Annulla
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
