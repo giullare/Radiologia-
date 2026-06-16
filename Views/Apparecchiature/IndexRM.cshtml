@@ -2,8 +2,8 @@
 @using RadiologiaAppNew.Enums
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Inventario Apparecchiature";
-    ViewData["BreadcrumbParent"] = "Attrezzature medico-radiologiche";
+    ViewData["Title"] = "Apparecchiature RM";
+    ViewData["BreadcrumbParent"] = "Apparecchiature a Risonanza Magnetica (DM 14/01/21)";
     var tipologiePerAmbito = ViewBag.TipologiePerAmbito as List<string> ?? new List<string>();
 }
 
@@ -11,20 +11,20 @@
     <div>
         <h1 class="page-title">
             <i class="bi bi-hdd-rack me-2 text-primary"></i>
-            Inventario Apparecchiature
+            Apparecchiature RM
         </h1>
         <p class="page-subtitle">
             @Model.TotaleRisultati apparecchiat@(Model.TotaleRisultati == 1 ? "ura" : "ure") trovate
         </p>
     </div>
     <div class="page-actions">
-        <a href="/Apparecchiature/Create" class="btn btn-primary">
+        <a href="/Apparecchiature/CreateRM" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nuova
         </a>
-        <a href="/Apparecchiature?stato=Cessata" class="btn btn-ghost">
+        <a href="/Apparecchiature/IndexRM?stato=Cessata" class="btn btn-ghost">
             <i class="bi bi-archive"></i> Cessate
         </a>
-        <a href="/Apparecchiature/ExportCsv@(string.IsNullOrEmpty(Model.StatoFiltro) ? "" : $"?stato={Model.StatoFiltro}")@(string.IsNullOrEmpty(Model.AmbitoFiltro) ? "" : $"&ambito={Model.AmbitoFiltro}")"
+        <a href="/Apparecchiature/ExportCsvRM@(string.IsNullOrEmpty(Model.StatoFiltro) ? "" : $"?stato={Model.StatoFiltro}")@(string.IsNullOrEmpty(Model.AmbitoFiltro) ? "" : $"&ambito={Model.AmbitoFiltro}")"
            class="btn btn-ghost">
             <i class="bi bi-download"></i> Export CSV
         </a>
@@ -34,7 +34,7 @@
 <!-- ═══ FILTRI ════════════════════════════════════════════════════ -->
 <div class="card mb-4">
     <div class="card-body">
-        <form method="get" asp-action="Index" id="formFiltri">
+        <form method="get" asp-action="IndexRM" id="formFiltri">
             <div class="row g-3 align-items-end">
 
                 <div class="col-md-4">
@@ -78,39 +78,11 @@
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label fw-600" style="font-size:0.78rem;
-                           text-transform:uppercase;letter-spacing:.04em;
-                           color:var(--neutral-500)">AMBITO</label>
-                    <select name="ambito" class="form-select" id="filtroAmbito"
-                            onchange="aggiornaTipologieFiltro(this.value)">
-                        <option value="">Tutti</option>
-                      <option value="Radiologia"
-        selected='@(Model.AmbitoFiltro == "Radiologia")'>
-    Radiologia
-</option>
-
-<option value="RadiologiaInterventistica"
-        selected='@(Model.AmbitoFiltro == "RadiologiaInterventistica")'>
-    Interventistica
-</option>
-
-<option value="MedicinaNucleare"
-        selected='@(Model.AmbitoFiltro == "MedicinaNucleare")'>
-    Medicina Nucleare
-</option>
-
-<option value="Radioterapia"
-        selected='@(Model.AmbitoFiltro == "Radioterapia")'>
-    Radioterapia
-</option>
-                    </select>
-                </div>
 
                 <div class="col-md-2">
                     <label class="form-label fw-600" style="font-size:0.78rem;
                            text-transform:uppercase;letter-spacing:.04em;
-                           color:var(--neutral-500)">TIPOLOGIA</label>
+                           color:var(--neutral-500)">TIPOLOGIA RM</label>
                     <select name="tipologia" class="form-select" id="filtroTipologia">
                         <option value="">Tutte</option>
                         @foreach (var t in tipologiePerAmbito)
@@ -179,7 +151,7 @@
                         <i class="bi bi-x-circle"></i> Azzera filtri
                     </a>
                 }
-                <a href="/Apparecchiature/Create" class="btn btn-primary">
+                <a href="/Apparecchiature/CreateRM" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Nuova Apparecchiatura
                 </a>
             </div>

@@ -22,15 +22,24 @@ namespace RadiologiaAppNew.Models
 
         [Required(ErrorMessage = "Il modulo è obbligatorio")]
         [Display(Name = "Modulo")]
-        public TipoModulo Modulo { get; set; }
+        public TipoModulo Modulo { get; set; } = TipoModulo.Radiologica;
 
-        [Display(Name = "Ambito di Intervento")]
+        [Display(Name = "Ambito")]
         public AmbitoIntervento? AmbitoIntervento { get; set; }
 
         [Required(ErrorMessage = "La tipologia è obbligatoria")]
         [MaxLength(100)]
         [Display(Name = "Tipologia")]
         public string Tipologia { get; set; } = string.Empty;
+
+        // ─── BENE AZIENDALE (dopo tipologia come richiesto) ──────────────
+        [MaxLength(100)]
+        [Display(Name = "Codice Cespite (SAP)")]
+        public string? SapId { get; set; }
+
+        [MaxLength(500)]
+        [Display(Name = "Codice Terminale (SIA)")]
+        public string? SiapDescrizione { get; set; }
 
         // ─── DATI TECNICI IDENTIFICATIVI ────────────────────────────────
         [Required(ErrorMessage = "Il modello è obbligatorio")]
@@ -74,18 +83,154 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Tipo Magnete")]
         public string? TipoMagnete { get; set; }
 
+        // ─── FLAGS TECNICI ───────────────────────────────────────────────
+        [Display(Name = "Collegata in Rete (LAN)")]
+        public bool LanCollegata { get; set; } = false;
+
+        [Display(Name = "Software di monitoraggio dose installato")]
+        public bool MedsquareInstallato { get; set; } = false;
+
         // ─── COLLOCAZIONE ────────────────────────────────────────────────
         [Display(Name = "Locale")]
         public int? LocaleId { get; set; }
         public Locale? Locale { get; set; }
+        public int? SitoId { get; set; }
+        public int? ImmobileId { get; set; }
+        public int? PianoId { get; set; }
 
-        [Display(Name = "Reparto")]
+        [Display(Name = "Struttura")]
         public int? RepartoId { get; set; }
         public Reparto? Reparto { get; set; }
 
+        /// <summary>Dipartimento (FK → tabella Dipartimenti)</summary>
+        [Display(Name = "Dipartimento")]
+        public int? DipartimentoId { get; set; }
+        public Dipartimento? Dipartimento { get; set; }
+
+        // ─── RESPONSABILI ────────────────────────────────────────────────
+        // Direttore Dipartimento
         [MaxLength(255)]
-        [Display(Name = "Caposala / Referente Reparto")]
+        [Display(Name = "Direttore Dipartimento")]
+        public string? DirettoreDipartimento { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "Email Direttore Dipartimento")]
+        public string? DirettoreDipartimentoEmail { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "PEC Direttore Dipartimento")]
+        public string? DirettoreDipartimentoEmailPec { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "Telefono Direttore Dipartimento")]
+        public string? DirettoreDipartimentoTelefono { get; set; }
+
+        // Direttore Struttura
+        [MaxLength(255)]
+        [Display(Name = "Direttore Struttura")]
+        public string? DirettoreStruttura { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "Email Direttore Struttura")]
+        public string? DirettoreStrutturaEmail { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "PEC Direttore Struttura")]
+        public string? DirettoreStrutturaEmailPec { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "Telefono Direttore Struttura")]
+        public string? DirettoreStrutturaTelefono { get; set; }
+
+        // Preposto D.Lgs 101/20 (ex Caposala)
+        [MaxLength(255)]
+        [Display(Name = "Preposto D. Lgs 101/20")]
         public string? Caposala { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "Email Preposto")]
+        public string? PrepostoEmail { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "PEC Preposto")]
+        public string? PrepostoEmailPec { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "Telefono Preposto")]
+        public string? PrepostoTelefono { get; set; }
+
+        // Responsabile Impianto Radiologico (RIR)
+        [MaxLength(255)]
+        [Display(Name = "Responsabile Impianto Radiologico (RIR)")]
+        public string? RirNome { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "Email RIR")]
+        public string? RirEmail { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "PEC RIR")]
+        public string? RirEmailPec { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "Telefono RIR")]
+        public string? RirTelefono { get; set; }
+
+        // Specialista in Fisica Medica (SFM)
+        [MaxLength(255)]
+        [Display(Name = "Specialista in Fisica Medica (SFM)")]
+        public string? SfmNome { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "Email SFM")]
+        public string? SfmEmail { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "PEC SFM")]
+        public string? SfmEmailPec { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "Telefono SFM")]
+        public string? SfmTelefono { get; set; }
+
+        // Esperto di Radioprotezione (EdR)
+        [MaxLength(255)]
+        [Display(Name = "Esperto di Radioprotezione (EdR)")]
+        public string? EdrNome { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "Email EdR")]
+        public string? EdrEmail { get; set; }
+
+        [MaxLength(255)]
+        [EmailAddress]
+        [Display(Name = "PEC EdR")]
+        public string? EdrEmailPec { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "Telefono EdR")]
+        public string? EdrTelefono { get; set; }
+
+        // ─── PLANIMETRIA E ZONE ──────────────────────────────────────────
+        [MaxLength(1000)]
+        [Display(Name = "Descrizione Zone Classificate")]
+        public string? DescrizioneZoneClassificate { get; set; }
+
+        /// <summary>Nome file piantina zone classificate (salvato in wwwroot/uploads/)</summary>
+        [MaxLength(500)]
+        [Display(Name = "Piantina Zone Classificate")]
+        public string? PiantinaZoneClassificateFile { get; set; }
 
         // ─── RIFERIMENTI ASSISTENZA ──────────────────────────────────────
         [MaxLength(255)]
@@ -109,13 +254,6 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Email Assistenza")]
         public string? EmailAssistenza { get; set; }
 
-        // ─── FLAGS TECNICI ───────────────────────────────────────────────
-        [Display(Name = "Collegata in Rete (LAN)")]
-        public bool LanCollegata { get; set; } = false;
-
-        [Display(Name = "Software MedSquare Installato")]
-        public bool MedsquareInstallato { get; set; } = false;
-
         // ─── CICLO DI VITA ───────────────────────────────────────────────
         [Required]
         [Display(Name = "Stato")]
@@ -133,17 +271,8 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Motivo Cessazione")]
         public string? MotivoCessazione { get; set; }
 
-        // ─── BENE AZIENDALE ──────────────────────────────────────────────
-        [MaxLength(100)]
-        [Display(Name = "ID SAP")]
-        public string? SapId { get; set; }
-
-        [MaxLength(500)]
-        [Display(Name = "Descrizione SIAP")]
-        public string? SiapDescrizione { get; set; }
-
         // ─── ADEMPIMENTI INAIL ───────────────────────────────────────────
-        [Display(Name = "Stato INAIL")]
+        [Display(Name = "Stato Registrazione INAIL")]
         public StatoAdempimento StatoInail { get; set; } = StatoAdempimento.DaRegistrare;
 
         [Display(Name = "Data Registrazione INAIL")]
@@ -154,8 +283,18 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Numero Pratica INAIL")]
         public string? NumeroPraticaInail { get; set; }
 
+        /// <summary>File ricevuta registrazione INAIL</summary>
+        [MaxLength(500)]
+        [Display(Name = "Ricevuta Registrazione INAIL")]
+        public string? InailRicevutaRegistrazioneFile { get; set; }
+
+        /// <summary>File ricevuta cessazione INAIL</summary>
+        [MaxLength(500)]
+        [Display(Name = "Ricevuta Cessazione INAIL")]
+        public string? InailRicevutaCessioneFile { get; set; }
+
         // ─── ADEMPIMENTI STRIMS ──────────────────────────────────────────
-        [Display(Name = "Stato STRIMS")]
+        [Display(Name = "Stato Registrazione STRIMS")]
         public StatoAdempimento StatoStrims { get; set; } = StatoAdempimento.DaRegistrare;
 
         [MaxLength(100)]
@@ -172,10 +311,15 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Notifica di Cessazione Caricata su STRIMS")]
         public bool StrimsNcCaricata { get; set; } = false;
 
-        // ─── PLANIMETRIA E ZONE ──────────────────────────────────────────
-        [MaxLength(1000)]
-        [Display(Name = "Descrizione Zone Classificate")]
-        public string? DescrizioneZoneClassificate { get; set; }
+        /// <summary>File ricevuta registrazione STRIMS</summary>
+        [MaxLength(500)]
+        [Display(Name = "Ricevuta Registrazione STRIMS")]
+        public string? StrimsRicevutaRegistrazioneFile { get; set; }
+
+        /// <summary>File ricevuta cessazione STRIMS</summary>
+        [MaxLength(500)]
+        [Display(Name = "Ricevuta Cessazione STRIMS")]
+        public string? StrimsRicevutaCessioneFile { get; set; }
 
         // ─── TIMESTAMPS ──────────────────────────────────────────────────
         [Display(Name = "Data Creazione")]

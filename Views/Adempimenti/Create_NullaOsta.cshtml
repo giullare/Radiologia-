@@ -24,7 +24,7 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "EditNullaOsta" : "CreateNullaOsta")"
+<form asp-action="@(isEdit ? "EditNullaOsta" : "NuovoNullaOsta")"
       asp-controller="Adempimenti"
       asp-route-id="@(isEdit ? Model.Id : (int?)null)"
       method="post" enctype="multipart/form-data">

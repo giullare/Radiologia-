@@ -159,7 +159,7 @@ namespace RadiologiaAppNew.Controllers
             if (app == null) return NotFound();
 
             ViewData["Title"] = "Nuova Verifica CQ";
-            ViewData["BreadcrumbParent"] = "Verifiche CQ";
+            ViewData["BreadcrumbParent"] = "Garanzia della Qualità";
             ViewData["BreadcrumbParentUrl"] = "/Verifiche";
 
             var vm = new VerificaCreateViewModel
@@ -168,7 +168,9 @@ namespace RadiologiaAppNew.Controllers
                 ApparecchiaturaDescrizione = app.Descrizione,
                 ApparecchiaturaCodice      = app.Codice,
                 Anno                       = DateTime.Today.Year,
-                ProtocolliDisponibili = await _db.ProtocolliVerifica
+                TipoUI                     = "FunzionamentoPeriodico",
+                EsitoUI                    = "InCorso",
+                ProtocolliDisponibili      = await _db.ProtocolliVerifica
                     .Where(p => p.Attivo)
                     .OrderBy(p => p.Tipo)
                     .ThenBy(p => p.Codice)
@@ -194,56 +196,58 @@ namespace RadiologiaAppNew.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var app = await _db.Apparecchiature
-                .FindAsync(model.ApparecchiaturaId);
+            var app = await _db.Apparecchiature.FindAsync(model.ApparecchiaturaId);
             if (app == null) return NotFound();
 
-            var protocollo = await _db.ProtocolliVerifica
-                .FindAsync(model.ProtocolloId);
+            var protocollo = await _db.ProtocolliVerifica.FindAsync(model.ProtocolloId);
             if (protocollo == null)
             {
-                ModelState.AddModelError("ProtocolloId",
-                    "Protocollo non trovato.");
+                ModelState.AddModelError("ProtocolloId", "Protocollo non trovato.");
                 return View(model);
             }
 
+            // Mappa TipoUI → TipoProtocollo
+            model.Tipo  = TipoUIHelper.ToTipoProtocollo(model.TipoUI);
+            // Mappa EsitoUI → EsitoVerifica
+            model.Esito = TipoUIHelper.ToEsitoVerifica(model.EsitoUI);
+
+            // Calcola periodicità in mesi dalla selezione UI
+            int? periodicitaMesi = TipoUIHelper.PeriodicitaToMesi(
+                model.Periodicita, model.PeriodicitaAltroMesi)
+                ?? protocollo.PeriodicitaMesi;
+
             // Calcola automaticamente prossima verifica
             DateTime? prossimaVerifica = model.ProssimaVerificaData;
-            if (!prossimaVerifica.HasValue &&
-                protocollo.PeriodicitaMesi.HasValue)
-            {
-                prossimaVerifica = model.DataInizio
-                    .AddMonths(protocollo.PeriodicitaMesi.Value);
-            }
+            if (!prossimaVerifica.HasValue && periodicitaMesi.HasValue)
+                prossimaVerifica = model.DataInizio.AddMonths(periodicitaMesi.Value);
 
             var verifica = new RecordVerifica
             {
-                ApparecchiaturaId         = model.ApparecchiaturaId,
-                ProtocolloId              = model.ProtocolloId,
-                Tipo                      = model.Tipo,
-                DataInizio                = model.DataInizio,
-                DataFine                  = model.DataFine,
-                Esito                     = model.Esito,
-                Note                      = model.Note,
-                Anno                      = model.Anno,
-                Semestre                  = model.Semestre,
-                ProssimaVerificaData      = prossimaVerifica,
-                InfoGuasto                = model.InfoGuasto,
-                TipoGuasto                = model.TipoGuasto,
+                ApparecchiaturaId           = model.ApparecchiaturaId,
+                ProtocolloId                = model.ProtocolloId,
+                Tipo                        = model.Tipo,
+                DataInizio                  = model.DataInizio,
+                DataFine                    = null, // rimosso
+                Esito                       = model.Esito,
+                Note                        = model.Note,
+                Anno                        = model.Anno,
+                Semestre                    = model.Semestre,
+                ProssimaVerificaData        = prossimaVerifica,
+                InfoGuasto                  = model.InfoGuasto,
+                TipoGuasto                  = model.TipoGuasto,
                 BenestareQualitaTecnicaData = model.BenestareQualitaTecnicaData,
-                BenestareQualitaTecnicaBy = model.BenestareQualitaTecnicaBy,
-                BenestareCliniciData      = model.BenestareCliniciData,
-                BenestareClinicoBy        = model.BenestareClinicoBy,
-                TipoInterventoManutenzione = model.TipoInterventoManutenzione,
-                TecnicoManutentore        = model.TecnicoManutentore,
-                SocietaManutenzione       = model.SocietaManutenzione,
-                DataInterventoManutenzione = model.DataInterventoManutenzione,
-                CreatedAt                 = DateTime.UtcNow,
-                CreatedByUserId           = User.FindFirst(
+                BenestareQualitaTecnicaBy   = model.BenestareQualitaTecnicaBy,
+                BenestareCliniciData        = model.BenestareCliniciData,
+                BenestareClinicoBy          = model.BenestareClinicoBy,
+                TipoInterventoManutenzione  = model.TipoInterventoManutenzione,
+                TecnicoManutentore          = model.TecnicoManutentore,
+                SocietaManutenzione         = model.SocietaManutenzione,
+                DataInterventoManutenzione  = model.DataInterventoManutenzione,
+                CreatedAt                   = DateTime.UtcNow,
+                CreatedByUserId             = User.FindFirst(
                     System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
             };
 
-            // Se manutenzione → aggiorna stato apparecchiatura
             if (model.Tipo == TipoProtocollo.PostManutenzione &&
                 model.Esito == EsitoVerifica.InCorso)
             {
@@ -251,7 +255,6 @@ namespace RadiologiaAppNew.Controllers
                 app.UpdatedAt = DateTime.UtcNow;
             }
 
-            // Se verifica superata → aggiorna stato apparecchiatura
             if (model.Tipo == TipoProtocollo.Accettazione &&
                 model.Esito == EsitoVerifica.Superato &&
                 !app.DataAccettazione.HasValue)
@@ -271,11 +274,9 @@ namespace RadiologiaAppNew.Controllers
             TempData["Success"] =
                 $"Verifica registrata con successo. " +
                 (prossimaVerifica.HasValue
-                    ? $"Prossima verifica: {prossimaVerifica.Value:dd/MM/yyyy}"
-                    : "");
+                    ? $"Prossimo controllo: {prossimaVerifica.Value:dd/MM/yyyy}" : "");
 
-            return RedirectToAction("Detail",
-                "Apparecchiature",
+            return RedirectToAction("Detail", "Apparecchiature",
                 new { id = model.ApparecchiaturaId, tab = "verifiche" });
         }
 
@@ -300,10 +301,11 @@ namespace RadiologiaAppNew.Controllers
                 ApparecchiaturaDescrizione = v.Apparecchiatura.Descrizione,
                 ApparecchiaturaCodice      = v.Apparecchiatura.Codice,
                 ProtocolloId              = v.ProtocolloId,
+                TipoUI                    = TipoUIHelper.ToTipoUI(v.Tipo),
                 Tipo                      = v.Tipo,
-                DataInizio                = v.DataInizio,
-                DataFine                  = v.DataFine,
+                EsitoUI                   = TipoUIHelper.ToEsitoUI(v.Esito),
                 Esito                     = v.Esito,
+                DataInizio                = v.DataInizio,
                 Note                      = v.Note,
                 Anno                      = v.Anno,
                 Semestre                  = v.Semestre,
@@ -351,18 +353,22 @@ namespace RadiologiaAppNew.Controllers
             var protocollo = await _db.ProtocolliVerifica
                 .FindAsync(model.ProtocolloId);
 
+            // Mappa UI → enum
+            model.Tipo  = TipoUIHelper.ToTipoProtocollo(model.TipoUI);
+            model.Esito = TipoUIHelper.ToEsitoVerifica(model.EsitoUI);
+
+            int? periodicitaMesi = TipoUIHelper.PeriodicitaToMesi(
+                model.Periodicita, model.PeriodicitaAltroMesi)
+                ?? protocollo?.PeriodicitaMesi;
+
             DateTime? prossimaVerifica = model.ProssimaVerificaData;
-            if (!prossimaVerifica.HasValue &&
-                protocollo?.PeriodicitaMesi.HasValue == true)
-            {
-                prossimaVerifica = model.DataInizio
-                    .AddMonths(protocollo.PeriodicitaMesi!.Value);
-            }
+            if (!prossimaVerifica.HasValue && periodicitaMesi.HasValue)
+                prossimaVerifica = model.DataInizio.AddMonths(periodicitaMesi.Value);
 
             verifica.ProtocolloId              = model.ProtocolloId;
             verifica.Tipo                      = model.Tipo;
             verifica.DataInizio                = model.DataInizio;
-            verifica.DataFine                  = model.DataFine;
+            verifica.DataFine                  = null;
             verifica.Esito                     = model.Esito;
             verifica.Note                      = model.Note;
             verifica.Anno                      = model.Anno;
@@ -403,7 +409,22 @@ namespace RadiologiaAppNew.Controllers
                 new { id = appId, tab = "verifiche" });
         }
 
-        // ─── API — Protocolli per tipo ───────────────────────────────────
+        // ─── API — File protocollo ────────────────────────────────────────
+        [HttpGet]
+        public async Task<JsonResult> GetProtocolloFile(int id)
+        {
+            var p = await _db.ProtocolliVerifica.FindAsync(id);
+            if (p == null) return Json(new { fileUrl = (string?)null });
+            // Il file è salvato come FileAllegato con categoria ProtocolloVerifica
+            var file = await _db.FileAllegati
+                .Where(f => f.Categoria == "PROTOCOLLO_VERIFICA" &&
+                            f.ApparecchiaturaId == null)
+                .OrderByDescending(f => f.UploadedAt)
+                .FirstOrDefaultAsync();
+            return Json(new { fileUrl = file?.NomeStorage });
+        }
+
+        // ─── API — Protocolli per tipo ────────────────────────────────────
         [HttpGet]
         public async Task<JsonResult> GetProtocolliPerTipo(string tipo)
         {

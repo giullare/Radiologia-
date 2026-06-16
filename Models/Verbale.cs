@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-
 namespace RadiologiaAppNew.Models
 {
     public class Verbale
     {
-       
         public int Id { get; set; }
 
         [Required]
@@ -53,7 +51,77 @@ namespace RadiologiaAppNew.Models
         [MaxLength(450)]
         public string? CreatedByUserId { get; set; }
 
-        // FK
+        // ─── SEZIONE SPECIFICHE SOPRALLUOGO ─────────────────────────────
+
+        // Campi generali
+        [Display(Name = "Presenza dosimetro ambientale")]
+        public bool? PresenzaDosimetroAmbientale { get; set; }
+
+        [Display(Name = "Correttezza dosimetro ambientale (nome/periodo/posizionamento)")]
+        public bool? CorrettezzaDosimetroAmbientale { get; set; }
+
+        [Display(Name = "Presenza norme di radioprotezione D.Lgs. 101/20")]
+        public bool? PresenzaNormeRadioprotezione { get; set; }
+
+        [Display(Name = "Piantina")]
+        public bool? Piantina { get; set; }
+
+        // ─── SALA CONSOLLE ───────────────────────────────────────────────
+        [Display(Name = "Segnaletica Consolle")]
+        public bool? SegnaleticaConsolle { get; set; }
+
+        [Display(Name = "Classificazione Consolle")]
+        public bool? ClassificazioneConsolle { get; set; }
+
+        [Display(Name = "Funzionamento Segnaletica Luminosa Consolle")]
+        public bool? FunzionamentoSegnaleticaLuminosaConsolle { get; set; }
+
+        [Display(Name = "Segnaletica donne in gravidanza (consolle)")]
+        public bool? SegnaleticaGravidanzaConsolle { get; set; }
+
+        [Display(Name = "Inter Lock porta/fascio funzionante Sala diagnostica")]
+        public bool? InterLockConsolle { get; set; }
+
+        // ─── SALA DIAGNOSTICA ────────────────────────────────────────────
+        [Display(Name = "Segnaletica sala diagnostica")]
+        public bool? SegnaleticaSalaDiagnostica { get; set; }
+
+        [Display(Name = "Classificazione sala diagnostica")]
+        public bool? ClassificazioneSalaDiagnostica { get; set; }
+
+        [Display(Name = "Funzionamento Segnaletica Luminosa (sala diagnostica)")]
+        public bool? FunzionamentoSegnaleticaLuminosaDiagnostica { get; set; }
+
+        [Display(Name = "Segnaletica donne in gravidanza (sala diagnostica)")]
+        public bool? SegnaleticaGravidanzaDiagnostica { get; set; }
+
+        // ─── SALA PREPARAZIONE ───────────────────────────────────────────
+        [Display(Name = "Segnaletica sala preparazione")]
+        public bool? SegnaleticaSalaPreparazione { get; set; }
+
+        [Display(Name = "Classificazione sala preparazione")]
+        public bool? ClassificazioneSalaPreparazione { get; set; }
+
+        [Display(Name = "Funzionamento Segnaletica Luminosa sala preparazione")]
+        public bool? FunzionamentoSegnaleticaLuminosaPreparazione { get; set; }
+
+        [Display(Name = "Segnaletica donne in gravidanza (sala preparazione)")]
+        public bool? SegnaleticaGravidanzaPreparazione { get; set; }
+
+        [Display(Name = "Inter Lock porta/fascio funzionante sala preparazione")]
+        public bool? InterLockPreparazione { get; set; }
+
+        // ─── PORTATILI RX - ARCO A C ─────────────────────────────────────
+        [Display(Name = "Segnaletica rischio presenza di radiazioni")]
+        public bool? SegnaleticaRischioRadiazioni { get; set; }
+
+        [Display(Name = "Segnaletica rischio donne in gravidanza")]
+        public bool? SegnaleticaRischioGravidanza { get; set; }
+
+        [Display(Name = "Presenza Norme Radioprotezione D.Lgs 101/20")]
+        public bool? PresenzaNormePortatili { get; set; }
+
+        // ─── FK ──────────────────────────────────────────────────────────
         public int ApparecchiaturaId { get; set; }
         public Apparecchiatura Apparecchiatura { get; set; } = null!;
 

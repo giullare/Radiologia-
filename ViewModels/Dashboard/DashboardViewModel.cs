@@ -2,7 +2,7 @@ namespace RadiologiaAppNew.ViewModels.Dashboard
 {
     public class DashboardViewModel
     {
-        // KPI principali
+        // KPI principali — Modulo 1
         public int TotaleApparecchiatureAttive { get; set; }
         public int ApparecchiatureInManutenzione { get; set; }
         public int VerificheCQScadute { get; set; }
@@ -10,6 +10,12 @@ namespace RadiologiaAppNew.ViewModels.Dashboard
         public int NullaOstaInScadenza { get; set; }
         public int AlertCriticiTotali { get; set; }
         public double PercentualeCompliance { get; set; }
+
+        // KPI — Modulo 2 (RM)
+        public int TotaleRMAttive { get; set; }
+        public int VerificheCQScaduteRM { get; set; }
+
+        // KPI — Modulo 4 (Lu177)
         public int PazientiLu177Attivi { get; set; }
 
         // Scadenze imminenti

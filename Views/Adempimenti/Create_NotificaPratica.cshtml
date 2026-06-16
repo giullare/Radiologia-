@@ -23,7 +23,7 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "EditNotifica" : "CreateNotifica")"
+<form asp-action="@(isEdit ? "EditNotifica" : "NuovaNotifica")"
       asp-controller="Adempimenti"
       asp-route-id="@(isEdit ? Model.Id : (int?)null)"
       method="post" enctype="multipart/form-data">

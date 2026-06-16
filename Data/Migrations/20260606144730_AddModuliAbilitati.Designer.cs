@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RadiologiaAppNew.Data;
 
@@ -10,9 +11,11 @@ using RadiologiaAppNew.Data;
 namespace RadiologiaAppNew.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260606144730_AddModuliAbilitati")]
+    partial class AddModuliAbilitati
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
@@ -199,57 +202,6 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("DipartimentoId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("DirettoreDipartimento")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DirettoreDipartimentoEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DirettoreDipartimentoEmailPec")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DirettoreDipartimentoTelefono")
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DirettoreStruttura")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DirettoreStrutturaEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DirettoreStrutturaEmailPec")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DirettoreStrutturaTelefono")
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EdrEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EdrEmailPec")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EdrNome")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EdrTelefono")
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("EmailAssistenza")
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
@@ -259,17 +211,6 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.Property<string>("GlobalService")
                         .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("ImmobileId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("InailRicevutaCessioneFile")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("InailRicevutaRegistrazioneFile")
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<decimal?>("IntensitaCampoTesla")
@@ -309,43 +250,8 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("PianoId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("PiantinaZoneClassificateFile")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PrepostoEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PrepostoEmailPec")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PrepostoTelefono")
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
                     b.Property<int?>("RepartoId")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("RirEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RirEmailPec")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RirNome")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RirTelefono")
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("SapId")
                         .HasMaxLength(100)
@@ -355,28 +261,9 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SfmEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SfmEmailPec")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SfmNome")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SfmTelefono")
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("SiapDescrizione")
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
-
-                    b.Property<int?>("SitoId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("SocietaManutenzione")
                         .HasMaxLength(255)
@@ -401,14 +288,6 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.Property<bool>("StrimsNpCaricata")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("StrimsRicevutaCessioneFile")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("StrimsRicevutaRegistrazioneFile")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("TecnicoRiferimento")
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
@@ -432,8 +311,6 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("Codice")
                         .IsUnique();
-
-                    b.HasIndex("DipartimentoId");
 
                     b.HasIndex("LocaleId");
 
@@ -961,29 +838,6 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.HasIndex("PazienteId");
 
                     b.ToTable("DatiEmatologici");
-                });
-
-            modelBuilder.Entity("RadiologiaAppNew.Models.Dipartimento", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("Attivo")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Descrizione")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Dipartimenti");
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.FiguraResponsabile", b =>
@@ -1625,18 +1479,6 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
-                    b.Property<bool?>("ClassificazioneConsolle")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("ClassificazioneSalaDiagnostica")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("ClassificazioneSalaPreparazione")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("CorrettezzaDosimetroAmbientale")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -1649,21 +1491,6 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.Property<DateTime>("DataSopralluogo")
                         .HasColumnType("TEXT");
-
-                    b.Property<bool?>("FunzionamentoSegnaleticaLuminosaConsolle")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("FunzionamentoSegnaleticaLuminosaDiagnostica")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("FunzionamentoSegnaleticaLuminosaPreparazione")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("InterLockConsolle")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("InterLockPreparazione")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("NonConformita")
                         .HasMaxLength(2000)
@@ -1678,18 +1505,6 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
-                    b.Property<bool?>("Piantina")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("PresenzaDosimetroAmbientale")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("PresenzaNormePortatili")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("PresenzaNormeRadioprotezione")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Rilievi")
                         .IsRequired()
                         .HasMaxLength(5000)
@@ -1697,30 +1512,6 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.Property<DateTime?>("ScadenzaAzioni")
                         .HasColumnType("TEXT");
-
-                    b.Property<bool?>("SegnaleticaConsolle")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("SegnaleticaGravidanzaConsolle")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("SegnaleticaGravidanzaDiagnostica")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("SegnaleticaGravidanzaPreparazione")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("SegnaleticaRischioGravidanza")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("SegnaleticaRischioRadiazioni")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("SegnaleticaSalaDiagnostica")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool?>("SegnaleticaSalaPreparazione")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Stato")
                         .IsRequired()
@@ -1787,11 +1578,6 @@ namespace RadiologiaAppNew.Data.Migrations
 
             modelBuilder.Entity("RadiologiaAppNew.Models.Apparecchiatura", b =>
                 {
-                    b.HasOne("RadiologiaAppNew.Models.Dipartimento", "Dipartimento")
-                        .WithMany("Apparecchiature")
-                        .HasForeignKey("DipartimentoId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("RadiologiaAppNew.Models.Collocazione.Locale", "Locale")
                         .WithMany("Apparecchiature")
                         .HasForeignKey("LocaleId")
@@ -1801,8 +1587,6 @@ namespace RadiologiaAppNew.Data.Migrations
                         .WithMany("Apparecchiature")
                         .HasForeignKey("RepartoId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Dipartimento");
 
                     b.Navigation("Locale");
 
@@ -1913,7 +1697,8 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasOne("RadiologiaAppNew.Models.Verbale", "Verbale")
                         .WithMany("FileAllegati")
-                        .HasForeignKey("VerbaleId");
+                        .HasForeignKey("VerbaleId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("RadiologiaAppNew.Models.RecordVerifica", "Verifica")
                         .WithMany("FileAllegati")
@@ -2049,11 +1834,6 @@ namespace RadiologiaAppNew.Data.Migrations
             modelBuilder.Entity("RadiologiaAppNew.Models.DatoEmatologico", b =>
                 {
                     b.Navigation("FileAllegati");
-                });
-
-            modelBuilder.Entity("RadiologiaAppNew.Models.Dipartimento", b =>
-                {
-                    b.Navigation("Apparecchiature");
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.NotificaPratica", b =>

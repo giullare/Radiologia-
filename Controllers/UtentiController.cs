@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RadiologiaAppNew.Helpers;
 using RadiologiaAppNew.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace RadiologiaAppNew.Controllers
 {
-    [Authorize(Roles = "ADMIN_ORG")]
+    [Authorize(Roles = "ADMIN_ORG,SUPER_ADMIN")]
     public class UtentiController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -43,15 +45,19 @@ namespace RadiologiaAppNew.Controllers
             foreach (var u in utenti)
             {
                 var ruoli = await _userManager.GetRolesAsync(u);
+                var moduliEffettivi = ModuliHelper.GetModuliEffettivi(
+                    u.ModuliAbilitati, ruoli);
+
                 vm.Add(new UtenteRowVm
                 {
-                    Id            = u.Id,
-                    Nome          = u.Nome,
-                    Cognome       = u.Cognome,
-                    Email         = u.Email ?? "",
-                    Attivo        = u.Attivo,
-                    UltimoAccesso = u.UltimoAccesso,
-                    Ruoli         = ruoli.ToList()
+                    Id             = u.Id,
+                    Nome           = u.Nome,
+                    Cognome        = u.Cognome,
+                    Email          = u.Email ?? "",
+                    Attivo         = u.Attivo,
+                    UltimoAccesso  = u.UltimoAccesso,
+                    Ruoli          = ruoli.ToList(),
+                    ModuliEffettivi = moduliEffettivi
                 });
             }
 
@@ -65,7 +71,10 @@ namespace RadiologiaAppNew.Controllers
             ViewData["Title"] = "Nuovo Utente";
             ViewData["BreadcrumbParent"] = "Gestione Utenti";
             ViewData["BreadcrumbParentUrl"] = "/Utenti";
-            ViewBag.RuoliSistema = RuoliSistema;
+            ViewBag.RuoliSistema  = RuoliSistema;
+            ViewBag.TuttiIModuli  = ModuliHelper.TuttiIModuli;
+            ViewBag.NomiModuli    = ModuliHelper.NomiModuli;
+            ViewBag.IconeModuli   = ModuliHelper.IconeModuli;
             return View(new CreaUtenteVm());
         }
 
@@ -75,6 +84,9 @@ namespace RadiologiaAppNew.Controllers
         public async Task<IActionResult> Create(CreaUtenteVm model)
         {
             ViewBag.RuoliSistema = RuoliSistema;
+            ViewBag.TuttiIModuli = ModuliHelper.TuttiIModuli;
+            ViewBag.NomiModuli   = ModuliHelper.NomiModuli;
+            ViewBag.IconeModuli  = ModuliHelper.IconeModuli;
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -88,18 +100,29 @@ namespace RadiologiaAppNew.Controllers
 
             var user = new ApplicationUser
             {
-                UserName         = model.Email,
-                Email            = model.Email,
-                Nome             = model.Nome,
-                Cognome          = model.Cognome,
-                TelefonoInterno  = model.Telefono,
-                EmailConfirmed   = true,
-                Attivo           = true,
-                CreatedAt        = DateTime.UtcNow
+                UserName        = model.Email,
+                Email           = model.Email,
+                Nome            = model.Nome,
+                Cognome         = model.Cognome,
+                TelefonoInterno = model.Telefono,
+                EmailConfirmed  = true,
+                Attivo          = true,
+                CreatedAt       = DateTime.UtcNow
             };
 
-            var result = await _userManager.CreateAsync(
-                user, model.Password);
+            // Assegna moduli: se non selezionati esplicitamente,
+            // calcola il default dai ruoli scelti
+            if (model.ModuliSelezionati?.Any() == true)
+            {
+                user.SetModuli(model.ModuliSelezionati);
+            }
+            else
+            {
+                // Default da ruolo: non salviamo nulla (null = usa default dinamico)
+                user.ModuliAbilitati = null;
+            }
+
+            var result = await _userManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
             {
@@ -130,12 +153,24 @@ namespace RadiologiaAppNew.Controllers
             var user = await _userManager.FindByIdAsync(id);
             if (user == null) return NotFound();
 
-            var ruoliUtente = await _userManager.GetRolesAsync(user);
+            var ruoliUtente  = await _userManager.GetRolesAsync(user);
+            var defaultModuli = ModuliHelper.GetDefaultModuliPerRuoli(ruoliUtente);
+
+            // I moduli selezionati nella UI sono quelli espliciti (se presenti),
+            // altrimenti mostriamo i default pre-spuntati
+            var moduliDaMostrare = user.GetModuli().Any()
+                ? user.GetModuli()
+                : defaultModuli;
 
             ViewData["Title"] = $"Modifica — {user.NomeCompleto}";
             ViewData["BreadcrumbParent"] = "Gestione Utenti";
             ViewData["BreadcrumbParentUrl"] = "/Utenti";
-            ViewBag.RuoliSistema = RuoliSistema;
+            ViewBag.RuoliSistema       = RuoliSistema;
+            ViewBag.TuttiIModuli       = ModuliHelper.TuttiIModuli;
+            ViewBag.NomiModuli         = ModuliHelper.NomiModuli;
+            ViewBag.IconeModuli        = ModuliHelper.IconeModuli;
+            ViewBag.DefaultModuli      = defaultModuli; // per JS hint
+            ViewBag.ModuliSonoDefault  = !user.GetModuli().Any(); // true = non personalizzati
 
             return View(new ModificaUtenteVm
             {
@@ -145,7 +180,9 @@ namespace RadiologiaAppNew.Controllers
                 Email            = user.Email ?? "",
                 Telefono         = user.TelefonoInterno,
                 Attivo           = user.Attivo,
-                RuoliSelezionati = ruoliUtente.ToList()
+                RuoliSelezionati = ruoliUtente.ToList(),
+                ModuliSelezionati = moduliDaMostrare,
+                UsaDefaultModuli  = !user.GetModuli().Any()
             });
         }
 
@@ -155,6 +192,9 @@ namespace RadiologiaAppNew.Controllers
         public async Task<IActionResult> Edit(ModificaUtenteVm model)
         {
             ViewBag.RuoliSistema = RuoliSistema;
+            ViewBag.TuttiIModuli = ModuliHelper.TuttiIModuli;
+            ViewBag.NomiModuli   = ModuliHelper.NomiModuli;
+            ViewBag.IconeModuli  = ModuliHelper.IconeModuli;
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -166,6 +206,21 @@ namespace RadiologiaAppNew.Controllers
             user.Cognome         = model.Cognome;
             user.TelefonoInterno = model.Telefono;
             user.Attivo          = model.Attivo;
+
+            // Gestione moduli
+            if (model.UsaDefaultModuli)
+            {
+                // Ripristina default da ruolo (toglie personalizzazione)
+                user.ModuliAbilitati = null;
+            }
+            else if (model.ModuliSelezionati?.Any() == true)
+            {
+                user.SetModuli(model.ModuliSelezionati);
+            }
+            else
+            {
+                user.ModuliAbilitati = null;
+            }
 
             await _userManager.UpdateAsync(user);
 
@@ -182,8 +237,7 @@ namespace RadiologiaAppNew.Controllers
             // Reset password se richiesto
             if (!string.IsNullOrEmpty(model.NuovaPassword))
             {
-                var token = await _userManager
-                    .GeneratePasswordResetTokenAsync(user);
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var res   = await _userManager.ResetPasswordAsync(
                     user, token, model.NuovaPassword);
                 if (!res.Succeeded)
@@ -198,6 +252,14 @@ namespace RadiologiaAppNew.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // ─── API — DEFAULT MODULI PER RUOLI (chiamata AJAX dalla UI) ─────
+        [HttpPost]
+        public IActionResult GetDefaultModuli([FromBody] List<string> ruoli)
+        {
+            var moduli = ModuliHelper.GetDefaultModuliPerRuoli(ruoli ?? new List<string>());
+            return Json(moduli);
+        }
+
         // ─── TOGGLE ATTIVO ───────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -206,7 +268,6 @@ namespace RadiologiaAppNew.Controllers
             var user = await _userManager.FindByIdAsync(id);
             if (user == null) return NotFound();
 
-            // Non disabilitare se stesso
             var currentId = _userManager.GetUserId(User);
             if (user.Id == currentId)
             {
@@ -224,118 +285,122 @@ namespace RadiologiaAppNew.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
         // ─── DETAIL ──────────────────────────────────────────────────────
-[HttpGet]
-public async Task<IActionResult> Detail(string id)
-{
-    var user = await _userManager.FindByIdAsync(id);
-    if (user == null) return NotFound();
+        [HttpGet]
+        public async Task<IActionResult> Detail(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
 
-    var ruoli = await _userManager.GetRolesAsync(user);
+            var ruoli = await _userManager.GetRolesAsync(user);
+            var moduliEffettivi = ModuliHelper.GetModuliEffettivi(
+                user.ModuliAbilitati, ruoli);
 
-    ViewData["Title"] = $"{user.NomeCompleto} — Profilo";
-    ViewData["BreadcrumbParent"] = "Gestione Utenti";
-    ViewData["BreadcrumbParentUrl"] = "/Utenti";
+            ViewData["Title"] = $"{user.NomeCompleto} — Profilo";
+            ViewData["BreadcrumbParent"] = "Gestione Utenti";
+            ViewData["BreadcrumbParentUrl"] = "/Utenti";
 
-    return View(new UtenteDetailVm
-    {
-        Id            = user.Id,
-        Nome          = user.Nome,
-        Cognome       = user.Cognome,
-        Email         = user.Email ?? "",
-        Telefono      = user.TelefonoInterno,
-        Attivo        = user.Attivo,
-        UltimoAccesso = user.UltimoAccesso,
-        CreatedAt     = user.CreatedAt,
-        Ruoli         = ruoli.ToList()
-    });
-}
+            return View(new UtenteDetailVm
+            {
+                Id              = user.Id,
+                Nome            = user.Nome,
+                Cognome         = user.Cognome,
+                Email           = user.Email ?? "",
+                Telefono        = user.TelefonoInterno,
+                Attivo          = user.Attivo,
+                UltimoAccesso   = user.UltimoAccesso,
+                CreatedAt       = user.CreatedAt,
+                Ruoli           = ruoli.ToList(),
+                ModuliEffettivi = moduliEffettivi,
+                ModuliPersonalizzati = user.GetModuli().Any()
+            });
+        }
 
-// ─── DELETE ──────────────────────────────────────────────────────
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Delete(string id)
-{
-    var currentId = _userManager.GetUserId(User);
-    if (id == currentId)
-    {
-        TempData["Error"] =
-            "Non puoi eliminare il tuo stesso account.";
-        return RedirectToAction(nameof(Index));
+        // ─── DELETE ──────────────────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var currentId = _userManager.GetUserId(User);
+            if (id == currentId)
+            {
+                TempData["Error"] =
+                    "Non puoi eliminare il tuo stesso account.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            var nomeUtente = user.NomeCompleto;
+            var result     = await _userManager.DeleteAsync(user);
+
+            if (result.Succeeded)
+                TempData["Success"] = $"Utente {nomeUtente} eliminato definitivamente.";
+            else
+                TempData["Error"] = "Errore durante l'eliminazione dell'utente.";
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 
-    var user = await _userManager.FindByIdAsync(id);
-    if (user == null) return NotFound();
+    // ─── VIEW MODELS ─────────────────────────────────────────────────────
 
-    var nomeUtente = user.NomeCompleto;
-    var result     = await _userManager.DeleteAsync(user);
-
-    if (result.Succeeded)
-    {
-        TempData["Success"] =
-            $"Utente {nomeUtente} eliminato definitivamente.";
-    }
-    else
-    {
-        TempData["Error"] =
-            "Errore durante l'eliminazione dell'utente.";
-    }
-
-    return RedirectToAction(nameof(Index));
-}
-    }
-
-    // ViewModel inline per semplicità
     public class UtenteRowVm
     {
-        public string Id            { get; set; } = "";
-        public string Nome          { get; set; } = "";
-        public string Cognome       { get; set; } = "";
-        public string Email         { get; set; } = "";
-        public bool   Attivo        { get; set; }
+        public string Id             { get; set; } = "";
+        public string Nome           { get; set; } = "";
+        public string Cognome        { get; set; } = "";
+        public string Email          { get; set; } = "";
+        public bool   Attivo         { get; set; }
         public DateTime? UltimoAccesso { get; set; }
-        public List<string> Ruoli   { get; set; } = new();
+        public List<string> Ruoli    { get; set; } = new();
+        public List<string> ModuliEffettivi { get; set; } = new();
     }
 
     public class CreaUtenteVm
     {
-        [System.ComponentModel.DataAnnotations.Required]
-        public string Nome          { get; set; } = "";
-        [System.ComponentModel.DataAnnotations.Required]
-        public string Cognome       { get; set; } = "";
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.EmailAddress]
-        public string Email         { get; set; } = "";
-        public string? Telefono     { get; set; }
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.MinLength(8)]
-        public string Password      { get; set; } = "";
-        public List<string> RuoliSelezionati { get; set; } = new();
+        [Required] public string Nome     { get; set; } = "";
+        [Required] public string Cognome  { get; set; } = "";
+        [Required][EmailAddress] public string Email { get; set; } = "";
+        public string? Telefono           { get; set; }
+        [Required][MinLength(8)] public string Password { get; set; } = "";
+        public List<string> RuoliSelezionati  { get; set; } = new();
+        public List<string> ModuliSelezionati { get; set; } = new();
     }
 
     public class ModificaUtenteVm
     {
-        public string Id            { get; set; } = "";
-        [System.ComponentModel.DataAnnotations.Required]
-        public string Nome          { get; set; } = "";
-        [System.ComponentModel.DataAnnotations.Required]
-        public string Cognome       { get; set; } = "";
-        public string Email         { get; set; } = "";
-        public string? Telefono     { get; set; }
-        public bool   Attivo        { get; set; } = true;
-        public string? NuovaPassword { get; set; }
-        public List<string> RuoliSelezionati { get; set; } = new();
+        public string Id              { get; set; } = "";
+        [Required] public string Nome    { get; set; } = "";
+        [Required] public string Cognome { get; set; } = "";
+        public string Email           { get; set; } = "";
+        public string? Telefono       { get; set; }
+        public bool   Attivo          { get; set; } = true;
+        public string? NuovaPassword  { get; set; }
+        public List<string> RuoliSelezionati  { get; set; } = new();
+        public List<string> ModuliSelezionati { get; set; } = new();
+
+        /// <summary>
+        /// Se true, i moduli vengono calcolati automaticamente dal ruolo (default).
+        /// Se false, si usano ModuliSelezionati.
+        /// </summary>
+        public bool UsaDefaultModuli { get; set; } = true;
     }
+
     public class UtenteDetailVm
-{
-    public string   Id            { get; set; } = "";
-    public string   Nome          { get; set; } = "";
-    public string   Cognome       { get; set; } = "";
-    public string   Email         { get; set; } = "";
-    public string?  Telefono      { get; set; }
-    public bool     Attivo        { get; set; }
-    public DateTime? UltimoAccesso { get; set; }
-    public DateTime  CreatedAt    { get; set; }
-    public List<string> Ruoli     { get; set; } = new();
-}
+    {
+        public string    Id              { get; set; } = "";
+        public string    Nome            { get; set; } = "";
+        public string    Cognome         { get; set; } = "";
+        public string    Email           { get; set; } = "";
+        public string?   Telefono        { get; set; }
+        public bool      Attivo          { get; set; }
+        public DateTime? UltimoAccesso   { get; set; }
+        public DateTime  CreatedAt       { get; set; }
+        public List<string> Ruoli        { get; set; } = new();
+        public List<string> ModuliEffettivi      { get; set; } = new();
+        public bool         ModuliPersonalizzati { get; set; }
+    }
 }

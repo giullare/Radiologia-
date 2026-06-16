@@ -24,6 +24,10 @@
             onclick="switchTabConf('reparti', this)">
         <i class="bi bi-diagram-3"></i> Reparti
     </button>
+    <button class="tab-btn @(tabAttivo=="dipartimenti"?"active":"")"
+            onclick="switchTabConf('dipartimenti', this)">
+        <i class="bi bi-diagram-2"></i> Dipartimenti
+    </button>
     <button class="tab-btn @(tabAttivo=="costruttori"?"active":"")"
             onclick="switchTabConf('costruttori', this)">
         <i class="bi bi-tools"></i> Costruttori
@@ -564,6 +568,138 @@
                 }
             </div>
         </div>
+    </div>
+</div>
+
+<!-- ═══ TAB: DIPARTIMENTI ════════════════════════════════════════════ -->
+<div class="tab-panel @(tabAttivo=="dipartimenti"?"active":"")"
+     id="tab-dipartimenti">
+
+    <!-- Form nuovo dipartimento -->
+    <div class="card mb-4" style="border:2px solid var(--primary);">
+        <div class="card-header" style="background:var(--primary);color:white;">
+            <h3 class="card-title" style="color:white;">
+                <i class="bi bi-plus-circle me-2"></i>
+                Nuovo Dipartimento
+            </h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="NuovoDipartimento"
+                  asp-controller="Configurazione" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tab" value="dipartimenti" />
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" name="nome"
+                               class="form-control"
+                               placeholder="Nome dipartimento *"
+                               required />
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="descrizione"
+                               class="form-control"
+                               placeholder="Descrizione (opzionale)" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-circle"></i> Aggiungi
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista dipartimenti -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="bi bi-diagram-2 card-icon"></i>
+                Dipartimenti (@Model.Dipartimenti.Count)
+            </h3>
+        </div>
+        @if (!Model.Dipartimenti.Any())
+        {
+            <div class="empty-state" style="padding:30px;">
+                <i class="bi bi-diagram-2 empty-state-icon"></i>
+                <div class="empty-state-title">Nessun dipartimento</div>
+                <p class="empty-state-text">
+                    Aggiungi i dipartimenti della struttura sanitaria.
+                </p>
+            </div>
+        }
+        else
+        {
+            <table class="table-radiologia w-100">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Descrizione</th>
+                        <th>Stato</th>
+                        <th style="width:100px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model.Dipartimenti.OrderBy(d => d.Nome))
+                    {
+                        <tr style="opacity:@(d.Attivo ? "1" : "0.55")">
+                            <td class="fw-600">@d.Nome</td>
+                            <td style="font-size:0.85rem;color:var(--neutral-500)">
+                                @(d.Descrizione ?? "—")
+                            </td>
+                            <td>
+                                @if (d.Attivo)
+                                {
+                                    <span class="badge-compliance badge-ok">
+                                        <i class="bi bi-check-circle"></i> Attivo
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge-compliance badge-missing">
+                                        <i class="bi bi-x-circle"></i> Disattivo
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <!-- Toggle attivo -->
+                                    <form asp-action="ToggleDipartimento"
+                                          asp-controller="Configurazione"
+                                          method="post" style="display:inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <input type="hidden" name="tab" value="dipartimenti" />
+                                        <button type="submit"
+                                                class="btn btn-ghost btn-icon btn-sm"
+                                                title="@(d.Attivo ? "Disattiva" : "Attiva")">
+                                            <i class="bi @(d.Attivo
+                                                ? "bi-toggle-on text-success"
+                                                : "bi-toggle-off text-muted")"></i>
+                                        </button>
+                                    </form>
+                                    <!-- Elimina -->
+                                    <form asp-action="EliminaDipartimento"
+                                          asp-controller="Configurazione"
+                                          method="post" style="display:inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <input type="hidden" name="tab" value="dipartimenti" />
+                                        <button type="submit"
+                                                class="btn btn-ghost btn-icon btn-sm"
+                                                data-confirm="Eliminare il dipartimento «@d.Nome»? Verrà rimosso da tutte le apparecchiature associate."
+                                                title="Elimina">
+                                            <i class="bi bi-trash3"
+                                               style="color:var(--danger)"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </div>
 </div>
 

@@ -1,8 +1,15 @@
 @model RadiologiaAppNew.Controllers.CreaUtenteVm
+@using RadiologiaAppNew.Helpers
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Nuovo Utente";
     var ruoliSistema = ViewBag.RuoliSistema as string[] ?? Array.Empty<string>();
+    var tuttiIModuli = ViewBag.TuttiIModuli as IReadOnlyList<string>
+                       ?? new List<string>();
+    var nomiModuli   = ViewBag.NomiModuli as IReadOnlyDictionary<string, string>
+                       ?? new Dictionary<string, string>();
+    var iconeModuli  = ViewBag.IconeModuli as IReadOnlyDictionary<string, string>
+                       ?? new Dictionary<string, string>();
 }
 
 <div class="page-header">
@@ -11,6 +18,9 @@
             <i class="bi bi-person-plus me-2 text-primary"></i>
             Nuovo Utente
         </h1>
+        <p class="page-subtitle">
+            Crea un nuovo account utente per questa organizzazione
+        </p>
     </div>
     <div class="page-actions">
         <a href="/Utenti" class="btn btn-ghost">
@@ -38,7 +48,7 @@
                 </div>
             }
 
-            <!-- Dati personali -->
+            <!-- ── Dati Personali ────────────────────────────────────── -->
             <div class="form-section">
                 <div class="form-section-header">
                     <i class="bi bi-person text-primary"></i>
@@ -49,72 +59,53 @@
                         <div class="col-md-5">
                             <label asp-for="Nome" class="form-label"></label>
                             <input asp-for="Nome" class="form-control"
-                                   placeholder="Nome" />
-                            <span asp-validation-for="Nome"
-                                  class="text-danger"
+                                   placeholder="Es. Mario" />
+                            <span asp-validation-for="Nome" class="text-danger"
                                   style="font-size:0.775rem"></span>
                         </div>
                         <div class="col-md-7">
                             <label asp-for="Cognome" class="form-label"></label>
                             <input asp-for="Cognome" class="form-control"
-                                   placeholder="Cognome" />
-                            <span asp-validation-for="Cognome"
-                                  class="text-danger"
+                                   placeholder="Es. Rossi" />
+                            <span asp-validation-for="Cognome" class="text-danger"
                                   style="font-size:0.775rem"></span>
                         </div>
-                        <div class="col-md-7">
+                        <div class="col-md-6">
                             <label asp-for="Email" class="form-label"></label>
                             <input asp-for="Email" type="email"
                                    class="form-control"
-                                   placeholder="email@ospedale.it" />
-                            <span asp-validation-for="Email"
-                                  class="text-danger"
+                                   placeholder="mario.rossi@ospedale.it" />
+                            <span asp-validation-for="Email" class="text-danger"
                                   style="font-size:0.775rem"></span>
                         </div>
-                        <div class="col-md-5">
-                            <label asp-for="Telefono"
-                                   class="form-label"></label>
-                            <input asp-for="Telefono" class="form-control"
-                                   placeholder="Es. interno 1234" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Password -->
-            <div class="form-section">
-                <div class="form-section-header">
-                    <i class="bi bi-lock text-primary"></i>
-                    <h4 class="form-section-title">Password</h4>
-                </div>
-                <div class="form-section-body">
-                    <div class="row g-3">
                         <div class="col-md-6">
-                            <label asp-for="Password"
-                                   class="form-label"></label>
-                            <input asp-for="Password"
-                                   type="password" class="form-control"
+                            <label asp-for="Telefono" class="form-label"></label>
+                            <input asp-for="Telefono" class="form-control"
+                                   placeholder="Es. +39 081 123456" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" type="password"
+                                   class="form-control"
                                    placeholder="Min. 8 caratteri" />
-                            <span asp-validation-for="Password"
-                                  class="text-danger"
+                            <span asp-validation-for="Password" class="text-danger"
                                   style="font-size:0.775rem"></span>
                             <div class="form-text">
-                                Min. 8 caratteri, almeno una maiuscola
-                                e un numero
+                                Min. 8 caratteri con maiuscole, numeri e caratteri speciali.
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Ruoli -->
+            <!-- ── Ruoli e Permessi ─────────────────────────────────── -->
             <div class="form-section">
                 <div class="form-section-header">
                     <i class="bi bi-shield-lock text-primary"></i>
                     <h4 class="form-section-title">Ruoli e Permessi</h4>
                 </div>
                 <div class="form-section-body">
-                    <div class="row g-2">
+                    <div class="row g-2" id="ruoliGrid">
                         @foreach (var ruolo in ruoliSistema)
                         {
                             var desc = ruolo switch
@@ -133,23 +124,20 @@
                                 _            => ruolo
                             };
                             <div class="col-md-6">
-                                <div style="display:flex;align-items:flex-start;
-                                            gap:10px;padding:10px 12px;
+                                <div style="display:flex;align-items:flex-start;gap:10px;
+                                            padding:10px 12px;
                                             border:1.5px solid var(--neutral-200);
-                                            border-radius:8px;
-                                            cursor:pointer;"
+                                            border-radius:8px;cursor:pointer;background:white;"
+                                     id="ruoloCard_@ruolo"
                                      onclick="toggleRuolo('@ruolo', this)">
                                     <input type="checkbox"
                                            name="RuoliSelezionati"
                                            value="@ruolo"
                                            id="ruolo_@ruolo"
                                            style="margin-top:2px;cursor:pointer;"
-                                           @(Model.RuoliSelezionati
-                                               .Contains(ruolo)
-                                               ? "checked" : "") />
+                                           onchange="onRuoloChange()" />
                                     <div>
-                                        <div class="fw-600"
-                                             style="font-size:0.85rem;">
+                                        <div class="fw-600" style="font-size:0.85rem;">
                                             @ruolo
                                         </div>
                                         <div style="font-size:0.775rem;
@@ -161,13 +149,90 @@
                             </div>
                         }
                     </div>
+                    <div class="form-text mt-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        I moduli visibili saranno assegnati automaticamente in base al ruolo.
+                        Puoi personalizzarli nella sezione seguente.
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Moduli Abilitati ─────────────────────────────────── -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-grid-3x3-gap text-primary"></i>
+                    <h4 class="form-section-title">Moduli Abilitati</h4>
+                </div>
+                <div class="form-section-body">
+
+                    <!-- Toggle default/personalizzato -->
+                    <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3"
+                         style="background:var(--neutral-50);
+                                border:1px solid var(--neutral-200)">
+                        <div class="form-check form-switch mb-0">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   id="switchDefaultModuli"
+                                   style="width:2.5em;height:1.3em;"
+                                   checked
+                                   onchange="onSwitchDefault(this)" />
+                            <label class="form-check-label ms-2 fw-600"
+                                   for="switchDefaultModuli"
+                                   style="font-size:0.875rem">
+                                Usa moduli predefiniti dal ruolo
+                            </label>
+                        </div>
+                        <span class="badge bg-primary bg-opacity-10 text-primary fw-normal"
+                              style="font-size:0.75rem"
+                              id="badgeDefaultInfo">automatico</span>
+                    </div>
+
+                    <!-- Griglia moduli (disabled in default mode) -->
+                    <div id="moduliGrid" class="row g-2"
+                         style="opacity:0.5;pointer-events:none">
+                        @foreach (var mod in tuttiIModuli)
+                        {
+                            var nome  = nomiModuli.ContainsKey(mod) ? nomiModuli[mod] : mod;
+                            var icona = iconeModuli.ContainsKey(mod) ? iconeModuli[mod] : "bi-grid";
+                            <div class="col-md-6">
+                                <div id="card_@mod"
+                                     style="display:flex;align-items:flex-start;gap:10px;
+                                            padding:12px 14px;
+                                            border:1.5px solid var(--neutral-200);
+                                            border-radius:8px;cursor:pointer;background:white;
+                                            transition:all .15s;"
+                                     onclick="toggleModulo('@mod', this)">
+                                    <input type="checkbox"
+                                           name="ModuliSelezionati"
+                                           value="@mod"
+                                           id="mod_@mod"
+                                           style="margin-top:3px;cursor:pointer;" />
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi @icona text-primary"
+                                               style="font-size:1rem"></i>
+                                            <span class="fw-600"
+                                                  style="font-size:0.85rem">@mod</span>
+                                        </div>
+                                        <div style="font-size:0.775rem;
+                                                    color:var(--neutral-500);
+                                                    margin-top:2px">@nome</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div id="moduliHint" class="form-text mt-2">
+                        I moduli vengono assegnati automaticamente dai ruoli selezionati.
+                        Disattiva il toggle per personalizzarli manualmente.
+                    </div>
                 </div>
             </div>
 
             <div class="d-flex gap-3 mt-3">
                 <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-circle"></i>
-                    Crea Utente
+                    <i class="bi bi-person-plus"></i> Crea Utente
                 </button>
                 <a href="/Utenti" class="btn btn-ghost">Annulla</a>
             </div>
@@ -177,23 +242,89 @@
 
 @section Scripts {
 <script>
+// ─── Ruoli: toggle visuale ────────────────────────────────────────
 function toggleRuolo(ruolo, container) {
     const cb = document.getElementById('ruolo_' + ruolo);
     if (event.target === cb) return;
     cb.checked = !cb.checked;
-    container.style.borderColor = cb.checked
-        ? 'var(--primary)' : 'var(--neutral-200)';
-    container.style.background  = cb.checked
-        ? 'rgba(27,79,114,0.04)' : 'white';
+    container.style.borderColor = cb.checked ? 'var(--primary)' : 'var(--neutral-200)';
+    container.style.background  = cb.checked ? 'rgba(27,79,114,0.04)' : 'white';
+    if (document.getElementById('switchDefaultModuli').checked) {
+        aggiornaDefaultModuli();
+    }
 }
 
-// Init stile checkbox già selezionati
-document.querySelectorAll('input[name="RuoliSelezionati"]').forEach(cb => {
-    const container = cb.closest('[onclick]');
-    if (cb.checked && container) {
-        container.style.borderColor = 'var(--primary)';
-        container.style.background  = 'rgba(27,79,114,0.04)';
+function onRuoloChange() {
+    if (document.getElementById('switchDefaultModuli').checked) {
+        aggiornaDefaultModuli();
     }
-});
+}
+
+// ─── Moduli: toggle visuale ───────────────────────────────────────
+function toggleModulo(mod, container) {
+    if (document.getElementById('switchDefaultModuli').checked) return;
+    const cb = document.getElementById('mod_' + mod);
+    if (event.target === cb) return;
+    cb.checked = !cb.checked;
+    container.style.borderColor = cb.checked ? 'var(--primary)' : 'var(--neutral-200)';
+    container.style.background  = cb.checked ? 'rgba(27,79,114,0.04)' : 'white';
+}
+
+// ─── Switch default/personalizzato ───────────────────────────────
+function onSwitchDefault(sw) {
+    const grid  = document.getElementById('moduliGrid');
+    const badge = document.getElementById('badgeDefaultInfo');
+    const hint  = document.getElementById('moduliHint');
+
+    if (sw.checked) {
+        grid.style.opacity       = '0.5';
+        grid.style.pointerEvents = 'none';
+        badge.textContent        = 'automatico';
+        hint.innerHTML = 'I moduli vengono assegnati automaticamente dai ruoli selezionati.';
+        aggiornaDefaultModuli();
+    } else {
+        grid.style.opacity       = '1';
+        grid.style.pointerEvents = 'auto';
+        badge.textContent        = 'personalizzato';
+        hint.innerHTML = 'Moduli personalizzati — il default da ruolo è ignorato.';
+        // Deseleziona tutto per ricominciare
+        document.querySelectorAll('input[name="ModuliSelezionati"]').forEach(cb => {
+            cb.checked = false;
+            const card = document.getElementById('card_' + cb.value);
+            if (card) {
+                card.style.borderColor = 'var(--neutral-200)';
+                card.style.background  = 'white';
+            }
+        });
+    }
+}
+
+// ─── Calcola moduli default dal server (AJAX) ─────────────────────
+async function aggiornaDefaultModuli() {
+    const ruoliSelezionati = Array.from(
+        document.querySelectorAll('input[name="RuoliSelezionati"]:checked')
+    ).map(cb => cb.value);
+
+    try {
+        const resp = await fetch('/Utenti/GetDefaultModuli', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(ruoliSelezionati)
+        });
+        const defaultModuli = await resp.json();
+
+        document.querySelectorAll('input[name="ModuliSelezionati"]').forEach(cb => {
+            const isDefault = defaultModuli.includes(cb.value);
+            cb.checked = isDefault;
+            const card = document.getElementById('card_' + cb.value);
+            if (card) {
+                card.style.borderColor = isDefault ? 'var(--primary)' : 'var(--neutral-200)';
+                card.style.background  = isDefault ? 'rgba(27,79,114,0.04)' : 'white';
+            }
+        });
+    } catch (e) {
+        console.warn('Impossibile calcolare moduli default', e);
+    }
+}
 </script>
 }

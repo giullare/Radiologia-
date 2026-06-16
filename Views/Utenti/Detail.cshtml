@@ -1,19 +1,20 @@
 @model RadiologiaAppNew.Controllers.UtenteDetailVm
+@using RadiologiaAppNew.Helpers
 @{
     Layout = "_Layout";
-    ViewData["Title"] = $"{Model.Nome} {Model.Cognome}";
+    ViewData["Title"] = $"{Model.Cognome} {Model.Nome} — Profilo";
 }
 
 <div class="page-header">
     <div>
         <h1 class="page-title">
             <i class="bi bi-person-badge me-2 text-primary"></i>
-            @Model.Nome @Model.Cognome
+            @Model.Cognome @Model.Nome
         </h1>
         <p class="page-subtitle">@Model.Email</p>
     </div>
     <div class="page-actions">
-        <a href="/Utenti/Edit/@Model.Id" class="btn btn-outline">
+        <a href="/Utenti/Edit/@Model.Id" class="btn btn-primary">
             <i class="bi bi-pencil"></i> Modifica
         </a>
         <a href="/Utenti" class="btn btn-ghost">
@@ -23,128 +24,162 @@
 </div>
 
 <div class="row g-4">
+
+    <!-- ── Colonna sinistra ─────────────────────────────────────── -->
     <div class="col-lg-4">
-        <div class="card">
-            <div class="card-body text-center" style="padding:32px;">
+
+        <!-- Card avatar + info base -->
+        <div class="card text-center mb-4">
+            <div class="card-body" style="padding:2rem 1.5rem">
+                <!-- Avatar grande -->
                 <div style="width:80px;height:80px;border-radius:50%;
-                            background:@(Model.Attivo
-                                ? "var(--primary)" : "var(--neutral-300)");
-                            color:white;display:flex;align-items:center;
-                            justify-content:center;font-size:2rem;
-                            font-weight:700;margin:0 auto 16px;">
-                    @(Model.Nome.Length > 0 ? Model.Nome[0].ToString() : "")@(Model.Cognome.Length > 0 ? Model.Cognome[0].ToString() : "")
+                            background:var(--primary);color:white;
+                            display:flex;align-items:center;justify-content:center;
+                            font-weight:700;font-size:1.8rem;
+                            margin:0 auto 1rem;">
+                    @((Model.Nome.Length > 0 ? Model.Nome[0].ToString() : "") +
+                      (Model.Cognome.Length > 0 ? Model.Cognome[0].ToString() : ""))
                 </div>
-                <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">
+
+                <h4 style="font-weight:700;margin-bottom:4px">
                     @Model.Nome @Model.Cognome
-                </h2>
-                <div style="color:var(--neutral-500);
-                            font-size:0.875rem;margin-bottom:16px;">
+                </h4>
+                <div style="font-size:0.85rem;color:var(--neutral-500);margin-bottom:1rem">
                     @Model.Email
                 </div>
+
+                <!-- Stato account -->
                 @if (Model.Attivo)
                 {
                     <span class="badge-compliance badge-ok">
-                        <i class="bi bi-check-circle"></i> Attivo
+                        <i class="bi bi-check-circle"></i> Account Attivo
                     </span>
                 }
                 else
                 {
-                    <span class="badge-compliance badge-missing">
-                        <i class="bi bi-slash-circle"></i> Disabilitato
+                    <span class="badge-compliance badge-danger">
+                        <i class="bi bi-x-circle"></i> Account Disabilitato
                     </span>
                 }
-            </div>
-        </div>
-    </div>
 
-    <div class="col-lg-8">
-        <div class="form-section mb-4">
-            <div class="form-section-header">
-                <i class="bi bi-info-circle text-primary"></i>
-                <h4 class="form-section-title">Informazioni Account</h4>
-            </div>
-            <div class="form-section-body">
-                <div class="row g-3">
+                <hr style="margin:1.25rem 0" />
+
+                <!-- Info contatto -->
+                <div style="text-align:left">
                     @if (!string.IsNullOrEmpty(Model.Telefono))
                     {
-                        <div class="col-md-4">
-                            <div class="form-label">Telefono Interno</div>
-                            <div class="fw-600">@Model.Telefono</div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-telephone text-primary"></i>
+                            <span style="font-size:0.875rem">@Model.Telefono</span>
                         </div>
                     }
-                    <div class="col-md-4">
-                        <div class="form-label">Registrato il</div>
-                        <div class="fw-600">
-                            @Model.CreatedAt.ToString("dd/MM/yyyy")
-                        </div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-calendar-plus text-primary"></i>
+                        <span style="font-size:0.875rem">
+                            Creato il @Model.CreatedAt.ToString("dd/MM/yyyy")
+                        </span>
                     </div>
-                    <div class="col-md-4">
-                        <div class="form-label">Ultimo Accesso</div>
-                        <div class="fw-600">
-                            @(Model.UltimoAccesso.HasValue
-                                ? Model.UltimoAccesso.Value
-                                    .ToString("dd/MM/yyyy HH:mm")
-                                : "Mai effettuato")
-                        </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-clock text-primary"></i>
+                        <span style="font-size:0.875rem">
+                            Ultimo accesso:
+                            @if (Model.UltimoAccesso.HasValue)
+                            {
+                                @Model.UltimoAccesso.Value.ToString("dd/MM/yyyy HH:mm")
+                            }
+                            else
+                            {
+                                <span style="color:var(--neutral-400)">mai</span>
+                            }
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="form-section">
+        <!-- Azioni rapide -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-lightning card-icon"></i>
+                    Azioni Rapide
+                </h3>
+            </div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a href="/Utenti/Edit/@Model.Id" class="btn btn-primary w-100">
+                    <i class="bi bi-pencil"></i> Modifica Utente
+                </a>
+                <form asp-action="ToggleAttivo" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit"
+                            class="btn @(Model.Attivo ? "btn-warning" : "btn-success") w-100"
+                            data-confirm="@(Model.Attivo
+                                ? $"Disabilitare l'account di {Model.Cognome} {Model.Nome}?"
+                                : $"Riabilitare l'account di {Model.Cognome} {Model.Nome}?")">
+                        <i class="bi @(Model.Attivo ? "bi-person-slash" : "bi-person-check")"></i>
+                        @(Model.Attivo ? "Disabilita Account" : "Riabilita Account")
+                    </button>
+                </form>
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger w-100"
+                            data-confirm="Eliminare definitivamente @Model.Cognome @Model.Nome? L'operazione non è reversibile.">
+                        <i class="bi bi-trash"></i> Elimina Utente
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Colonna destra ───────────────────────────────────────── -->
+    <div class="col-lg-8">
+
+        <!-- Ruoli -->
+        <div class="form-section mb-4">
             <div class="form-section-header">
                 <i class="bi bi-shield-lock text-primary"></i>
-                <h4 class="form-section-title">
-                    Ruoli Assegnati (@Model.Ruoli.Count)
-                </h4>
+                <h4 class="form-section-title">Ruoli e Permessi</h4>
             </div>
             <div class="form-section-body">
                 @if (!Model.Ruoli.Any())
                 {
-                    <div style="color:var(--neutral-400);
-                                font-size:0.875rem;">
+                    <span style="color:var(--neutral-400);font-size:0.875rem">
                         Nessun ruolo assegnato
-                    </div>
+                    </span>
                 }
                 else
                 {
                     <div class="row g-2">
-                        @foreach (var ruolo in Model.Ruoli)
+                        @foreach (var r in Model.Ruoli)
                         {
-                            var desc = ruolo switch
+                            var desc = r switch
                             {
-                                "ADMIN_ORG"  => "Accesso completo al sistema",
-                                "EFM"        => "Gestione apparecchiature e CQ",
-                                "EDR"        => "Adempimenti radioprotezione",
-                                "RIR"        => "Benestare clinico impianti",
-                                "SFM"        => "Verifiche tecniche specialistiche",
-                                "MA"         => "Responsabile medico RM",
-                                "ES"         => "Sicurezza RM",
-                                "MR"         => "Medico responsabile RM",
-                                "RQ"         => "Supervisione qualità",
-                                "OPERATORE"  => "Inserimento dati limitato",
-                                "READER"     => "Solo lettura",
-                                _            => "—"
+                                "ADMIN_ORG"  => ("Amministratore completo", "danger", "bi-shield-fill-exclamation"),
+                                "EFM"        => ("Esperto Fisica Medica", "primary", "bi-activity"),
+                                "EDR"        => ("Esperto Radioprotezione", "success", "bi-radioactive"),
+                                "RIR"        => ("Resp. Impianto Radiologico", "info", "bi-building"),
+                                "SFM"        => ("Specialista Fisica Medica", "primary", "bi-microscope"),
+                                "MA"         => ("Medico Autorizzato (RM)", "secondary", "bi-person-badge"),
+                                "ES"         => ("Esperto Sicurezza (RM)", "secondary", "bi-magnet"),
+                                "MR"         => ("Medico Responsabile (RM)", "secondary", "bi-person-badge"),
+                                "RQ"         => ("Responsabile Qualità", "warning", "bi-star"),
+                                "OPERATORE"  => ("Operatore dati", "secondary", "bi-keyboard"),
+                                "READER"     => ("Sola lettura", "secondary", "bi-eye"),
+                                _            => (r, "secondary", "bi-person")
                             };
                             <div class="col-md-6">
-                                <div style="display:flex;gap:10px;
-                                            align-items:flex-start;
-                                            padding:10px 14px;
-                                            background:rgba(27,79,114,0.04);
-                                            border:1.5px solid var(--primary);
-                                            border-radius:8px;">
-                                    <i class="bi bi-shield-fill-check"
-                                       style="color:var(--primary);
-                                              margin-top:2px;"></i>
+                                <div style="display:flex;align-items:center;gap:10px;
+                                            padding:10px 12px;
+                                            border:1.5px solid var(--neutral-200);
+                                            border-radius:8px;
+                                            background:white;">
+                                    <i class="bi @desc.Item3 text-@desc.Item2"
+                                       style="font-size:1.1rem"></i>
                                     <div>
-                                        <div class="fw-700"
-                                             style="font-size:0.875rem;
-                                                    color:var(--primary);">
-                                            @ruolo
-                                        </div>
-                                        <div style="font-size:0.775rem;
-                                                    color:var(--neutral-500);">
-                                            @desc
+                                        <div class="fw-600" style="font-size:0.85rem">@r</div>
+                                        <div style="font-size:0.775rem;color:var(--neutral-500)">
+                                            @desc.Item1
                                         </div>
                                     </div>
                                 </div>
@@ -154,5 +189,110 @@
                 }
             </div>
         </div>
+
+        <!-- Moduli abilitati -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="bi bi-grid-3x3-gap text-primary"></i>
+                <h4 class="form-section-title">
+                    Moduli Abilitati
+                    @if (Model.ModuliPersonalizzati)
+                    {
+                        <span class="badge bg-warning bg-opacity-15 text-warning fw-normal ms-2"
+                              style="font-size:0.72rem;vertical-align:middle">
+                            <i class="bi bi-pencil"></i> personalizzati
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-primary bg-opacity-10 text-primary fw-normal ms-2"
+                              style="font-size:0.72rem;vertical-align:middle">
+                            <i class="bi bi-magic"></i> da ruolo
+                        </span>
+                    }
+                </h4>
+            </div>
+            <div class="form-section-body">
+
+                @if (!Model.ModuliEffettivi.Any())
+                {
+                    <div style="color:var(--neutral-400);font-size:0.875rem">
+                        Nessun modulo abilitato
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var mod in new[] {
+                            ModuliHelper.MOD1,
+                            ModuliHelper.MOD2,
+                            ModuliHelper.MOD3,
+                            ModuliHelper.MOD4 })
+                        {
+                            bool attivo = Model.ModuliEffettivi.Contains(mod);
+                            var nome    = ModuliHelper.NomiModuli.ContainsKey(mod)
+                                          ? ModuliHelper.NomiModuli[mod] : mod;
+                            var icona   = ModuliHelper.IconeModuli.ContainsKey(mod)
+                                          ? ModuliHelper.IconeModuli[mod] : "bi-grid";
+
+                            <div class="col-md-6">
+                                <div style="display:flex;align-items:center;gap:12px;
+                                            padding:14px 16px;border-radius:10px;
+                                            border:1.5px solid @(attivo
+                                                ? "var(--primary)" : "var(--neutral-200)");
+                                            background:@(attivo
+                                                ? "rgba(27,79,114,0.04)" : "var(--neutral-50)");
+                                            opacity:@(attivo ? "1" : "0.5")">
+                                    <div style="width:42px;height:42px;border-radius:10px;
+                                                background:@(attivo
+                                                    ? "var(--primary)" : "var(--neutral-300)");
+                                                display:flex;align-items:center;
+                                                justify-content:center;flex-shrink:0">
+                                        <i class="bi @icona"
+                                           style="color:white;font-size:1.1rem"></i>
+                                    </div>
+                                    <div style="flex:1;min-width:0">
+                                        <div class="fw-600" style="font-size:0.85rem">
+                                            @mod
+                                        </div>
+                                        <div style="font-size:0.775rem;
+                                                    color:var(--neutral-500);
+                                                    white-space:nowrap;overflow:hidden;
+                                                    text-overflow:ellipsis">
+                                            @nome
+                                        </div>
+                                    </div>
+                                    @if (attivo)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-x-circle text-muted"
+                                           style="opacity:.4"></i>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="form-text mt-2">
+                        @if (Model.ModuliPersonalizzati)
+                        {
+                            <i class="bi bi-info-circle me-1"></i>
+                            <span>I moduli di questo utente sono stati personalizzati
+                            dall'amministratore e non riflettono il default del ruolo.</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-info-circle me-1"></i>
+                            <span>I moduli sono calcolati automaticamente dai ruoli assegnati.
+                            Puoi personalizzarli dalla pagina di modifica.</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
     </div>
 </div>

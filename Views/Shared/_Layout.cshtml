@@ -1,4 +1,33 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@using RadiologiaAppNew.Models
+@using RadiologiaAppNew.Helpers
+@inject UserManager<ApplicationUser> LayoutUserManager
+@inject SignInManager<ApplicationUser> LayoutSignInManager
+
+@{
+    // ── Calcola moduli attivi per l'utente corrente ──────────────────
+    List<string> _moduliAttivi = new();
+
+    if (LayoutSignInManager.IsSignedIn(User))
+    {
+        var _currentUser = await LayoutUserManager.GetUserAsync(User);
+        if (_currentUser != null)
+        {
+            var _ruoli = await LayoutUserManager.GetRolesAsync(_currentUser);
+            _moduliAttivi = ModuliHelper.GetModuliEffettivi(
+                _currentUser.ModuliAbilitati, _ruoli);
+        }
+    }
+
+    bool _hasMod1 = _moduliAttivi.Contains(ModuliHelper.MOD1);
+    bool _hasMod2 = _moduliAttivi.Contains(ModuliHelper.MOD2);
+    bool _hasMod3 = _moduliAttivi.Contains(ModuliHelper.MOD3);
+    bool _hasMod4 = _moduliAttivi.Contains(ModuliHelper.MOD4);
+
+    string _ctrl   = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string _action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+}
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="utf-8" />
@@ -40,164 +69,212 @@
             <!-- Nav -->
             <nav class="sidebar-nav">
 
-                <!-- Dashboard -->
+                <!-- Dashboard — sempre visibile -->
                 <div class="nav-section-title">Generale</div>
 
-                <div class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
-                       href="/Home/Index">
+                <div class="nav-item @(_ctrl == "Home" ? "active" : "")">
+                    <a class="nav-link @(_ctrl == "Home" ? "active" : "")" href="/Home/Index">
                         <i class="bi bi-speedometer2 nav-icon"></i>
                         <span class="nav-label">Dashboard</span>
                     </a>
                 </div>
 
-                <!-- Modulo 1 -->
-                <div class="nav-section-title">Modulo 1 — Radiologia</div>
+                <!-- ─── MODULO 1 — Apparecchiature Radiologiche ─────── -->
+                @if (_hasMod1)
+                {
+                    <div class="nav-section-title">
+                        <i class="bi bi-radioactive me-1" style="font-size:0.65rem"></i>
+                        Attrezzature medico-radiologiche<br> 
+                        (D.lgs.101/20 s.m.i)
+                    </div>
 
-                <div class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Apparecchiature" ? "open" : "")">
-                    <button class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Apparecchiature" ? "active" : "")"
-                            onclick="toggleSubmenu(this)">
-                        <i class="bi bi-hdd-rack nav-icon"></i>
-                        <span class="nav-label">Apparecchiature</span>
-                        <i class="bi bi-chevron-right nav-arrow"></i>
-                    </button>
-                    <div class="nav-submenu @(ViewContext.RouteData.Values["controller"]?.ToString() == "Apparecchiature" ? "open" : "")">
-                        <div class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Apparecchiature" ? "active" : "")"
-                               href="/Apparecchiature">
-                                <i class="bi bi-list-ul nav-icon"></i>
-                                <span class="nav-label">Catalogo</span>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")"
-                               href="/Apparecchiature/Create">
-                                <i class="bi bi-plus-circle nav-icon"></i>
-                                <span class="nav-label">Nuova Apparecchiatura</span>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Apparecchiature?stato=Cessata">
-                                <i class="bi bi-archive nav-icon"></i>
-                                <span class="nav-label">Cessate</span>
-                            </a>
+                    <div class="nav-item @(_ctrl == "Apparecchiature" ? "open" : "")">
+                        <button class="nav-link @(_ctrl == "Apparecchiature" ? "active" : "")"
+                                onclick="toggleSubmenu(this)">
+                            <i class="bi bi-hdd-rack nav-icon"></i>
+                            <span class="nav-label">Apparecchiature Radiologiche</span>
+                            <i class="bi bi-chevron-right nav-arrow"></i>
+                        </button>
+                        <div class="nav-submenu @(_ctrl == "Apparecchiature" ? "open" : "")">
+                            <div class="nav-item">
+                                <a class="nav-link @(_action == "Index" && _ctrl == "Apparecchiature" ? "active" : "")"
+                                   href="/Apparecchiature">
+                                    <i class="bi bi-list-ul nav-icon"></i>
+                                    <span class="nav-label">Inventario</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link @(_action == "Create" && _ctrl == "Apparecchiature" ? "active" : "")"
+                                   href="/Apparecchiature/Create">
+                                    <i class="bi bi-plus-circle nav-icon"></i>
+                                    <span class="nav-label">Nuova</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Apparecchiature?stato=Cessata">
+                                    <i class="bi bi-archive nav-icon"></i>
+                                    <span class="nav-label">Cessate</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Verifiche" ? "open" : "")">
-                    <button class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Verifiche" ? "active" : "")"
-                            onclick="toggleSubmenu(this)">
-                        <i class="bi bi-clipboard2-check nav-icon"></i>
-                        <span class="nav-label">Verifiche CQ</span>
-                        <i class="bi bi-chevron-right nav-arrow"></i>
-                    </button>
-                    <div class="nav-submenu @(ViewContext.RouteData.Values["controller"]?.ToString() == "Verifiche" ? "open" : "")">
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Verifiche">
-                                <i class="bi bi-list-check nav-icon"></i>
-                                <span class="nav-label">Tutte le Verifiche</span>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Verifiche?tipo=Accettazione">
-                                <i class="bi bi-check2-circle nav-icon"></i>
-                                <span class="nav-label">Accettazioni</span>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Verifiche?tipo=Ldr">
-                                <i class="bi bi-graph-up nav-icon"></i>
-                                <span class="nav-label">LDR</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Adempimenti" ? "open" : "")">
-                    <button class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Adempimenti" ? "active" : "")"
-                            onclick="toggleSubmenu(this)">
-                        <i class="bi bi-file-earmark-text nav-icon"></i>
-                        <span class="nav-label">Adempimenti EDR</span>
-                        <i class="bi bi-chevron-right nav-arrow"></i>
-                    </button>
-                    <div class="nav-submenu @(ViewContext.RouteData.Values["controller"]?.ToString() == "Adempimenti" ? "open" : "")">
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Adempimenti/NotifichePratica">
-                                <i class="bi bi-send nav-icon"></i>
-                                <span class="nav-label">Notifiche di Pratica</span>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Adempimenti/NullaOsta">
-                                <i class="bi bi-shield-check nav-icon"></i>
-                                <span class="nav-label">Nulla Osta</span>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Adempimenti/Verbali">
-                                <i class="bi bi-journal-text nav-icon"></i>
-                                <span class="nav-label">Verbali Sopralluogo</span>
-                            </a>
+                    <div class="nav-item @(_ctrl == "Verifiche" ? "open" : "")">
+                        <button class="nav-link @(_ctrl == "Verifiche" ? "active" : "")"
+                                onclick="toggleSubmenu(this)">
+                            <i class="bi bi-clipboard2-check nav-icon"></i>
+                            <span class="nav-label">Garanzia della qualità</span>
+                            <i class="bi bi-chevron-right nav-arrow"></i>
+                        </button>
+                        <div class="nav-submenu @(_ctrl == "Verifiche" ? "open" : "")">
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Verifiche">
+                                    <i class="bi bi-list-check nav-icon"></i>
+                                    <span class="nav-label">Tutte le Verifiche</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Verifiche?tipo=Accettazione">
+                                    <i class="bi bi-check2-circle nav-icon"></i>
+                                    <span class="nav-label">Accettazioni</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Verifiche?tipo=Ldr">
+                                    <i class="bi bi-graph-up nav-icon"></i>
+                                    <span class="nav-label">LDR</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Modulo 2 -->
-                <div class="nav-section-title">Modulo 2 — RM</div>
-
-                <div class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RisonanzaMagnetica" ? "active" : "")"
-                       href="/RisonanzaMagnetica">
-                        <i class="bi bi-magnet nav-icon"></i>
-                        <span class="nav-label">Risonanza Magnetica</span>
-                    </a>
-                </div>
-
-                <!-- Modulo 3 -->
-                <div class="nav-section-title">Modulo 3 — Med. Nucleare</div>
-
-                <div class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "MedicinaNucleare" ? "active" : "")"
-                       href="/MedicinaNucleare">
-                        <i class="bi bi-radioactive nav-icon"></i>
-                        <span class="nav-label">Registri MN</span>
-                    </a>
-                </div>
-
-                <!-- Modulo 4 -->
-                <div class="nav-section-title">Modulo 4 — Lu177</div>
-
-                <div class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lu177" ? "open" : "")">
-                    <button class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lu177" ? "active" : "")"
-                            onclick="toggleSubmenu(this)">
-                        <i class="bi bi-person-heart nav-icon"></i>
-                        <span class="nav-label">Terapia Lu177</span>
-                        <i class="bi bi-chevron-right nav-arrow"></i>
-                    </button>
-                    <div class="nav-submenu @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lu177" ? "open" : "")">
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Lu177">
-                                <i class="bi bi-people nav-icon"></i>
-                                <span class="nav-label">Pazienti</span>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a class="nav-link" href="/Lu177/Statistiche">
-                                <i class="bi bi-bar-chart nav-icon"></i>
-                                <span class="nav-label">Statistiche Cliniche</span>
-                            </a>
+                    <div class="nav-item @(_ctrl == "Adempimenti" ? "open" : "")">
+                        <button class="nav-link @(_ctrl == "Adempimenti" ? "active" : "")"
+                                onclick="toggleSubmenu(this)">
+                            <i class="bi bi-file-earmark-text nav-icon"></i>
+                            <span class="nav-label">Sorveglianza Fisica</span>
+                            <i class="bi bi-chevron-right nav-arrow"></i>
+                        </button>
+                        <div class="nav-submenu @(_ctrl == "Adempimenti" ? "open" : "")">
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Adempimenti/NotifichePratica">
+                                    <i class="bi bi-send nav-icon"></i>
+                                    <span class="nav-label">Notifiche di Pratica</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Adempimenti/NullaOsta">
+                                    <i class="bi bi-shield-check nav-icon"></i>
+                                    <span class="nav-label">Nulla Osta</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Adempimenti/Verbali">
+                                    <i class="bi bi-journal-text nav-icon"></i>
+                                    <span class="nav-label">Verbali Sopralluogo</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
 
-                <!-- Admin -->
-                @if (User.IsInRole("ADMIN_ORG"))
+                <!-- ─── MODULO 2 — Risonanza Magnetica ──────────────── -->
+                @if (_hasMod2)
+                {
+                    <div class="nav-section-title">
+                        <i class="bi bi-magnet me-1" style="font-size:0.65rem"></i>
+                        Apparecchiature a Risonanza Magnetica<br>
+                        (DM 14/01/21)
+                    </div>
+
+                    <div class="nav-item @(_ctrl == "Apparecchiature" && ViewData["IsRM"] != null ? "open" : "")">
+                        <button class="nav-link @(_ctrl == "Apparecchiature" && ViewData["IsRM"] != null ? "active" : "")"
+                                onclick="toggleSubmenu(this)">
+                            <i class="bi bi-magnet nav-icon"></i>
+                            <span class="nav-label">Apparecchiature RM</span>
+                            <i class="bi bi-chevron-right nav-arrow"></i>
+                        </button>
+                        <div class="nav-submenu @(_ctrl == "Apparecchiature" && ViewData["IsRM"] != null ? "open" : "")">
+                            <div class="nav-item">
+                                <a class="nav-link @(_action == "IndexRM" ? "active" : "")"
+                                   href="/Apparecchiature/IndexRM">
+                                    <i class="bi bi-list-ul nav-icon"></i>
+                                    <span class="nav-label">Inventario</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link @(_action == "CreateRM" ? "active" : "")"
+                                   href="/Apparecchiature/CreateRM">
+                                    <i class="bi bi-plus-circle nav-icon"></i>
+                                    <span class="nav-label">Nuova</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Apparecchiature/IndexRM?stato=Cessata">
+                                    <i class="bi bi-archive nav-icon"></i>
+                                    <span class="nav-label">Cessate</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- ─── MODULO 3 — Medicina Nucleare ────────────────── -->
+                @if (_hasMod3)
+                {
+                    <div class="nav-section-title">
+                        <i class="bi bi-activity me-1" style="font-size:0.65rem"></i>
+                        Modulo 3 — Med. Nucleare
+                    </div>
+
+                    <div class="nav-item">
+                        <a class="nav-link @(_ctrl == "MedicinaNucleare" ? "active" : "")"
+                           href="/MedicinaNucleare">
+                            <i class="bi bi-radioactive nav-icon"></i>
+                            <span class="nav-label">Registri MN</span>
+                        </a>
+                    </div>
+                }
+
+                <!-- ─── MODULO 4 — Lu177 ─────────────────────────────── -->
+                @if (_hasMod4)
+                {
+                    <div class="nav-section-title">
+                        <i class="bi bi-heart-pulse me-1" style="font-size:0.65rem"></i>
+                        Modulo 4 — Lu177
+                    </div>
+
+                    <div class="nav-item @(_ctrl == "Lu177" ? "open" : "")">
+                        <button class="nav-link @(_ctrl == "Lu177" ? "active" : "")"
+                                onclick="toggleSubmenu(this)">
+                            <i class="bi bi-person-heart nav-icon"></i>
+                            <span class="nav-label">Terapia Lu177</span>
+                            <i class="bi bi-chevron-right nav-arrow"></i>
+                        </button>
+                        <div class="nav-submenu @(_ctrl == "Lu177" ? "open" : "")">
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Lu177">
+                                    <i class="bi bi-people nav-icon"></i>
+                                    <span class="nav-label">Pazienti</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="/Lu177/Statistiche">
+                                    <i class="bi bi-bar-chart nav-icon"></i>
+                                    <span class="nav-label">Statistiche Cliniche</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- ─── Amministrazione ──────────────────────────────── -->
+                @if (User.IsInRole("ADMIN_ORG") || User.IsInRole("SUPER_ADMIN"))
                 {
                     <div class="nav-section-title">Amministrazione</div>
 
                     <div class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Utenti" ? "active" : "")"
+                        <a class="nav-link @(_ctrl == "Utenti" ? "active" : "")"
                            href="/Utenti">
                             <i class="bi bi-people nav-icon"></i>
                             <span class="nav-label">Gestione Utenti</span>
@@ -205,7 +282,7 @@
                     </div>
 
                     <div class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Configurazione" ? "active" : "")"
+                        <a class="nav-link @(_ctrl == "Configurazione" ? "active" : "")"
                            href="/Configurazione">
                             <i class="bi bi-gear nav-icon"></i>
                             <span class="nav-label">Configurazione</span>
@@ -270,12 +347,58 @@
                     }
                 </a>
 
-                <!-- Nuova apparecchiatura rapida -->
-                @if (User.IsInRole("EFM") || User.IsInRole("EDR") || User.IsInRole("ADMIN_ORG"))
+                <!-- Nuova apparecchiatura rapida — dropdown se MOD1 e/o MOD2 abilitati -->
+                @{
+                    bool _puoCreare = User.IsInRole("EFM") || User.IsInRole("EDR") ||
+                                      User.IsInRole("ADMIN_ORG") || User.IsInRole("ES") ||
+                                      User.IsInRole("MR");
+                    bool _showPlus  = _puoCreare && (_hasMod1 || _hasMod2);
+                }
+                @if (_showPlus)
                 {
-                    <a class="header-btn" href="/Apparecchiature/Create" title="Nuova Apparecchiatura">
-                        <i class="bi bi-plus-circle"></i>
-                    </a>
+                    @if (_hasMod1 && _hasMod2)
+                    {
+                        <!-- Entrambi i moduli — dropdown di scelta -->
+                        <div class="dropdown">
+                            <button class="header-btn" data-bs-toggle="dropdown"
+                                    title="Nuova Apparecchiatura">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-1">
+                                <li>
+                                    <h6 class="dropdown-header"
+                                        style="font-size:0.75rem;">Nuova apparecchiatura</h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/Apparecchiature/Create">
+                                        <i class="bi bi-radioactive me-2 text-primary"></i>
+                                        Radiologica (D.Lgs.101/20)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/Apparecchiature/CreateRM">
+                                        <i class="bi bi-magnet me-2"
+                                           style="color:#8e44ad"></i>
+                                        Risonanza Magnetica (DM 14/01/21)
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else if (_hasMod1)
+                    {
+                        <a class="header-btn" href="/Apparecchiature/Create"
+                           title="Nuova Apparecchiatura Radiologica">
+                            <i class="bi bi-plus-circle"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="header-btn" href="/Apparecchiature/CreateRM"
+                           title="Nuova Apparecchiatura RM">
+                            <i class="bi bi-plus-circle"></i>
+                        </a>
+                    }
                 }
 
                 <!-- Avatar utente con dropdown -->
@@ -306,6 +429,12 @@
                                       User.IsInRole("EDR") ? "Esperto di Radioprotezione" :
                                       User.IsInRole("RIR") ? "Responsabile Impianto" : "Utente")
                                 </div>
+                                @if (_moduliAttivi.Any())
+                                {
+                                    <div style="font-size:0.7rem; color:var(--neutral-400); margin-top:2px">
+                                        @string.Join(" · ", _moduliAttivi)
+                                    </div>
+                                }
                             </div>
                         </li>
                         <li>
@@ -399,10 +528,9 @@ else
 
 <script>
 // ─── SIDEBAR TOGGLE ──────────────────────────────────────────────
-const appWrapper   = document.getElementById('appWrapper');
+const appWrapper    = document.getElementById('appWrapper');
 const sidebarToggle = document.getElementById('sidebarToggle');
 
-// Ripristina stato sidebar dal localStorage
 if (localStorage.getItem('sidebarCollapsed') === 'true') {
     appWrapper?.classList.add('sidebar-collapsed');
 }
@@ -415,7 +543,6 @@ sidebarToggle?.addEventListener('click', () => {
     );
 });
 
-// Mobile: overlay click chiude sidebar
 document.addEventListener('click', (e) => {
     if (window.innerWidth <= 768) {
         const sidebar = document.getElementById('sidebar');
@@ -431,13 +558,11 @@ function toggleSubmenu(btn) {
     const submenu = navItem.querySelector('.nav-submenu');
     const isOpen  = navItem.classList.contains('open');
 
-    // Chiudi tutti gli altri
     document.querySelectorAll('.nav-item.open').forEach(item => {
         item.classList.remove('open');
         item.querySelector('.nav-submenu')?.classList.remove('open');
     });
 
-    // Apri/chiudi questo
     if (!isOpen) {
         navItem.classList.add('open');
         submenu?.classList.add('open');

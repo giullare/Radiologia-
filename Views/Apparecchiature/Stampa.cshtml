@@ -1,0 +1,505 @@
+@model RadiologiaAppNew.Models.Apparecchiatura
+@using RadiologiaAppNew.Enums
+@{
+    Layout = null; // Nessun layout — pagina di stampa standalone
+    ViewData["Title"] = $"Scheda — {Model.Descrizione}";
+}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8" />
+    <title>Scheda Apparecchiatura — @Model.Descrizione</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 11pt;
+            color: #1a1a2e;
+            background: white;
+            padding: 20mm 18mm;
+        }
+        /* HEADER */
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #1B4F72;
+            margin-bottom: 18px;
+        }
+        .print-header h1 {
+            font-size: 16pt;
+            color: #1B4F72;
+            font-weight: 700;
+        }
+        .print-header .subtitle {
+            font-size: 9pt;
+            color: #666;
+            margin-top: 4px;
+        }
+        .print-header .meta {
+            text-align: right;
+            font-size: 9pt;
+            color: #666;
+        }
+        /* SECTION */
+        .section {
+            margin-bottom: 16px;
+            break-inside: avoid;
+        }
+        .section-title {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #1B4F72;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 5px 10px;
+            background: #EBF5FB;
+            border-left: 4px solid #1B4F72;
+            margin-bottom: 10px;
+        }
+        /* GRID */
+        .grid { display: grid; gap: 8px; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+        .field { }
+        .field-label {
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 2px;
+        }
+        .field-value {
+            font-size: 10.5pt;
+            color: #1a1a2e;
+            font-weight: 500;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 3px;
+            min-height: 18px;
+        }
+        .field-value.empty { color: #bbb; font-style: italic; }
+        /* BADGE */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        .badge-ok      { background: #d5f5e3; color: #1e8449; }
+        .badge-warning { background: #fef9e7; color: #b7950b; }
+        .badge-danger  { background: #fadbd8; color: #922b21; }
+        .badge-gray    { background: #f0f0f0; color: #555; }
+        /* RESPONSABILE */
+        .responsabile-row {
+            display: grid;
+            grid-template-columns: 160px 1fr 1fr 1fr;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: start;
+        }
+        .responsabile-row:last-child { border-bottom: none; }
+        .resp-role {
+            font-size: 8.5pt;
+            font-weight: 700;
+            color: #1B4F72;
+        }
+        /* FOOTER */
+        .print-footer {
+            margin-top: 24px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+            font-size: 8.5pt;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+        }
+        /* FIRMA */
+        .firma-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        .firma {
+            border-top: 1px solid #333;
+            padding-top: 4px;
+            font-size: 9pt;
+            color: #555;
+            text-align: center;
+        }
+        @@media print {
+            body { padding: 12mm 14mm; }
+            .no-print { display: none !important; }
+            @@page { margin: 0; size: A4 portrait; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOOLBAR (solo a schermo) -->
+    <div class="no-print" style="margin-bottom:20px;display:flex;gap:10px;">
+        <button onclick="window.print()"
+                style="padding:8px 20px;background:#1B4F72;color:white;
+                       border:none;border-radius:6px;cursor:pointer;font-size:14px;">
+            🖨️ Stampa / Salva PDF
+        </button>
+        <button onclick="window.close()"
+                style="padding:8px 16px;background:#eee;border:1px solid #ccc;
+                       border-radius:6px;cursor:pointer;">
+            ✕ Chiudi
+        </button>
+    </div>
+
+    <!-- INTESTAZIONE -->
+    <div class="print-header">
+        <div>
+            <h1>Scheda Apparecchiatura</h1>
+            <div class="subtitle">
+                Attrezzature medico-radiologiche — D.Lgs. 101/20 s.m.i
+            </div>
+        </div>
+        <div class="meta">
+            <div><strong>@Model.Codice</strong></div>
+            <div>Generato il @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
+            <div>
+                @{
+                    var statoLabel = Model.Stato switch {
+                        StatoApparecchiatura.Attiva => "Attiva",
+                        StatoApparecchiatura.Cessata => "Cessata",
+                        StatoApparecchiatura.InInstallazione => "In Installazione",
+                        StatoApparecchiatura.InManutenzione => "In Manutenzione",
+                        _ => Model.Stato.ToString()
+                    };
+                    var statoClass = Model.Stato == StatoApparecchiatura.Attiva ? "badge-ok"
+                                   : Model.Stato == StatoApparecchiatura.Cessata ? "badge-danger"
+                                   : "badge-warning";
+                }
+                <span class="badge @statoClass">@statoLabel</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. IDENTIFICAZIONE -->
+    <div class="section">
+        <div class="section-title">1. Identificazione</div>
+        <div class="grid grid-2">
+            @{ string V(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v; }
+            <div class="field">
+                <div class="field-label">Descrizione</div>
+                <div class="field-value">@V(Model.Descrizione)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Codice Interno</div>
+                <div class="field-value">@V(Model.Codice)</div>
+            </div>
+        </div>
+        <div class="grid grid-4" style="margin-top:8px">
+            <div class="field">
+                <div class="field-label">Ambito</div>
+                <div class="field-value">
+                    @(Model.AmbitoIntervento?.ToString() ?? "—")
+                </div>
+            </div>
+            <div class="field">
+                <div class="field-label">Tipologia</div>
+                <div class="field-value">@V(Model.Tipologia)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Codice Cespite (SAP)</div>
+                <div class="field-value">@V(Model.SapId)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Codice Terminale (SIA)</div>
+                <div class="field-value">@V(Model.SiapDescrizione)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. DATI TECNICI -->
+    <div class="section">
+        <div class="section-title">2. Dati Tecnici</div>
+        <div class="grid grid-4">
+            <div class="field">
+                <div class="field-label">Costruttore</div>
+                <div class="field-value">@V(Model.Costruttore)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Modello</div>
+                <div class="field-value">@V(Model.Modello)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Matricola</div>
+                <div class="field-value">@V(Model.Matricola)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Numero Seriale</div>
+                <div class="field-value">@V(Model.SerialNumber)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Corrente Max (mA)</div>
+                <div class="field-value">
+                    @(Model.CorrenteMaxMa.HasValue ? $"{Model.CorrenteMaxMa} mA" : "—")
+                </div>
+            </div>
+            <div class="field">
+                <div class="field-label">Tensione Max (kV)</div>
+                <div class="field-value">
+                    @(Model.TensioneMaxKvolt.HasValue ? $"{Model.TensioneMaxKvolt} kV" : "—")
+                </div>
+            </div>
+            <div class="field">
+                <div class="field-label">Energia Max (keV)</div>
+                <div class="field-value">
+                    @(Model.EnergiaMaxKev.HasValue ? $"{Model.EnergiaMaxKev} keV" : "—")
+                </div>
+            </div>
+            <div class="field">
+                <div class="field-label">Data Accettazione</div>
+                <div class="field-value">
+                    @(Model.DataAccettazione.HasValue
+                        ? Model.DataAccettazione.Value.ToString("dd/MM/yyyy") : "—")
+                </div>
+            </div>
+            <div class="field">
+                <div class="field-label">LAN Collegata</div>
+                <div class="field-value">@(Model.LanCollegata ? "Sì" : "No")</div>
+            </div>
+            <div class="field">
+                <div class="field-label">SW Monitoraggio Dose</div>
+                <div class="field-value">@(Model.MedsquareInstallato ? "Sì" : "No")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. COLLOCAZIONE -->
+<div class="section">
+    <div class="section-title">3. Collocazione Fisica</div>
+
+    <div class="grid grid-3">
+
+        <!-- Collocazione completa -->
+        <div class="field">
+            <div class="field-label">Collocazione</div>
+            <div class="field-value">
+
+                @if (Model.Locale?.Piano?.Immobile?.Sito != null)
+                {
+                    <div><strong>Sito:</strong> @Model.Locale.Piano.Immobile.Sito.Nome</div>
+                }
+
+                @if (Model.Locale?.Piano?.Immobile != null)
+                {
+                    <div><strong>Edificio:</strong> @Model.Locale.Piano.Immobile.Nome</div>
+                }
+
+                @if (Model.Locale?.Piano != null)
+                {
+                    <div><strong>Piano:</strong> @Model.Locale.Piano.Nome</div>
+                }
+
+                @if (Model.Locale != null)
+                {
+                    <div>
+                        <strong>Locale:</strong> @Model.Locale.Nome
+                        @if (!string.IsNullOrEmpty(Model.Locale.Codice))
+                        {
+                            <span> (@Model.Locale.Codice)</span>
+                        }
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <!-- Struttura -->
+        <div class="field">
+            <div class="field-label">Struttura</div>
+            <div class="field-value">@V(Model.Reparto?.Nome)</div>
+        </div>
+
+        <!-- Dipartimento -->
+        <div class="field">
+            <div class="field-label">Dipartimento</div>
+            <div class="field-value">@V(Model.Dipartimento?.Nome)</div>
+        </div>
+
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.DescrizioneZoneClassificate))
+    {
+        <div class="field" style="margin-top:8px">
+            <div class="field-label">Zone Classificate</div>
+            <div class="field-value">@Model.DescrizioneZoneClassificate</div>
+        </div>
+    }
+</div>
+
+    <!-- 4. RESPONSABILI -->
+    <div class="section">
+        <div class="section-title">4. Responsabili</div>
+
+        @{
+            void PrintResp(string ruolo, string? nome, string? email, string? tel)
+            {
+                <div class="responsabile-row">
+                    <div class="resp-role">@ruolo</div>
+                    <div class="field-value">@V(nome)</div>
+                    <div class="field-value">@V(email)</div>
+                    <div class="field-value">@V(tel)</div>
+                </div>
+            }
+        }
+
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr 1fr;gap:8px;
+                    padding:4px 0 6px;border-bottom:2px solid #1B4F72;
+                    font-size:8.5pt;font-weight:700;color:#1B4F72;
+                    text-transform:uppercase;letter-spacing:.04em">
+            <div>Ruolo</div>
+            <div>Nome e Cognome</div>
+            <div>Email PEC</div>
+            <div>Telefono</div>
+        </div>
+
+        @{ PrintResp("Direttore Dipartimento",
+               Model.DirettoreDipartimento,
+               Model.DirettoreDipartimentoEmailPec,
+               Model.DirettoreDipartimentoTelefono); }
+        @{ PrintResp("Direttore Struttura",
+               Model.DirettoreStruttura,
+               Model.DirettoreStrutturaEmailPec,
+               Model.DirettoreStrutturaTelefono); }
+        @{ PrintResp("Preposto D.Lgs 101/20",
+               Model.Caposala,
+               Model.PrepostoEmailPec,
+               Model.PrepostoTelefono); }
+        @{ PrintResp("RIR",
+               Model.RirNome,
+               Model.RirEmailPec,
+               Model.RirTelefono); }
+        @{ PrintResp("SFM",
+               Model.SfmNome,
+               Model.SfmEmailPec,
+               Model.SfmTelefono); }
+        @{ PrintResp("EdR",
+               Model.EdrNome,
+               Model.EdrEmailPec,
+               Model.EdrTelefono); }
+    </div>
+
+    <!-- 5. ASSISTENZA -->
+    <div class="section">
+        <div class="section-title">5. Assistenza e Manutenzione</div>
+        <div class="grid grid-3">
+            <div class="field">
+                <div class="field-label">Società di Manutenzione</div>
+                <div class="field-value">@V(Model.SocietaManutenzione)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Tecnico di Riferimento</div>
+                <div class="field-value">@V(Model.TecnicoRiferimento)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">N. Assistenza Tecnica</div>
+                <div class="field-value">@V(Model.NumeroAssistenza)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Global Service</div>
+                <div class="field-value">@V(Model.GlobalService)</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Email Assistenza</div>
+                <div class="field-value">@V(Model.EmailAssistenza)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. TRACCIABILITÀ -->
+    <div class="section">
+        <div class="section-title">6. Tracciabilità e Denuncia di Messa in Servizio</div>
+        <div class="grid grid-2">
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px;
+                        border:1px solid #e0e0e0">
+                <div style="font-weight:700;color:#1B4F72;margin-bottom:8px;
+                             font-size:9.5pt">STRIMS</div>
+                <div class="grid grid-2">
+                    <div class="field">
+                        <div class="field-label">Stato</div>
+                        <div class="field-value">
+                            @(Model.StatoStrims switch {
+                                StatoAdempimento.Registrato => "Registrato",
+                                StatoAdempimento.DaRegistrare => "Da Registrare",
+                                StatoAdempimento.NonApplicabile => "Non Applicabile",
+                                _ => Model.StatoStrims.ToString()
+                            })
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">ID STRIMS</div>
+                        <div class="field-value">@V(Model.StrimsIdApparecchiatura)</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">Data Registrazione</div>
+                        <div class="field-value">
+                            @(Model.DataRegistrazioneStrims?.ToString("dd/MM/yyyy") ?? "—")
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">Notifica Pratica</div>
+                        <div class="field-value">
+                            @(Model.StrimsNpCaricata ? "✓ Caricata" : "Non caricata")
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px;
+                        border:1px solid #e0e0e0">
+                <div style="font-weight:700;color:#1B4F72;margin-bottom:8px;
+                             font-size:9.5pt">INAIL</div>
+                <div class="grid grid-2">
+                    <div class="field">
+                        <div class="field-label">Stato</div>
+                        <div class="field-value">
+                            @(Model.StatoInail switch {
+                                StatoAdempimento.Registrato => "Registrato",
+                                StatoAdempimento.DaRegistrare => "Da Registrare",
+                                StatoAdempimento.NonApplicabile => "Non Applicabile",
+                                _ => Model.StatoInail.ToString()
+                            })
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">N. Pratica INAIL</div>
+                        <div class="field-value">@V(Model.NumeroPraticaInail)</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">Data Registrazione</div>
+                        <div class="field-value">
+                            @(Model.DataRegistrazioneInail?.ToString("dd/MM/yyyy") ?? "—")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIRME -->
+    <div class="firma-box">
+        <div class="firma">Responsabile Impianto Radiologico (RIR)</div>
+        <div class="firma">Esperto di Radioprotezione (EdR)</div>
+        <div class="firma">Specialista in Fisica Medica (SFM)</div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="print-footer">
+        <div>Documento generato automaticamente dalla piattaforma di Fisica Sanitaria e Radioprotezione</div>
+        <div>@DateTime.Now.ToString("dd/MM/yyyy HH:mm") — Riservato uso interno</div>
+    </div>
+
+</body>
+</html>

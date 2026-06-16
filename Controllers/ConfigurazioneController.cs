@@ -7,7 +7,7 @@ using RadiologiaAppNew.Models.Collocazione;
 
 namespace RadiologiaAppNew.Controllers
 {
-    [Authorize(Roles = "ADMIN_ORG")]
+    [Authorize(Roles = "ADMIN_ORG,SUPER_ADMIN")]
     public class ConfigurazioneController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -20,9 +20,10 @@ namespace RadiologiaAppNew.Controllers
         // ─── INDEX ───────────────────────────────────────────────────────
         public async Task<IActionResult> Index(string tab = "struttura")
         {
-            ViewData["Title"] = "Configurazione";
+            ViewData["Title"]          = "Configurazione";
             ViewData["BreadcrumbParent"] = "Amministrazione";
-            ViewData["TabAttivo"] = tab;
+            ViewData["TabAttivo"]      = tab;
+
             var vm = new ConfigurazioneVm
             {
                 Siti = await _db.Siti
@@ -30,14 +31,21 @@ namespace RadiologiaAppNew.Controllers
                         .ThenInclude(i => i.Piani)
                             .ThenInclude(p => p.Locali)
                     .OrderBy(s => s.Nome).ToListAsync(),
-                Reparti    = await _db.Reparti
+
+                Reparti = await _db.Reparti
                     .OrderBy(r => r.Nome).ToListAsync(),
+
+                Dipartimenti = await _db.Dipartimenti          // NUOVO
+                    .OrderBy(d => d.Nome).ToListAsync(),
+
                 Protocolli = await _db.ProtocolliVerifica
                     .OrderBy(p => p.Tipo)
                     .ThenBy(p => p.Codice).ToListAsync(),
+
                 Costruttori = await _db.Costruttori
                     .Include(c => c.Modelli)
                     .OrderBy(c => c.Nome).ToListAsync(),
+
                 SocietaManutenzione = await _db.SocietaManutenzione
                     .OrderBy(s => s.Nome).ToListAsync()
             };
@@ -45,18 +53,17 @@ namespace RadiologiaAppNew.Controllers
             return View(vm);
         }
 
-        // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
         // STRUTTURA FISICA
-        // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> NuovoSito(
-            string nome, string? indirizzo , string tab = "struttura")
+            string nome, string? indirizzo, string tab = "struttura")
         {
             if (!string.IsNullOrWhiteSpace(nome))
             {
-                _db.Siti.Add(new Sito
-                    { Nome = nome, Indirizzo = indirizzo });
+                _db.Siti.Add(new Sito { Nome = nome, Indirizzo = indirizzo });
                 await _db.SaveChangesAsync();
                 TempData["Success"] = $"Sito «{nome}» aggiunto.";
             }
@@ -69,8 +76,7 @@ namespace RadiologiaAppNew.Controllers
         {
             if (!string.IsNullOrWhiteSpace(nome))
             {
-                _db.Immobili.Add(new Immobile
-                    { SitoId = sitoId, Nome = nome });
+                _db.Immobili.Add(new Immobile { SitoId = sitoId, Nome = nome });
                 await _db.SaveChangesAsync();
                 TempData["Success"] = $"Edificio «{nome}» aggiunto.";
             }
@@ -101,330 +107,127 @@ namespace RadiologiaAppNew.Controllers
         {
             if (!string.IsNullOrWhiteSpace(nome))
             {
-                _db.Locali.Add(new Locale
-                {
-                    PianoId = pianoId,
-                    Nome    = nome,
-                    Codice  = codice
-                });
+                _db.Locali.Add(new Locale { PianoId = pianoId, Nome = nome, Codice = codice });
                 await _db.SaveChangesAsync();
                 TempData["Success"] = $"Locale «{nome}» aggiunto.";
             }
             return RedirectToAction(nameof(Index), new { tab });
         }
 
-        
-        
-
-        
-
-    
-    // ─── ELIMINA PRESIDIO ────────────────────────────────────────────
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> EliminaSito(
-    int id, string tab = "struttura")
-{
-    var sito = await _db.Siti
-        .Include(s => s.Immobili)
-            .ThenInclude(i => i.Piani)
-                .ThenInclude(p => p.Locali)
-        .FirstOrDefaultAsync(s => s.Id == id);
-
-    if (sito == null)
-        return RedirectToAction(nameof(Index), new { tab });
-
-    // Controlla se qualche locale è usato da apparecchiature
-    var localiIds = sito.Immobili
-        .SelectMany(i => i.Piani)
-        .SelectMany(p => p.Locali)
-        .Select(l => l.Id)
-        .ToList();
-
-    if (localiIds.Any())
-    {
-        var haApp = await _db.Apparecchiature
-            .AnyAsync(a => a.LocaleId.HasValue &&
-                           localiIds.Contains(a.LocaleId.Value));
-        if (haApp)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminaSito(int id, string tab = "struttura")
         {
-            TempData["Error"] =
-                $"Impossibile eliminare il presidio «{sito.Nome}»: " +
-                "uno o più locali sono associati ad apparecchiature. " +
-                "Riassegna prima le apparecchiature ad altro locale.";
+            var sito = await _db.Siti
+                .Include(s => s.Immobili)
+                    .ThenInclude(i => i.Piani)
+                        .ThenInclude(p => p.Locali)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (sito == null) return RedirectToAction(nameof(Index), new { tab });
+
+            var localiIds = sito.Immobili
+                .SelectMany(i => i.Piani)
+                .SelectMany(p => p.Locali)
+                .Select(l => l.Id).ToList();
+
+            if (localiIds.Any())
+            {
+                var haApp = await _db.Apparecchiature
+                    .AnyAsync(a => a.LocaleId.HasValue && localiIds.Contains(a.LocaleId.Value));
+                if (haApp)
+                {
+                    TempData["Error"] = $"Impossibile eliminare «{sito.Nome}»: " +
+                        "uno o più locali sono associati ad apparecchiature.";
+                    return RedirectToAction(nameof(Index), new { tab });
+                }
+            }
+
+            _db.Siti.Remove(sito);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Presidio «{sito.Nome}» eliminato.";
             return RedirectToAction(nameof(Index), new { tab });
         }
-    }
 
-    // Azzera LocaleId nelle apparecchiature che puntano
-    // a locali di questo sito (per sicurezza)
-    if (localiIds.Any())
-    {
-        var appDaAggiornare = await _db.Apparecchiature
-            .Where(a => a.LocaleId.HasValue &&
-                        localiIds.Contains(a.LocaleId.Value))
-            .ToListAsync();
-        foreach (var a in appDaAggiornare)
-            a.LocaleId = null;
-    }
-
-    // Cascade delete gestita dal DB dopo il fix migration
-    _db.Siti.Remove(sito);
-    await _db.SaveChangesAsync();
-
-    TempData["Success"] =
-        $"Presidio «{sito.Nome}» eliminato con tutti gli edifici, " +
-        "piani e locali.";
-    return RedirectToAction(nameof(Index), new { tab });
-}
-
-// ─── ELIMINA IMMOBILE ────────────────────────────────────────────
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> EliminaImmobile(
-    int id, string tab = "struttura")
-{
-    var imm = await _db.Immobili
-        .Include(x => x.Piani)
-            .ThenInclude(p => p.Locali)
-        .FirstOrDefaultAsync(x => x.Id == id);
-
-    if (imm == null)
-        return RedirectToAction(nameof(Index), new { tab });
-
-    var localiIds = imm.Piani
-        .SelectMany(p => p.Locali)
-        .Select(l => l.Id).ToList();
-
-    if (localiIds.Any())
-    {
-        var haApp = await _db.Apparecchiature
-            .AnyAsync(a => a.LocaleId.HasValue &&
-                           localiIds.Contains(a.LocaleId.Value));
-        if (haApp)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminaImmobile(int id, string tab = "struttura")
         {
-            TempData["Error"] =
-                $"Impossibile eliminare l'edificio «{imm.Nome}»: " +
-                "contiene locali associati ad apparecchiature.";
+            var imm = await _db.Immobili
+                .Include(x => x.Piani).ThenInclude(p => p.Locali)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (imm == null) return RedirectToAction(nameof(Index), new { tab });
+
+            var localiIds = imm.Piani.SelectMany(p => p.Locali).Select(l => l.Id).ToList();
+            if (localiIds.Any())
+            {
+                var haApp = await _db.Apparecchiature
+                    .AnyAsync(a => a.LocaleId.HasValue && localiIds.Contains(a.LocaleId.Value));
+                if (haApp)
+                {
+                    TempData["Error"] = $"Impossibile eliminare «{imm.Nome}»: " +
+                        "contiene locali associati ad apparecchiature.";
+                    return RedirectToAction(nameof(Index), new { tab });
+                }
+            }
+
+            _db.Immobili.Remove(imm);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Edificio «{imm.Nome}» eliminato.";
             return RedirectToAction(nameof(Index), new { tab });
         }
-    }
 
-    _db.Immobili.Remove(imm);
-    await _db.SaveChangesAsync();
-    TempData["Success"] = $"Edificio «{imm.Nome}» eliminato.";
-    return RedirectToAction(nameof(Index), new { tab });
-}
-
-// ─── ELIMINA COSTRUTTORE ─────────────────────────────────────────
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> EliminaCostruttore(
-    int id, string tab = "costruttori")
-{
-    var c = await _db.Costruttori
-        .Include(x => x.Modelli)
-        .FirstOrDefaultAsync(x => x.Id == id);
-
-    if (c == null)
-        return RedirectToAction(nameof(Index), new { tab });
-
-    // Controlla se il costruttore è usato in apparecchiature
-    var haApp = await _db.Apparecchiature
-        .AnyAsync(a => a.Costruttore == c.Nome);
-
-    if (haApp)
-    {
-        TempData["Error"] =
-            $"Impossibile eliminare «{c.Nome}»: " +
-            "è associato ad una o più apparecchiature. " +
-            "Disattivalo invece di eliminarlo.";
-        return RedirectToAction(nameof(Index), new { tab });
-    }
-
-    _db.Costruttori.Remove(c);
-    await _db.SaveChangesAsync();
-    TempData["Success"] = $"Costruttore «{c.Nome}» eliminato.";
-    return RedirectToAction(nameof(Index), new { tab });
-}
-
-
-// ─── MODIFICA SOCIETÀ ────────────────────────────────────────────
-[HttpGet]
-public async Task<IActionResult> ModificaSocieta(int id)
-{
-    var s = await _db.SocietaManutenzione.FindAsync(id);
-    if (s == null) return NotFound();
-
-    ViewData["Title"] = $"Modifica — {s.Nome}";
-    return View(s);
-}
-
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> ModificaSocieta(
-    SocietaManutenzione model, string tab = "societa")
-{
-    if (!ModelState.IsValid)
-        return View(model);
-
-    var existing = await _db.SocietaManutenzione
-        .FindAsync(model.Id);
-    if (existing == null) return NotFound();
-
-    existing.Nome               = model.Nome;
-    existing.NumeroAssistenza   = model.NumeroAssistenza;
-    existing.NumeroReperibilita = model.NumeroReperibilita;
-    existing.EmailAssistenza    = model.EmailAssistenza;
-    existing.GlobalService      = model.GlobalService;
-    existing.SitoWeb            = model.SitoWeb;
-    existing.Note               = model.Note;
-
-    await _db.SaveChangesAsync();
-    TempData["Success"] = "Società aggiornata.";
-    return RedirectToAction(nameof(Index), new { tab = "societa" });
-}
-
-// ─── ELIMINA SOCIETÀ ─────────────────────────────────────────────
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> EliminaSocieta(
-    int id, string tab = "societa")
-{
-    var s = await _db.SocietaManutenzione.FindAsync(id);
-    if (s == null)
-        return RedirectToAction(nameof(Index), new { tab });
-
-    // Controlla se usata in apparecchiature
-    var haApp = await _db.Apparecchiature
-        .AnyAsync(a => a.SocietaManutenzione == s.Nome);
-
-    if (haApp)
-    {
-        TempData["Error"] =
-            $"Impossibile eliminare «{s.Nome}»: " +
-            "è associata ad una o più apparecchiature.";
-        return RedirectToAction(nameof(Index), new { tab });
-    }
-
-    _db.SocietaManutenzione.Remove(s);
-    await _db.SaveChangesAsync();
-    TempData["Success"] = $"Società «{s.Nome}» eliminata.";
-    return RedirectToAction(nameof(Index), new { tab });
-}
-
-// ─── ELIMINA PIANO ───────────────────────────────────────────────
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> EliminaPiano(
-    int id, string tab = "struttura")
-{
-    var piano = await _db.Piani
-        .Include(p => p.Locali)
-        .FirstOrDefaultAsync(p => p.Id == id);
-
-    if (piano == null)
-        return RedirectToAction(nameof(Index), new { tab });
-
-    var localiIds = piano.Locali.Select(l => l.Id).ToList();
-
-    if (localiIds.Any())
-    {
-        var haApp = await _db.Apparecchiature
-            .AnyAsync(a => a.LocaleId.HasValue &&
-                           localiIds.Contains(a.LocaleId.Value));
-        if (haApp)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminaPiano(int id, string tab = "struttura")
         {
-            TempData["Error"] =
-                $"Impossibile eliminare il piano «{piano.Nome}»: " +
-                "contiene locali associati ad apparecchiature.";
+            var piano = await _db.Piani
+                .Include(p => p.Locali)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (piano == null) return RedirectToAction(nameof(Index), new { tab });
+
+            var localiIds = piano.Locali.Select(l => l.Id).ToList();
+            if (localiIds.Any())
+            {
+                var haApp = await _db.Apparecchiature
+                    .AnyAsync(a => a.LocaleId.HasValue && localiIds.Contains(a.LocaleId.Value));
+                if (haApp)
+                {
+                    TempData["Error"] = $"Impossibile eliminare «{piano.Nome}»: " +
+                        "contiene locali associati ad apparecchiature.";
+                    return RedirectToAction(nameof(Index), new { tab });
+                }
+            }
+
+            _db.Piani.Remove(piano);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Piano «{piano.Nome}» eliminato.";
             return RedirectToAction(nameof(Index), new { tab });
         }
-    }
 
-    _db.Piani.Remove(piano);
-    await _db.SaveChangesAsync();
-    TempData["Success"] = $"Piano «{piano.Nome}» eliminato.";
-    return RedirectToAction(nameof(Index), new { tab });
-}
-
-// ─── ELIMINA LOCALE ──────────────────────────────────────────────
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> EliminaLocale(
-    int id, string tab = "struttura")
-{
-    var locale = await _db.Locali.FindAsync(id);
-    if (locale == null)
-        return RedirectToAction(nameof(Index), new { tab });
-
-    var haApp = await _db.Apparecchiature
-        .AnyAsync(a => a.LocaleId == id);
-
-    if (haApp)
-    {
-        TempData["Error"] =
-            $"Impossibile eliminare il locale «{locale.Nome}»: " +
-            "è associato ad una o più apparecchiature. " +
-            "Riassegna prima le apparecchiature.";
-        return RedirectToAction(nameof(Index), new { tab });
-    }
-
-    _db.Locali.Remove(locale);
-    await _db.SaveChangesAsync();
-    TempData["Success"] = $"Locale «{locale.Nome}» eliminato.";
-    return RedirectToAction(nameof(Index), new { tab });
-}
-
-// ─── ELIMINA REPARTO ─────────────────────────────────────────────
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> EliminaReparto(
-    int id, string tab = "reparti")
-{
-    var r = await _db.Reparti.FindAsync(id);
-    if (r == null)
-        return RedirectToAction(nameof(Index), new { tab });
-
-    var haApp = await _db.Apparecchiature
-        .AnyAsync(a => a.RepartoId == id);
-
-    if (haApp)
-    {
-        TempData["Error"] =
-            $"Impossibile eliminare il reparto «{r.Nome}»: " +
-            "ha apparecchiature associate. " +
-            "Riassegna prima le apparecchiature.";
-        return RedirectToAction(nameof(Index), new { tab });
-    }
-
-    _db.Reparti.Remove(r);
-    await _db.SaveChangesAsync();
-    TempData["Success"] = $"Reparto «{r.Nome}» eliminato.";
-    return RedirectToAction(nameof(Index), new { tab });
-}
-
-
-// ─── ELIMINA PROTOCOLLO ──────────────────────────────────────────
-[HttpPost, ValidateAntiForgeryToken]
-public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protocolli")
-{
-    var p = await _db.ProtocolliVerifica.FindAsync(id);
-    if (p != null)
-    {
-        var usato = await _db.RecordVerifiche
-            .AnyAsync(v => v.ProtocolloId == id);
-        if (usato)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminaLocale(int id, string tab = "struttura")
         {
-            TempData["Error"] =
-                "Impossibile eliminare: protocollo utilizzato " +
-                "in verifiche esistenti. Disattivalo invece.";
-            return RedirectToAction(nameof(Index),
-                new { tab = "protocolli" });
-        }
-        _db.ProtocolliVerifica.Remove(p);
-        await _db.SaveChangesAsync();
-        TempData["Success"] = $"Protocollo «{p.Codice}» eliminato.";
-    }
-    return RedirectToAction(nameof(Index),
-        new { tab = "protocolli" });
-}
+            var locale = await _db.Locali.FindAsync(id);
+            if (locale == null) return RedirectToAction(nameof(Index), new { tab });
 
-        // ═══════════════════════════════════════════════════════════
+            var haApp = await _db.Apparecchiature
+                .AnyAsync(a => a.LocaleId == id);
+            if (haApp)
+            {
+                TempData["Error"] = $"Impossibile eliminare «{locale.Nome}»: " +
+                    "è associato ad apparecchiature.";
+                return RedirectToAction(nameof(Index), new { tab });
+            }
+
+            _db.Locali.Remove(locale);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Locale «{locale.Nome}» eliminato.";
+            return RedirectToAction(nameof(Index), new { tab });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // REPARTI
-        // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> NuovoReparto(
@@ -439,20 +242,95 @@ public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protoco
                     Email        = email
                 });
                 await _db.SaveChangesAsync();
-                TempData["Success"] = $"Reparto «{nome}» aggiunto.";
+                TempData["Success"] = $"Struttura «{nome}» aggiunta.";
             }
             return RedirectToAction(nameof(Index), new { tab });
         }
 
-        
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminaReparto(int id, string tab = "reparti")
+        {
+            var rep = await _db.Reparti.FindAsync(id);
+            if (rep == null) return RedirectToAction(nameof(Index), new { tab });
 
-        // ═══════════════════════════════════════════════════════════
+            var haApp = await _db.Apparecchiature.AnyAsync(a => a.RepartoId == id);
+            if (haApp)
+            {
+                TempData["Error"] = $"Impossibile eliminare «{rep.Nome}»: " +
+                    "è associata ad apparecchiature.";
+                return RedirectToAction(nameof(Index), new { tab });
+            }
+
+            _db.Reparti.Remove(rep);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Struttura «{rep.Nome}» eliminata.";
+            return RedirectToAction(nameof(Index), new { tab });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // DIPARTIMENTI (NUOVO)
+        // ═══════════════════════════════════════════════════════════════
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> NuovoDipartimento(
+            string nome, string? descrizione, string tab = "dipartimenti")
+        {
+            if (!string.IsNullOrWhiteSpace(nome))
+            {
+                _db.Dipartimenti.Add(new Dipartimento
+                {
+                    Nome        = nome,
+                    Descrizione = descrizione,
+                    Attivo      = true
+                });
+                await _db.SaveChangesAsync();
+                TempData["Success"] = $"Dipartimento «{nome}» aggiunto.";
+            }
+            return RedirectToAction(nameof(Index), new { tab });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleDipartimento(int id, string tab = "dipartimenti")
+        {
+            var d = await _db.Dipartimenti.FindAsync(id);
+            if (d != null)
+            {
+                d.Attivo = !d.Attivo;
+                await _db.SaveChangesAsync();
+                TempData["Success"] = d.Attivo
+                    ? $"Dipartimento «{d.Nome}» attivato."
+                    : $"Dipartimento «{d.Nome}» disattivato.";
+            }
+            return RedirectToAction(nameof(Index), new { tab });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminaDipartimento(int id, string tab = "dipartimenti")
+        {
+            var d = await _db.Dipartimenti.FindAsync(id);
+            if (d == null) return RedirectToAction(nameof(Index), new { tab });
+
+            var haApp = await _db.Apparecchiature.AnyAsync(a => a.DipartimentoId == id);
+            if (haApp)
+            {
+                TempData["Error"] = $"Impossibile eliminare «{d.Nome}»: " +
+                    "è associato ad apparecchiature. Prima riassegna le apparecchiature.";
+                return RedirectToAction(nameof(Index), new { tab });
+            }
+
+            _db.Dipartimenti.Remove(d);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Dipartimento «{d.Nome}» eliminato.";
+            return RedirectToAction(nameof(Index), new { tab });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // COSTRUTTORI E MODELLI
-        // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> NuovoCostruttore(
-            string nome, string? paese, string? sitoWeb , string tab = "costruttori")
+            string nome, string? paese, string? sitoWeb, string tab = "costruttori")
         {
             if (!string.IsNullOrWhiteSpace(nome))
             {
@@ -464,8 +342,7 @@ public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protoco
                     Attivo  = true
                 });
                 await _db.SaveChangesAsync();
-                TempData["Success"] =
-                    $"Costruttore «{nome}» aggiunto.";
+                TempData["Success"] = $"Costruttore «{nome}» aggiunto.";
             }
             return RedirectToAction(nameof(Index), new { tab });
         }
@@ -476,17 +353,15 @@ public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protoco
         {
             if (!string.IsNullOrWhiteSpace(nome))
             {
-                _db.ModelliApparecchiatura.Add(
-                    new ModelloApparecchiatura
-                    {
-                        CostrutoreId = costruttoreId,
-                        Nome         = nome,
-                        Tipologia    = tipologia,
-                        Attivo       = true
-                    });
+                _db.ModelliApparecchiatura.Add(new ModelloApparecchiatura
+                {
+                    CostrutoreId = costruttoreId,
+                    Nome         = nome,
+                    Tipologia    = tipologia,
+                    Attivo       = true
+                });
                 await _db.SaveChangesAsync();
-                TempData["Success"] =
-                    $"Modello «{nome}» aggiunto.";
+                TempData["Success"] = $"Modello «{nome}» aggiunto.";
             }
             return RedirectToAction(nameof(Index), new { tab });
         }
@@ -499,9 +374,7 @@ public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protoco
             {
                 c.Attivo = !c.Attivo;
                 await _db.SaveChangesAsync();
-                TempData["Success"] = c.Attivo
-                    ? "Costruttore attivato."
-                    : "Costruttore disattivato.";
+                TempData["Success"] = c.Attivo ? "Costruttore attivato." : "Costruttore disattivato.";
             }
             return RedirectToAction(nameof(Index), new { tab });
         }
@@ -519,50 +392,72 @@ public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protoco
             return RedirectToAction(nameof(Index), new { tab });
         }
 
-        // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
         // SOCIETÀ DI MANUTENZIONE
-        // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> NuovaSocieta(
-            string nome, string? numeroAssistenza,
-            string? numeroReperibilita, string? emailAssistenza,
-            string? globalService, string? sitoWeb, string tab = "societa")
+            string nome, string? numeroAssistenza, string? numeroReperibilita,
+            string? emailAssistenza, string? globalService, string? sitoWeb,
+            string tab = "societa")
         {
             if (!string.IsNullOrWhiteSpace(nome))
             {
                 _db.SocietaManutenzione.Add(new SocietaManutenzione
                 {
-                    Nome                = nome,
-                    NumeroAssistenza    = numeroAssistenza,
-                    NumeroReperibilita  = numeroReperibilita,
-                    EmailAssistenza     = emailAssistenza,
-                    GlobalService       = globalService,
-                    SitoWeb             = sitoWeb,
-                    Attivo              = true
+                    Nome               = nome,
+                    NumeroAssistenza   = numeroAssistenza,
+                    NumeroReperibilita = numeroReperibilita,
+                    EmailAssistenza    = emailAssistenza,
+                    GlobalService      = globalService,
+                    SitoWeb            = sitoWeb,
+                    Attivo             = true
                 });
                 await _db.SaveChangesAsync();
-                TempData["Success"] =
-                    $"Società «{nome}» aggiunta.";
+                TempData["Success"] = $"Società «{nome}» aggiunta.";
             }
             return RedirectToAction(nameof(Index), new { tab });
         }
 
-        
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleSocieta(int id, string tab = "societa")
+        {
+            var s = await _db.SocietaManutenzione.FindAsync(id);
+            if (s != null)
+            {
+                s.Attivo = !s.Attivo;
+                await _db.SaveChangesAsync();
+                TempData["Success"] = s.Attivo ? "Società attivata." : "Società disattivata.";
+            }
+            return RedirectToAction(nameof(Index), new { tab });
+        }
 
-        // ═══════════════════════════════════════════════════════════
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminaSocieta(int id, string tab = "societa")
+        {
+            var s = await _db.SocietaManutenzione.FindAsync(id);
+            if (s != null)
+            {
+                _db.SocietaManutenzione.Remove(s);
+                await _db.SaveChangesAsync();
+                TempData["Success"] = $"Società «{s.Nome}» eliminata.";
+            }
+            return RedirectToAction(nameof(Index), new { tab });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // PROTOCOLLI
-        // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> NuovoProtocollo(
-            string codice, string descrizione,
-            string tipo, int? periodicitaMesi, string tab = "protocolli")
+            string codice, string descrizione, string tipo,
+            int? periodicitaMesi, string tab = "protocolli")
         {
             if (!string.IsNullOrWhiteSpace(codice) &&
                 !string.IsNullOrWhiteSpace(descrizione) &&
-                Enum.TryParse<RadiologiaAppNew.Enums.TipoProtocollo>(
-                    tipo, out var tipoEnum))
+                Enum.TryParse<RadiologiaAppNew.Enums.TipoProtocollo>(tipo, out var tipoEnum))
             {
                 _db.ProtocolliVerifica.Add(new ProtocolloVerifica
                 {
@@ -576,8 +471,7 @@ public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protoco
                     CreatedAt         = DateTime.UtcNow
                 });
                 await _db.SaveChangesAsync();
-                TempData["Success"] =
-                    $"Protocollo «{codice}» aggiunto.";
+                TempData["Success"] = $"Protocollo «{codice}» aggiunto.";
             }
             return RedirectToAction(nameof(Index), new { tab });
         }
@@ -590,22 +484,37 @@ public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protoco
             {
                 p.Attivo = !p.Attivo;
                 await _db.SaveChangesAsync();
-                TempData["Success"] = p.Attivo
-                    ? "Protocollo attivato."
-                    : "Protocollo disattivato.";
+                TempData["Success"] = p.Attivo ? "Protocollo attivato." : "Protocollo disattivato.";
             }
             return RedirectToAction(nameof(Index), new { tab });
         }
 
-        // ─── API AJAX — modelli per costruttore ──────────────────────────
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<JsonResult> GetModelliPerCostruttore(
-            int costruttoreId)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protocolli")
+        {
+            var p = await _db.ProtocolliVerifica.FindAsync(id);
+            if (p != null)
+            {
+                var haVerifiche = await _db.RecordVerifiche.AnyAsync(v => v.ProtocolloId == p.Id);
+                if (haVerifiche)
+                {
+                    TempData["Error"] = $"Impossibile eliminare «{p.Codice}»: " +
+                        "è associato a verifiche esistenti. Disattivalo invece.";
+                    return RedirectToAction(nameof(Index), new { tab });
+                }
+                _db.ProtocolliVerifica.Remove(p);
+                await _db.SaveChangesAsync();
+                TempData["Success"] = $"Protocollo «{p.Codice}» eliminato.";
+            }
+            return RedirectToAction(nameof(Index), new { tab });
+        }
+
+        // ─── API AJAX ─────────────────────────────────────────────────────
+        [HttpGet, AllowAnonymous]
+        public async Task<JsonResult> GetModelliPerCostruttore(int costruttoreId)
         {
             var modelli = await _db.ModelliApparecchiatura
-                .Where(m => m.CostrutoreId == costruttoreId &&
-                            m.Attivo)
+                .Where(m => m.CostrutoreId == costruttoreId && m.Attivo)
                 .OrderBy(m => m.Nome)
                 .Select(m => new { m.Id, m.Nome, m.Tipologia })
                 .ToListAsync();
@@ -613,14 +522,14 @@ public async Task<IActionResult> EliminaProtocollo(int id, string tab = "protoco
         }
     }
 
+    // ─── VIEW MODEL ───────────────────────────────────────────────────────
     public class ConfigurazioneVm
     {
-        public List<Sito>               Siti       { get; set; } = new();
-        public List<Reparto>            Reparti    { get; set; } = new();
-        public List<ProtocolloVerifica> Protocolli { get; set; } = new();
-        public List<Costruttore>        Costruttori { get; set; } = new();
-        public List<SocietaManutenzione> SocietaManutenzione
-            { get; set; } = new();
+        public List<Sito>                Siti                { get; set; } = new();
+        public List<Reparto>             Reparti             { get; set; } = new();
+        public List<Dipartimento>        Dipartimenti        { get; set; } = new(); // NUOVO
+        public List<ProtocolloVerifica>  Protocolli          { get; set; } = new();
+        public List<Costruttore>         Costruttori         { get; set; } = new();
+        public List<SocietaManutenzione> SocietaManutenzione { get; set; } = new();
     }
-
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RadiologiaAppNew.Data;
 
@@ -10,9 +11,11 @@ using RadiologiaAppNew.Data;
 namespace RadiologiaAppNew.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260613151201_SyncModello")]
+    partial class SyncModello
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
@@ -261,9 +264,6 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ImmobileId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("InailRicevutaCessioneFile")
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
@@ -308,9 +308,6 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.Property<string>("NumeroPraticaInail")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
-
-                    b.Property<int?>("PianoId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PiantinaZoneClassificateFile")
                         .HasMaxLength(500)
@@ -374,9 +371,6 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.Property<string>("SiapDescrizione")
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
-
-                    b.Property<int?>("SitoId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("SocietaManutenzione")
                         .HasMaxLength(255)
