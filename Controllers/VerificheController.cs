@@ -393,21 +393,32 @@ namespace RadiologiaAppNew.Controllers
 
         // ─── DELETE ──────────────────────────────────────────────────────
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "ADMIN_ORG")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var verifica = await _db.RecordVerifiche.FindAsync(id);
-            if (verifica == null) return NotFound();
+[ValidateAntiForgeryToken]
+[Authorize(Roles = "ADMIN_ORG")]
+public async Task<IActionResult> Delete(int id)
+{
+    var verifica = await _db.RecordVerifiche
+        .Include(v => v.FileAllegati)
+        .FirstOrDefaultAsync(v => v.Id == id);
 
-            var appId = verifica.ApparecchiaturaId;
-            _db.RecordVerifiche.Remove(verifica);
-            await _db.SaveChangesAsync();
+    if (verifica == null) return NotFound();
 
-            TempData["Success"] = "Verifica eliminata.";
-            return RedirectToAction("Detail", "Apparecchiature",
-                new { id = appId, tab = "verifiche" });
-        }
+    var appId = verifica.ApparecchiaturaId;
+
+    // 🔥 elimina file prima
+    if (verifica.FileAllegati.Any())
+    {
+        _db.FileAllegati.RemoveRange(verifica.FileAllegati);
+    }
+
+    _db.RecordVerifiche.Remove(verifica);
+
+    await _db.SaveChangesAsync();
+
+    TempData["Success"] = "Verifica eliminata.";
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = appId, tab = "verifiche" });
+}
 
         // ─── API — File protocollo ────────────────────────────────────────
         [HttpGet]

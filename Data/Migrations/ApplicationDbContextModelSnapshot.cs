@@ -439,7 +439,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("RepartoId");
 
-                    b.ToTable("Apparecchiature");
+                    b.ToTable("Apparecchiature", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.ApplicationUser", b =>
@@ -602,7 +602,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("PazienteId");
 
-                    b.ToTable("CicliTrattamento");
+                    b.ToTable("CicliTrattamento", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.Collocazione.Immobile", b =>
@@ -623,7 +623,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("SitoId");
 
-                    b.ToTable("Immobili");
+                    b.ToTable("Immobili", (string)null);
 
                     b.HasData(
                         new
@@ -662,7 +662,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("PianoId");
 
-                    b.ToTable("Locali");
+                    b.ToTable("Locali", (string)null);
 
                     b.HasData(
                         new
@@ -716,7 +716,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("ImmobileId");
 
-                    b.ToTable("Piani");
+                    b.ToTable("Piani", (string)null);
 
                     b.HasData(
                         new
@@ -763,7 +763,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reparti");
+                    b.ToTable("Reparti", (string)null);
 
                     b.HasData(
                         new
@@ -809,7 +809,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Siti");
+                    b.ToTable("Siti", (string)null);
 
                     b.HasData(
                         new
@@ -848,7 +848,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Costruttori");
+                    b.ToTable("Costruttori", (string)null);
 
                     b.HasData(
                         new
@@ -960,7 +960,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("PazienteId");
 
-                    b.ToTable("DatiEmatologici");
+                    b.ToTable("DatiEmatologici", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.Dipartimento", b =>
@@ -983,7 +983,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Dipartimenti");
+                    b.ToTable("Dipartimenti", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.FiguraResponsabile", b =>
@@ -1030,7 +1030,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("ApparecchiaturaId");
 
-                    b.ToTable("FigureResponsabili");
+                    b.ToTable("FigureResponsabili", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.FileAllegato", b =>
@@ -1120,7 +1120,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("VerificaId");
 
-                    b.ToTable("FileAllegati");
+                    b.ToTable("FileAllegati", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.ModelloApparecchiatura", b =>
@@ -1152,7 +1152,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("CostrutoreId");
 
-                    b.ToTable("ModelliApparecchiatura");
+                    b.ToTable("ModelliApparecchiatura", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.NotificaPratica", b =>
@@ -1194,7 +1194,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("ApparecchiaturaId");
 
-                    b.ToTable("NotifichePratica");
+                    b.ToTable("NotifichePratica", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.NullaOsta", b =>
@@ -1239,7 +1239,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("ApparecchiaturaId");
 
-                    b.ToTable("NullaOsta");
+                    b.ToTable("NullaOsta", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.PazienteLu177", b =>
@@ -1348,7 +1348,7 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.HasIndex("CodicePaziente")
                         .IsUnique();
 
-                    b.ToTable("PazientiLu177");
+                    b.ToTable("PazientiLu177", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.ProtocolloVerifica", b =>
@@ -1397,7 +1397,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProtocolliVerifica");
+                    b.ToTable("ProtocolliVerifica", (string)null);
 
                     b.HasData(
                         new
@@ -1566,7 +1566,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("ProtocolloId");
 
-                    b.ToTable("RecordVerifiche");
+                    b.ToTable("RecordVerifiche", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.SocietaManutenzione", b =>
@@ -1609,7 +1609,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SocietaManutenzione");
+                    b.ToTable("SocietaManutenzione", (string)null);
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.Verbale", b =>
@@ -1731,7 +1731,7 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.HasIndex("ApparecchiaturaId");
 
-                    b.ToTable("Verbali");
+                    b.ToTable("Verbali", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

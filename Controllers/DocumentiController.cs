@@ -221,6 +221,21 @@ namespace RadiologiaAppNew.Controllers
                 $"File «{file.FileName}» caricato con successo.";
             return Redirect(returnUrl);
         }
+       // ─── VIEW ────────────────────────────────────────────────────
+        public async Task<IActionResult> Visualizza(int id)
+        {
+    var file = await _db.FileAllegati.FindAsync(id);
+    if (file == null) return NotFound();
+
+    var percorso = Path.Combine(_env.WebRootPath, file.NomeStorage);
+    if (!System.IO.File.Exists(percorso))
+        return NotFound();
+
+    var mimeType = file.MimeType ?? "application/octet-stream";
+
+    // INLINE => apertura nel browser
+    return PhysicalFile(percorso, mimeType);
+       }
 
         // ─── DOWNLOAD ────────────────────────────────────────────────────
         public async Task<IActionResult> Download(int id)
@@ -248,6 +263,7 @@ namespace RadiologiaAppNew.Controllers
         [Authorize(Roles = "ADMIN_ORG,EFM,EDR")]
         public async Task<IActionResult> Elimina(int id, string returnUrl)
         {
+            
             var file = await _db.FileAllegati.FindAsync(id);
             if (file != null)
             {

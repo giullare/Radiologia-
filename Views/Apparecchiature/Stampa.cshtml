@@ -344,51 +344,126 @@
         <div class="section-title">4. Responsabili</div>
 
         @{
-            void PrintResp(string ruolo, string? nome, string? email, string? tel)
-            {
-                <div class="responsabile-row">
-                    <div class="resp-role">@ruolo</div>
-                    <div class="field-value">@V(nome)</div>
-                    <div class="field-value">@V(email)</div>
-                    <div class="field-value">@V(tel)</div>
-                </div>
-            }
+           void PrintResp(string ruolo, string? nome, string? email, string? pec, string? tel)
+{
+    <div class="responsabile-row">
+        <div class="resp-role">@ruolo</div>
+        <div class="field-value">@V(nome)</div>
+        <div class="field-value">@V(email)</div>
+        <div class="field-value">@V(pec)</div>
+        <div class="field-value">@V(tel)</div>
+    </div>
+}
         }
+@functions {
+    bool HasData(string? nome, string? email, string? pec, string? tel)
+    {
+        return !string.IsNullOrWhiteSpace(nome)
+            || !string.IsNullOrWhiteSpace(email)
+            || !string.IsNullOrWhiteSpace(pec)
+            || !string.IsNullOrWhiteSpace(tel);
+    }
+}
 
-        <div style="display:grid;grid-template-columns:160px 1fr 1fr 1fr;gap:8px;
-                    padding:4px 0 6px;border-bottom:2px solid #1B4F72;
-                    font-size:8.5pt;font-weight:700;color:#1B4F72;
-                    text-transform:uppercase;letter-spacing:.04em">
-            <div>Ruolo</div>
-            <div>Nome e Cognome</div>
-            <div>Email PEC</div>
-            <div>Telefono</div>
-        </div>
+     <table style="width:100%; border-collapse:collapse; font-size:9pt;">
+    <thead>
+        <tr style="border-bottom:2px solid #1B4F72; color:#1B4F72; text-transform:uppercase; font-size:8.5pt;">
+            <th style="text-align:left; padding:6px; width:160px;">Ruolo</th>
+            <th style="text-align:left; padding:6px;">Nome e Cognome</th>
+            <th style="text-align:left; padding:6px;">Email</th>
+            <th style="text-align:left; padding:6px;">PEC</th>
+            <th style="text-align:left; padding:6px; width:120px;">Telefono</th>
+        </tr>
+    </thead>
 
-        @{ PrintResp("Direttore Dipartimento",
-               Model.DirettoreDipartimento,
-               Model.DirettoreDipartimentoEmailPec,
-               Model.DirettoreDipartimentoTelefono); }
-        @{ PrintResp("Direttore Struttura",
-               Model.DirettoreStruttura,
-               Model.DirettoreStrutturaEmailPec,
-               Model.DirettoreStrutturaTelefono); }
-        @{ PrintResp("Preposto D.Lgs 101/20",
-               Model.Caposala,
-               Model.PrepostoEmailPec,
-               Model.PrepostoTelefono); }
-        @{ PrintResp("RIR",
-               Model.RirNome,
-               Model.RirEmailPec,
-               Model.RirTelefono); }
-        @{ PrintResp("SFM",
-               Model.SfmNome,
-               Model.SfmEmailPec,
-               Model.SfmTelefono); }
-        @{ PrintResp("EdR",
-               Model.EdrNome,
-               Model.EdrEmailPec,
-               Model.EdrTelefono); }
+    <tbody>
+    
+@if(HasData(Model.DirettoreDipartimento,
+             Model.DirettoreDipartimentoEmail,
+             Model.DirettoreDipartimentoEmailPec,
+             Model.DirettoreDipartimentoTelefono))
+{
+
+        <tr>
+            <td style="padding:6px; font-weight:600; color:#1B4F72;">Direttore Dipartimento</td>
+            <td style="padding:6px;">@V(Model.DirettoreDipartimento)</td>
+            <td style="padding:6px;">@V(Model.DirettoreDipartimentoEmail)</td>
+            <td style="padding:6px;">@V(Model.DirettoreDipartimentoEmailPec)</td>
+            <td style="padding:6px;">@V(Model.DirettoreDipartimentoTelefono)</td>
+        </tr>
+}
+ @if(HasData(Model.DirettoreStruttura,
+             Model.DirettoreStrutturaEmail,
+             Model.DirettoreStrutturaEmailPec,
+             Model.DirettoreStrutturaTelefono))
+             
+        {
+        <tr>
+            <td style="padding:6px; font-weight:600; color:#1B4F72;">Direttore Struttura</td>
+            <td style="padding:6px;">@V(Model.DirettoreStruttura)</td>
+            <td style="padding:6px;">@V(Model.DirettoreStrutturaEmail)</td>
+            <td style="padding:6px;">@V(Model.DirettoreStrutturaEmailPec)</td>
+            <td style="padding:6px;">@V(Model.DirettoreStrutturaTelefono)</td>
+        </tr>
+    }
+    @if(HasData(Model.Caposala,
+             Model.PrepostoEmail,
+             Model.PrepostoEmailPec,
+             Model.PrepostoTelefono))
+             
+        {   
+        <tr>
+            <td style="padding:6px; font-weight:600; color:#1B4F72;">Preposto D.Lgs 101/20</td>
+            <td style="padding:6px;">@V(Model.Caposala)</td>
+            <td style="padding:6px;">@V(Model.PrepostoEmail)</td>
+            <td style="padding:6px;">@V(Model.PrepostoEmailPec)</td>
+            <td style="padding:6px;">@V(Model.PrepostoTelefono)</td>
+        </tr>
+  }   
+  @if(HasData(Model.RirNome,
+             Model.RirEmail,
+             Model.RirEmailPec,
+             Model.RirTelefono))
+             
+        {
+        <tr>
+            <td style="padding:6px; font-weight:600; color:#1B4F72;">RIR</td>
+            <td style="padding:6px;">@V(Model.RirNome)</td>
+            <td style="padding:6px;">@V(Model.RirEmail)</td>
+            <td style="padding:6px;">@V(Model.RirEmailPec)</td>
+            <td style="padding:6px;">@V(Model.RirTelefono)</td>
+        </tr>
+}
+@if(HasData(Model.SfmNome,
+             Model.SfmEmail,
+             Model.SfmEmailPec,
+             Model.SfmTelefono))
+             
+        {
+        <tr>
+            <td style="padding:6px; font-weight:600; color:#1B4F72;">SFM</td>
+            <td style="padding:6px;">@V(Model.SfmNome)</td>
+            <td style="padding:6px;">@V(Model.SfmEmail)</td>
+            <td style="padding:6px;">@V(Model.SfmEmailPec)</td>
+            <td style="padding:6px;">@V(Model.SfmTelefono)</td>
+        </tr>
+}
+@if(HasData(Model.EdrNome,
+             Model.EdrEmail,
+             Model.EdrEmailPec,
+             Model.EdrTelefono))
+             
+        {
+        <tr>
+            <td style="padding:6px; font-weight:600; color:#1B4F72;">EdR</td>
+            <td style="padding:6px;">@V(Model.EdrNome)</td>
+            <td style="padding:6px;">@V(Model.EdrEmail)</td>
+            <td style="padding:6px;">@V(Model.EdrEmailPec)</td>
+            <td style="padding:6px;">@V(Model.EdrTelefono)</td>
+        </tr>
+        }
+    </tbody>
+</table>
     </div>
 
     <!-- 5. ASSISTENZA -->

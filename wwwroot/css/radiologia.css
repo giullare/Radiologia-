@@ -1176,6 +1176,25 @@ a:hover { color: var(--primary); text-decoration: underline; }
   .kpi-grid { grid-template-columns: 1fr; }
 }
 
+.responsabile-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #ddd;
+    font-size: 9pt;
+}
+
+.resp-role {
+    font-weight: 600;
+    color: #1B4F72;
+}
+
+.field-value {
+    word-break: break-word;
+}
+
+
 /* ─── UTILITIES ────────────────────────────────────────────────── */
 
 .text-primary   { color: var(--primary) !important; }

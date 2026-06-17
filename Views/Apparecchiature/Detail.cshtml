@@ -325,6 +325,7 @@
                 @if (!string.IsNullOrEmpty(app.PiantinaZoneClassificateFile))
                 {
                     <div class="col-md-4">
+                    <div class="form-label">Piantina Zone Classificate</div>
                         <a href="@app.PiantinaZoneClassificateFile" target="_blank"
                            class="btn btn-ghost btn-sm">
                             <i class="bi bi-map"></i>
@@ -344,15 +345,15 @@
         </div>
         <div class="form-section-body p-0">
             @{
-                var responsabiliInline = new List<(string Ruolo, string? Nome, string? Email, string? Tel)>
-                {
-                    ("Direttore Dipartimento",             app.DirettoreDipartimento,   app.DirettoreDipartimentoEmailPec, app.DirettoreDipartimentoTelefono),
-                    ("Direttore Struttura",                app.DirettoreStruttura,      app.DirettoreStrutturaEmailPec,    app.DirettoreStrutturaTelefono),
-                    ("Preposto D.Lgs 101/20",              app.Caposala,                app.PrepostoEmailPec,              app.PrepostoTelefono),
-                    ("Responsabile Impianto Radiologico (RIR)", app.RirNome,            app.RirEmailPec,                   app.RirTelefono),
-                    ("Specialista in Fisica Medica (SFM)", app.SfmNome,                app.SfmEmailPec,                   app.SfmTelefono),
-                    ("Esperto di Radioprotezione (EdR)",   app.EdrNome,                app.EdrEmailPec,                   app.EdrTelefono),
-                };
+               var responsabiliInline = new List<(string Ruolo, string? Nome, string? Email, string? Pec, string? Tel)>
+{
+    ("Direttore Dipartimento", app.DirettoreDipartimento, app.DirettoreDipartimentoEmail, app.DirettoreDipartimentoEmailPec, app.DirettoreDipartimentoTelefono),
+    ("Direttore Struttura", app.DirettoreStruttura, app.DirettoreStrutturaEmail, app.DirettoreStrutturaEmailPec, app.DirettoreStrutturaTelefono),
+    ("Preposto D.Lgs 101/20", app.Caposala, app.PrepostoEmail, app.PrepostoEmailPec, app.PrepostoTelefono),
+    ("Responsabile Impianto Radiologico (RIR)", app.RirNome, app.RirEmail, app.RirEmailPec, app.RirTelefono),
+    ("Specialista in Fisica Medica (SFM)", app.SfmNome, app.SfmEmail, app.SfmEmailPec, app.SfmTelefono),
+    ("Esperto di Radioprotezione (EdR)", app.EdrNome, app.EdrEmail, app.EdrEmailPec, app.EdrTelefono),
+};
             }
 
             @if (!responsabiliInline.Any(r => !string.IsNullOrEmpty(r.Nome)))
@@ -374,7 +375,10 @@
                                        color:var(--neutral-500)">Nome</th>
                             <th style="padding:8px 16px;font-size:0.75rem;font-weight:700;
                                        text-transform:uppercase;letter-spacing:.04em;
-                                       color:var(--neutral-500)">Email PEC</th>
+                                       color:var(--neutral-500)">Email</th>
+                            <th style="padding:8px 16px;font-size:0.75rem;font-weight:700;
+                                       text-transform:uppercase;letter-spacing:.04em;
+                                       color:var(--neutral-500)">PEC</th>
                             <th style="padding:8px 16px;font-size:0.75rem;font-weight:700;
                                        text-transform:uppercase;letter-spacing:.04em;
                                        color:var(--neutral-500)">Telefono</th>
@@ -400,6 +404,16 @@
                                         <a href="mailto:@r.Email"
                                            style="font-size:0.82rem;color:var(--primary)">
                                             @r.Email
+                                        </a>
+                                    }
+                                    else { <span style="color:var(--neutral-300);font-size:0.82rem">—</span> }
+                                </td>
+                                <td style="padding:10px 16px;">
+                                    @if (!string.IsNullOrEmpty(r.Pec))
+                                    {
+                                        <a href="mailto:@r.Pec"
+                                           style="font-size:0.82rem;color:var(--primary)">
+                                            @r.Pec
                                         </a>
                                     }
                                     else { <span style="color:var(--neutral-300);font-size:0.82rem">—</span> }
@@ -733,6 +747,7 @@
                         <th>Esito</th>
                         <th>Prossima Verifica</th>
                         <th>Note</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -812,6 +827,36 @@
                         : v.Note ?? "—")
                 </span>
             </td>
+            <td>
+    <div class="d-flex gap-1">
+
+        <!-- Visualizza -->
+        <a href="/Verifiche/Detail/@v.Id"
+           class="btn btn-ghost btn-icon btn-sm"
+           title="Visualizza">
+            <i class="bi bi-eye"></i>
+        </a>
+
+        <!-- Modifica -->
+        <a href="/Verifiche/Edit/@v.Id"
+           class="btn btn-ghost btn-icon btn-sm"
+           title="Modifica">
+            <i class="bi bi-pencil"></i>
+        </a>
+        <form method="post"
+      action="/Verifiche/Delete/@v.Id"
+      style="display:inline">
+    @Html.AntiForgeryToken()
+    <button type="submit"
+            class="btn btn-ghost btn-icon btn-sm"
+            title="Elimina"
+            onclick="return confirm('Eliminare questa verifica?')">
+        <i class="bi bi-trash text-danger"></i>
+    </button>
+</form>
+
+    </div>
+</td>
         </tr>
     }
 </tbody>
@@ -1090,7 +1135,34 @@
     else
     {
         <ul class="file-list">
-            @foreach (var f in Model.FileAllegati)
+            
+@foreach (var gruppo in Model.FileAllegati
+    .OrderBy(f => f.Categoria)
+    .GroupBy(f => f.Categoria))
+{
+
+<!-- TITOLO CATEGORIA -->
+   
+<li style="list-style:none; margin-top:15px;">
+
+   @{
+    var safeId = "cat-" + Guid.NewGuid().ToString("N");
+}
+
+<h5 style="cursor:pointer;"
+    onclick="toggleCategoria('@safeId')">
+
+    <i class="bi bi-folder"></i>
+    @gruppo.Key (@gruppo.Count())
+
+    <i class="bi bi-chevron-right"
+       id="icon-@safeId"></i>
+</h5>
+
+<div id="@safeId" style="display:none;">
+<ul class="file-list">  
+    <!-- FILE DELLA CATEGORIA -->
+           @foreach (var f in gruppo)
             {
                 var ext = System.IO.Path.GetExtension(f.NomeOriginale)
                           .ToLower().TrimStart('.');
@@ -1110,26 +1182,65 @@
                     <i class="bi @iconClass"></i>
                     <div class="file-item-info">
                         <div class="file-item-name">@f.NomeOriginale</div>
+                        @if (!string.IsNullOrEmpty(f.Descrizione))
+                        {
+                            <div class="file-item-description">@f.Descrizione</div>
+                        }
                         <div class="file-item-meta">
                             @f.Categoria ·
                             @(f.DimensioneBytes / 1024) KB ·
                             @f.UploadedAt.ToString("dd/MM/yyyy HH:mm")
-                            @if (f.Versione > 1)
-                            {
-                                <span class="badge-compliance badge-todo"
-                                      style="font-size:0.65rem;padding:1px 5px;">
-                                    v@f.Versione
-                                </span>
-                            }
+                            
                         </div>
                     </div>
+                    <!-- AZIONI -->
+                    
+<!-- VISUALIZZA -->
+<a href="/Documenti/Visualizza/@f.Id"
+   class="btn btn-ghost btn-icon btn-sm"
+   title="Visualizza"
+   target="_blank"
+   onclick="event.stopPropagation()">
+    <i class="bi bi-eye"></i>
+</a>
+
+       <!-- DOWNLOAD -->
                     <a href="/Documenti/Download/@f.Id"
                        class="btn btn-ghost btn-icon btn-sm"
                        title="Scarica"
                        onclick="event.stopPropagation()">
                         <i class="bi bi-download"></i>
                     </a>
+                   <!-- ELIMINA -->
+@if (User.IsInRole("ADMIN_ORG") || User.IsInRole("EFM") || User.IsInRole("EDR"))
+{
+    <form asp-controller="Documenti"
+          asp-action="Elimina"
+          asp-route-id="@f.Id"
+          method="post"
+          style="display:inline;">
+          @Html.AntiForgeryToken()
+<input type="hidden"
+               name="returnUrl"
+               value="/Apparecchiature/Detail/@app.Id?tab=documenti#tab-documenti" />
+        
+          <button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Elimina"
+                onclick="if(!confirm('Eliminare questo documento?')) return false;">
+            <i class="bi bi-trash"></i>
+        </button>
+
+    </form>
+}
                 </li>
+            }
+           </ul> 
+
+
+</div>
+
+</li>
+
+
             }
         </ul>
     }
@@ -1305,4 +1416,37 @@ function toggleFormFigura() {
     if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
 }
 </script>
+<script>
+function toggleCategoria(id) {
+    const el = document.getElementById(id);
+    const icon = document.getElementById("icon-" + id);
+
+    if (!el) return;
+
+    // controllo semplice e sicuro
+    if (el.style.display === "none") {
+        el.style.display = "block";
+
+        if (icon) {
+            icon.classList.remove("bi-chevron-right");
+            icon.classList.add("bi-chevron-down");
+        }
+
+    } else {
+        el.style.display = "none";
+
+        if (icon) {
+            icon.classList.remove("bi-chevron-down");
+            icon.classList.add("bi-chevron-right");
+        }
+    }
+}
+</script>
+<style>
+.collapsed {
+    display: none !important;
+}
+</style>
+
+
 }
