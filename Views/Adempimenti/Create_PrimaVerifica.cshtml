@@ -1,0 +1,142 @@
+@model RadiologiaAppNew.Models.PrimaVerificaBenestare
+@{
+    Layout = "_Layout";
+    var isEdit = ViewBag.IsEdit == true;
+    ViewData["Title"] = isEdit ? "Modifica Prima Verifica e Benestare" : "Nuova Prima Verifica e Benestare";
+    ViewData["BreadcrumbParent"] = "Sorveglianza Fisica";
+    int appId = ViewBag.ApparecchiaturaId ?? 0;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-check2-circle me-2 text-primary"></i>
+            @(isEdit ? "Modifica Prima Verifica e Benestare" : "Nuova Prima Verifica e Benestare")
+        </h1>
+        <p class="page-subtitle">@ViewBag.ApparecchiaturaDescrizione</p>
+    </div>
+    <div class="page-actions">
+        <a href="/Apparecchiature/Detail/@appId?tab=adempimenti"
+   class="btn btn-ghost">
+    <i class="bi bi-arrow-left"></i> Torna alla scheda
+</a>
+    </div>
+</div>
+
+
+
+<form asp-action="@(isEdit ? "EditPrimaVerifica" : "NuovaPrimaVerifica")"
+      asp-controller="Adempimenti"
+      asp-route-id="@(isEdit ? Model.Id : (int?)null)"
+      method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ApparecchiaturaId" />
+
+    @if (isEdit) { <input type="hidden" asp-for="Id" /> }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert-radiologia alert-danger mb-4">
+            <i class="bi bi-exclamation-circle alert-icon"></i>
+            <div>
+                @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <div style="font-size:0.85rem">@e.ErrorMessage</div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <i class="bi bi-check2-circle text-primary"></i>
+                    <h4 class="form-section-title">Dati Prima Verifica e Benestare</h4>
+                </div>
+
+                <div class="form-section-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <label asp-for="DataVerifica" class="form-label"></label>
+                            <input asp-for="DataVerifica" type="date" class="form-control" />
+                            <span asp-validation-for="DataVerifica"
+                                  class="text-danger" style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label asp-for="EnteVerificatore" class="form-label"></label>
+                            <input asp-for="EnteVerificatore" class="form-control"
+                                   placeholder="Es. Esperto qualificato / Ente" />
+                            <span asp-validation-for="EnteVerificatore"
+                                  class="text-danger" style="font-size:0.775rem"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">File Verifica</label>
+                            @if (isEdit && !string.IsNullOrEmpty(ViewBag.FileAttuale as string))
+                            {
+                                <div class="mb-2 d-flex align-items-center gap-2">
+                                    <a href="@ViewBag.FileAttuale" target="_blank"
+                                       class="btn btn-ghost btn-sm">
+                                        <i class="bi bi-paperclip"></i> @ViewBag.FileNome
+                                    </a>
+                                    <button type="submit"
+                                            formaction="/Adempimenti/EliminaFilePrimaVerifica?id=@Model.Id&amp;apparecchiaturaId=@appId"
+                                            formmethod="post"
+                                            class="btn btn-outline-danger btn-sm"
+                                            title="Elimina definitivamente il file"
+                                            onclick="return confirm('Eliminare definitivamente questo file? L\'operazione non è reversibile.');">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            }
+                            <input type="file" name="fileVerifica" class="form-control"
+                                   accept=".pdf,.jpg,.jpeg,.png,.docx" />
+                            <div class="form-text">
+                                Documento di prima verifica e benestare
+                            </div>
+                        </div>
+
+
+                        <div class="col-12"><hr class="divider" /></div>
+
+                        <div class="col-12">
+                            <label asp-for="Note" class="form-label"></label>
+                            <textarea asp-for="Note" class="form-control" rows="3"
+                                      placeholder="Note aggiuntive..."></textarea>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header" style="background:var(--primary);color:white;">
+                    <h3 class="card-title" style="color:white;">
+                        <i class="bi bi-info-circle me-2"></i> Info
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p style="font-size:0.85rem;color:var(--neutral-600)">
+                        Inserisci i dati della prima verifica e del benestare all’utilizzo.
+                    </p>
+                    <hr class="divider" />
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle"></i>
+                         @(isEdit ? "Aggiorna" : "Salva Verifica e Benestare")
+
+                    </button>
+                    <a href="/Apparecchiature/Detail/@appId?tab=adempimenti"  class="btn btn-ghost w-100 mt-2">Annulla</a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

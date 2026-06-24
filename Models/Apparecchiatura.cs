@@ -336,6 +336,8 @@ namespace RadiologiaAppNew.Models
         public ICollection<FileAllegato> FileAllegati { get; set; } = new List<FileAllegato>();
         public ICollection<RecordVerifica> RecordVerifiche { get; set; } = new List<RecordVerifica>();
         public ICollection<NotificaPratica> NotifichePratica { get; set; } = new List<NotificaPratica>();
+        public ICollection<CessazionePratica> CessazioniPratica { get; set; } = new List<CessazionePratica>();
+        public ICollection<PrimaVerificaBenestare> PrimeVerificheBenestare { get; set; } = new List<PrimaVerificaBenestare>();
         public ICollection<NullaOsta> NullaOsta { get; set; } = new List<NullaOsta>();
         public ICollection<Verbale> Verbali { get; set; } = new List<Verbale>();
     }

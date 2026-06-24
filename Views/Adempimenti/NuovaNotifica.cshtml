@@ -2,7 +2,7 @@
 @{
     Layout = "_Layout";
     var isEdit = ViewBag.IsEdit == true;
-    ViewData["Title"] = isEdit ? "Modifica Notifica di Pratica" : "Nuova Notifica di Pratica";
+    ViewData["Title"] = isEdit ? "Modifica Notifica di Pratica e DVR" : "Nuova Notifica di Pratica e DVR";
     ViewData["BreadcrumbParent"] = "Sorveglianza Fisica";
     int appId = ViewBag.ApparecchiaturaId ?? 0;
 }
@@ -11,7 +11,7 @@
     <div>
         <h1 class="page-title">
             <i class="bi bi-send me-2 text-primary"></i>
-            @(isEdit ? "Modifica Notifica di Pratica" : "Nuova Notifica di Pratica")
+            @(isEdit ? "Modifica Notifica di Pratica e DVR" : "Nuova Notifica di Pratica e DVR")
         </h1>
         <p class="page-subtitle">@ViewBag.ApparecchiaturaDescrizione</p>
     </div>
@@ -50,7 +50,7 @@
             <div class="form-section">
                 <div class="form-section-header">
                     <i class="bi bi-send text-primary"></i>
-                    <h4 class="form-section-title">Dati Notifica di Pratica</h4>
+                    <h4 class="form-section-title">Dati Notifica di Pratica e DVR</h4>
                 </div>
                 <div class="form-section-body">
                     <div class="row g-3">

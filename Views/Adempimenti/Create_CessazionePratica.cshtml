@@ -1,8 +1,8 @@
-@model RadiologiaAppNew.Models.NotificaPratica
+@model RadiologiaAppNew.Models.CessazionePratica
 @{
     Layout = "_Layout";
     var isEdit = ViewBag.IsEdit == true;
-    ViewData["Title"] = isEdit ? "Modifica Notifica di Pratica e DVR" : "Nuova Notifica di Pratica e DVR";
+    ViewData["Title"] = isEdit ? "Modifica Cessazione di Pratica" : "Nuova Cessazione di Pratica";
     ViewData["BreadcrumbParent"] = "Sorveglianza Fisica";
     int appId = ViewBag.ApparecchiaturaId ?? 0;
 }
@@ -11,7 +11,7 @@
     <div>
         <h1 class="page-title">
             <i class="bi bi-send me-2 text-primary"></i>
-            @(isEdit ? "Modifica Notifica di Pratica e DVR" : "Nuova Notifica di Pratica e DVR")
+            @(isEdit ? "Modifica Cessazione di Pratica" : "Nuova Cessazione di Pratica")
         </h1>
         <p class="page-subtitle">@ViewBag.ApparecchiaturaDescrizione</p>
     </div>
@@ -23,11 +23,12 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "EditNotifica" : "NuovaNotifica")"
+<form asp-action="@(isEdit ? "EditCessazione" : "NuovaCessazione")"
       asp-controller="Adempimenti"
       asp-route-id="@(isEdit ? Model.Id : (int?)null)"
       method="post" enctype="multipart/form-data">
-    @Html.AntiForgeryToken()<input type="hidden" asp-for="ApparecchiaturaId" />
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ApparecchiaturaId" />
     @if (isEdit) { <input type="hidden" asp-for="Id" /> }
 
     @if (!ViewData.ModelState.IsValid)
@@ -49,7 +50,7 @@
             <div class="form-section">
                 <div class="form-section-header">
                     <i class="bi bi-send text-primary"></i>
-                    <h4 class="form-section-title">Dati Notifica di Pratica e DVR</h4>
+                    <h4 class="form-section-title">Dati Cessazione di Pratica</h4>
                 </div>
                 <div class="form-section-body">
                     <div class="row g-3">
@@ -65,9 +66,9 @@
                         </div>
 
                         <div class="col-md-3">
-                            <label asp-for="DataNotifica" class="form-label"></label>
-                            <input asp-for="DataNotifica" type="date" class="form-control" />
-                            <span asp-validation-for="DataNotifica"
+                            <label asp-for="DataCessazione" class="form-label"></label>
+                            <input asp-for="DataCessazione" type="date" class="form-control" />
+                            <span asp-validation-for="DataCessazione"
                                   class="text-danger" style="font-size:0.775rem"></span>
                         </div>
 
@@ -80,17 +81,16 @@
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label">File Notifica</label>
+                            <label class="form-label">File Cessazione</label>
                             @if (isEdit && !string.IsNullOrEmpty(ViewBag.FileAttuale as string))
                             {
                                 <div class="mb-2 d-flex align-items-center gap-2">
                                     <a href="@ViewBag.FileAttuale" target="_blank"
                                        class="btn btn-ghost btn-sm">
-                                        <i class="bi bi-paperclip"></i>@ViewBag.FileNome
-
+                                        <i class="bi bi-paperclip"></i> @ViewBag.FileNome
                                     </a>
                                     <button type="submit"
-                                            formaction="/Adempimenti/EliminaFileNotifica?id=@Model.Id&amp;apparecchiaturaId=@appId"
+                                            formaction="/Adempimenti/EliminaFileCessazione?id=@Model.Id&amp;apparecchiaturaId=@appId"
                                             formmethod="post"
                                             class="btn btn-outline-danger btn-sm"
                                             title="Elimina definitivamente il file"
@@ -99,64 +99,15 @@
                                     </button>
                                 </div>
                             }
-                            <input type="file" name="fileNotifica" class="form-control"
+                            <input type="file" name="fileCessazione" class="form-control"
                                    accept=".pdf,.jpg,.jpeg,.png,.docx" />
                             <div class="form-text">
-                                Documento di notifica (PEC, ricevuta, allegati)
+                                Documento di cessazione (PEC, ricevuta, allegati)
                             </div>
                         </div>
-
-<!-- ✅ NUOVO CAMPO DVR -->
-<div class="col-12 mt-3">
-    <label class="form-label">File DVR</label>
-
-    @if (isEdit && !string.IsNullOrEmpty(ViewBag.FileDvrAttuale as string))
-    {
-        <div class="mb-2 d-flex align-items-center gap-2">
-            <a href="@ViewBag.FileDvrAttuale" target="_blank"
-               class="btn btn-ghost btn-sm">
-               <i class="bi bi-paperclip"></i>@ViewBag.FileDvrNome
-            </a>
-            <button type="submit"
-                    formaction="/Adempimenti/EliminaFileDvr?id=@Model.Id&amp;apparecchiaturaId=@appId"
-                    formmethod="post"
-                    class="btn btn-outline-danger btn-sm"
-                    title="Elimina definitivamente il file"
-                    onclick="return confirm('Eliminare definitivamente questo file? L\'operazione non è reversibile.');">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        </div>
-    }
-
-    <input type="file" name="fileDvr" class="form-control"
-           accept=".pdf,.jpg,.jpeg,.png,.docx" />
-
-    <div class="form-text">
-        Documento DVR
-    </div>
-</div>
-
 
 
                         <div class="col-12"><hr class="divider" /></div>
-
-                        <div class="col-md-3">
-                            <div class="form-check form-switch mt-2">
-                                <input asp-for="InviatoRspp" type="checkbox"
-                                       class="form-check-input"
-                                       style="width:2.5em;height:1.3em;"
-                                       onchange="onRsppChange(this)" />
-                                <label asp-for="InviatoRspp" class="form-check-label ms-2">
-                                    DVR Inviato a RSPP
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3" id="divDataRspp"
-                             style="@(Model.InviatoRspp ? "" : "display:none")">
-                            <label asp-for="DataInvioRspp" class="form-label"></label>
-                            <input asp-for="DataInvioRspp" type="date" class="form-control" />
-                        </div>
 
                         <div class="col-12">
                             <label asp-for="Note" class="form-label"></label>
@@ -180,14 +131,12 @@
                 </div>
                 <div class="card-body">
                     <p style="font-size:0.85rem;color:var(--neutral-600)">
-                        La Notifica di Pratica deve essere inviata agli organi
-                        competenti via PEC prima dell'entrata in uso
-                        dell'apparecchiatura (art. 46 D.Lgs. 101/20).
+                        La cessazione di pratica deve essere comunicata agli enti competenti via PEC.
                     </p>
                     <hr class="divider" />
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-check-circle"></i>
-                        @(isEdit ? "Aggiorna" : "Salva Notifica")
+                        @(isEdit ? "Aggiorna" : "Salva Cessazione")
                     </button>
                     <a href="/Apparecchiature/Detail/@appId?tab=adempimenti"
                        class="btn btn-ghost w-100 mt-2">Annulla</a>
@@ -197,11 +146,3 @@
     </div>
 </form>
 
-@section Scripts {
-<script>
-function onRsppChange(cb) {
-    document.getElementById('divDataRspp').style.display =
-        cb.checked ? 'block' : 'none';
-}
-</script>
-}

@@ -18,7 +18,7 @@
         <p class="page-subtitle">@ViewBag.ApparecchiaturaDescrizione</p>
     </div>
     <div class="page-actions">
-        <a href="/Apparecchiature/Detail/@appId?tab=verbali"
+        <a href="/Apparecchiature/Detail/@appId?tab=adempimenti"
            class="btn btn-ghost">
             <i class="bi bi-arrow-left"></i> Torna alla scheda
         </a>
@@ -121,6 +121,23 @@
 
                         <div class="col-12">
                             <label class="form-label">File Verbale</label>
+                            @if (isEdit && !string.IsNullOrEmpty(ViewBag.FileAttuale as string))
+                            {
+                                <div class="mb-2 d-flex align-items-center gap-2">
+                                    <a href="@ViewBag.FileAttuale" target="_blank"
+                                       class="btn btn-ghost btn-sm">
+                                        <i class="bi bi-paperclip"></i> @ViewBag.FileNome
+                                    </a>
+                                    <button type="submit"
+                                            formaction="/Adempimenti/EliminaFileVerbale?id=@Model.Id&amp;apparecchiaturaId=@appId"
+                                            formmethod="post"
+                                            class="btn btn-outline-danger btn-sm"
+                                            title="Elimina definitivamente il file"
+                                            onclick="return confirm('Eliminare definitivamente questo file? L\'operazione non è reversibile.');">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            }
                             <input type="file" name="fileVerbale" class="form-control"
                                    accept=".pdf,.docx,.jpg,.png" />
                         </div>

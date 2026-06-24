@@ -161,13 +161,7 @@
                             <div class="fw-600">@v.Anno</div>
                         </div>
                     }
-                    @if (!string.IsNullOrEmpty(v.Semestre))
-                    {
-                        <div class="col-md-2">
-                            <div class="form-label">Semestre</div>
-                            <div class="fw-600">@v.Semestre</div>
-                        </div>
-                    }
+                    
                     @if (v.ProssimaVerificaData.HasValue)
                     {
                         <div class="col-md-4">

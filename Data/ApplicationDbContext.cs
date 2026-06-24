@@ -29,6 +29,8 @@ namespace RadiologiaAppNew.Data
         public DbSet<RecordVerifica> RecordVerifiche { get; set; }
         public DbSet<NotificaPratica> NotifichePratica { get; set; }
         public DbSet<NullaOsta> NullaOsta { get; set; }
+        public DbSet<CessazionePratica> CessazioniPratica { get; set; }
+        public DbSet<PrimaVerificaBenestare> PrimeVerificheBenestare { get; set; }
         public DbSet<Verbale> Verbali { get; set; }
 
         // Anagrafica tecnica

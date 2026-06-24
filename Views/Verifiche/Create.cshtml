@@ -167,17 +167,7 @@
                                    placeholder="Es. 2025" />
                         </div>
 
-                        <div class="col-md-5" id="divSemestre" style="display:none;">
-                            <label asp-for="Semestre" class="form-label"></label>
-                            <select asp-for="Semestre" class="form-select">
-                                <option value="">— Seleziona —</option>
-                                @for (int y = DateTime.Today.Year; y >= DateTime.Today.Year - 3; y--)
-                                {
-                                    <option value="1S-@y">1° Semestre @y</option>
-                                    <option value="2S-@y">2° Semestre @y</option>
-                                }
-                            </select>
-                        </div>
+                       
 
                         <!-- Esito — valori rinominati -->
                         <div class="col-md-12">

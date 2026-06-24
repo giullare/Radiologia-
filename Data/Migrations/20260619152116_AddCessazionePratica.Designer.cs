@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RadiologiaAppNew.Data;
 
@@ -10,9 +11,11 @@ using RadiologiaAppNew.Data;
 namespace RadiologiaAppNew.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260619152116_AddCessazionePratica")]
+    partial class AddCessazionePratica
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
@@ -1122,9 +1125,6 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.Property<int?>("PazienteId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("PrimaVerificaBenestareId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int?>("SostituisceFileId")
                         .HasColumnType("INTEGER");
 
@@ -1159,8 +1159,6 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.HasIndex("NullaOstaId");
 
                     b.HasIndex("PazienteId");
-
-                    b.HasIndex("PrimaVerificaBenestareId");
 
                     b.HasIndex("VerbaleId");
 
@@ -1395,37 +1393,6 @@ namespace RadiologiaAppNew.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("PazientiLu177");
-                });
-
-            modelBuilder.Entity("RadiologiaAppNew.Models.PrimaVerificaBenestare", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ApparecchiaturaId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("DataVerifica")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EnteVerificatore")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApparecchiaturaId");
-
-                    b.ToTable("PrimeVerificheBenestare");
                 });
 
             modelBuilder.Entity("RadiologiaAppNew.Models.ProtocolloVerifica", b =>
@@ -1889,7 +1856,7 @@ namespace RadiologiaAppNew.Data.Migrations
             modelBuilder.Entity("RadiologiaAppNew.Models.CessazionePratica", b =>
                 {
                     b.HasOne("RadiologiaAppNew.Models.Apparecchiatura", "Apparecchiatura")
-                        .WithMany("CessazioniPratica")
+                        .WithMany()
                         .HasForeignKey("ApparecchiaturaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2003,10 +1970,6 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasForeignKey("PazienteId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("RadiologiaAppNew.Models.PrimaVerificaBenestare", null)
-                        .WithMany("FileAllegati")
-                        .HasForeignKey("PrimaVerificaBenestareId");
-
                     b.HasOne("RadiologiaAppNew.Models.Verbale", "Verbale")
                         .WithMany("FileAllegati")
                         .HasForeignKey("VerbaleId");
@@ -2060,17 +2023,6 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.Navigation("Apparecchiatura");
                 });
 
-            modelBuilder.Entity("RadiologiaAppNew.Models.PrimaVerificaBenestare", b =>
-                {
-                    b.HasOne("RadiologiaAppNew.Models.Apparecchiatura", "Apparecchiatura")
-                        .WithMany("PrimeVerificheBenestare")
-                        .HasForeignKey("ApparecchiaturaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Apparecchiatura");
-                });
-
             modelBuilder.Entity("RadiologiaAppNew.Models.RecordVerifica", b =>
                 {
                     b.HasOne("RadiologiaAppNew.Models.Apparecchiatura", "Apparecchiatura")
@@ -2103,8 +2055,6 @@ namespace RadiologiaAppNew.Data.Migrations
 
             modelBuilder.Entity("RadiologiaAppNew.Models.Apparecchiatura", b =>
                 {
-                    b.Navigation("CessazioniPratica");
-
                     b.Navigation("FigureResponsabili");
 
                     b.Navigation("FileAllegati");
@@ -2112,8 +2062,6 @@ namespace RadiologiaAppNew.Data.Migrations
                     b.Navigation("NotifichePratica");
 
                     b.Navigation("NullaOsta");
-
-                    b.Navigation("PrimeVerificheBenestare");
 
                     b.Navigation("RecordVerifiche");
 
@@ -2188,11 +2136,6 @@ namespace RadiologiaAppNew.Data.Migrations
 
                     b.Navigation("DatiEmatologici");
 
-                    b.Navigation("FileAllegati");
-                });
-
-            modelBuilder.Entity("RadiologiaAppNew.Models.PrimaVerificaBenestare", b =>
-                {
                     b.Navigation("FileAllegati");
                 });
 

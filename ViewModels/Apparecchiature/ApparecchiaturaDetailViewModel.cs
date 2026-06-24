@@ -20,6 +20,9 @@ namespace RadiologiaAppNew.ViewModels.Apparecchiature
 
         // Adempimenti
         public List<NotificaPratica> NotichePratica { get; set; } = new();
+        public List<CessazionePratica> CessazioniPratica { get; set; } = new();
+        public List<PrimaVerificaBenestare> PrimeVerificheBenestare { get; set; } = new();
+
         public List<NullaOsta> NullaOsta            { get; set; } = new();
         public List<Verbale> Verbali                { get; set; } = new();
 

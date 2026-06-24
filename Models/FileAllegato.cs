@@ -58,5 +58,10 @@ namespace RadiologiaAppNew.Models
 
         public int? CicloId { get; set; }
         public CicloTrattamento? Ciclo { get; set; }
+
+        public int? PrimaVerificaBenestareId { get; set; }
+public int? CessazionePraticaId { get; set; }
+public int? NotificaPraticaId { get; set; }
+public int? NullaOstaId { get; set; }
     }
 }

@@ -27,6 +27,80 @@ namespace RadiologiaAppNew.Controllers
         // ═══════════════════════════════════════════════════════════
         // NOTIFICHE DI PRATICA
         // ═══════════════════════════════════════════════════════════
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EliminaNotifica(int id, int apparecchiaturaId)
+{
+    var item = await _db.NotifichePratica
+        .Include(x => x.FileAllegati)
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (item != null)
+    {
+        // 1. elimina i file fisici dal disco
+        foreach (var f in item.FileAllegati)
+        {
+            EliminaFileFisico(f.NomeStorage);
+        }
+
+        // 2. elimina i record degli allegati
+        if (item.FileAllegati.Any())
+        {
+            _db.FileAllegati.RemoveRange(item.FileAllegati);
+        }
+
+        // 3. elimina notifica
+        _db.NotifichePratica.Remove(item);
+
+        await _db.SaveChangesAsync();
+    }
+
+
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = apparecchiaturaId, tab = "adempimenti" });
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EliminaFileNotifica(int id, int apparecchiaturaId)
+{
+    // id = Id della NotificaPratica. Elimina solo l'allegato NOTIFICA_PRATICA,
+    // lascia intatto l'eventuale DVR.
+    var file = await _db.FileAllegati
+        .FirstOrDefaultAsync(f => f.NotificaPraticaId == id
+                                && f.Categoria == "NOTIFICA_PRATICA");
+
+    if (file != null)
+    {
+        EliminaFileFisico(file.NomeStorage);
+        _db.FileAllegati.Remove(file);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "File eliminato.";
+    }
+
+    return RedirectToAction("EditNotifica", new { id = id });
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EliminaFileDvr(int id, int apparecchiaturaId)
+{
+    // id = Id della NotificaPratica. Elimina solo l'allegato DVR,
+    // lascia intatta la notifica di pratica.
+    var file = await _db.FileAllegati
+        .FirstOrDefaultAsync(f => f.NotificaPraticaId == id
+                                && f.Categoria == "DVR");
+
+    if (file != null)
+    {
+        EliminaFileFisico(file.NomeStorage);
+        _db.FileAllegati.Remove(file);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "File eliminato.";
+    }
+
+    return RedirectToAction("EditNotifica", new { id = id });
+}
 
         [HttpGet]
         public async Task<IActionResult> NuovaNotifica(int id)
@@ -44,16 +118,19 @@ namespace RadiologiaAppNew.Controllers
             return View("Create_NotificaPratica", new NotificaPratica
             {
                 ApparecchiaturaId = id,
-                DataNotifica      = DateTime.Today
+                DataNotifica      = DateTime.Today,
+                FileAllegati = new List<FileAllegato>()
             });
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "ADMIN_ORG,EDR")]
         public async Task<IActionResult> NuovaNotifica(
             NotificaPratica model,
-            IFormFile? fileNotifica)
+            IFormFile? fileNotifica,
+            IFormFile? fileDvr)
         {
             ModelState.Remove("Apparecchiatura");
             ModelState.Remove("FileAllegati");
@@ -66,12 +143,24 @@ namespace RadiologiaAppNew.Controllers
                 ViewBag.IsEdit = false;
                 return View("Create_NotificaPratica", model);
             }
+            
+// ✅ 1. SALVA PRIMA LA NOTIFICA
+    model.Id = 0;
+    model.CreatedAt = DateTime.UtcNow;
+
+    _db.NotifichePratica.Add(model);
+    await _db.SaveChangesAsync(); // ✅ ORA model.Id è valido
+
+    // ✅ 2. SALVA FILE NOTIFICA
+    if (fileNotifica != null)
+    {
+
 
             // Upload file
             var pathFile = await SalvaFile(fileNotifica, "notifiche");
             if (pathFile != null)
             {
-                var allegato = new FileAllegato
+                _db.FileAllegati.Add(new FileAllegato
                 {
                     NomeOriginale     = fileNotifica!.FileName,
                     NomeStorage       = pathFile,
@@ -79,17 +168,44 @@ namespace RadiologiaAppNew.Controllers
                     DimensioneBytes   = fileNotifica.Length,
                     Categoria         = "NOTIFICA_PRATICA",
                     ApparecchiaturaId = model.ApparecchiaturaId,
+                    NotificaPraticaId = model.Id, // ✅ CORRETTO
                     UploadedAt        = DateTime.UtcNow,
                     UploadedByUserId  = User.FindFirst(
                         System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
-                };
-                model.FileAllegati.Add(allegato);
+                });
+               
             }
+             }
 
-            model.Id        = 0;
-            model.CreatedAt = DateTime.UtcNow;
-            _db.NotifichePratica.Add(model);
-            await _db.SaveChangesAsync();
+ // ✅ 3. SALVA FILE DVR
+    if (fileDvr != null)
+    {
+
+            var pathDvr = await SalvaFile(fileDvr, "notifiche");
+if (pathDvr != null)
+{
+     _db.FileAllegati.Add(new FileAllegato
+    {
+        NomeOriginale     = fileDvr!.FileName,
+        NomeStorage       = pathDvr,
+        MimeType          = fileDvr.ContentType,
+        DimensioneBytes   = fileDvr.Length,
+        Categoria         = "DVR",
+        ApparecchiaturaId = model.ApparecchiaturaId,
+        NotificaPraticaId = model.Id, // ✅ CORRETTO
+        UploadedAt        = DateTime.UtcNow,
+        UploadedByUserId  = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
+    });
+
+   
+}
+}
+
+           
+// ✅ 4. SALVA FILE NEL DB
+    await _db.SaveChangesAsync();
+
 
             _logger.LogInformation(
                 "Notifica di Pratica creata per app {Id}.", model.ApparecchiaturaId);
@@ -109,12 +225,25 @@ namespace RadiologiaAppNew.Controllers
             if (n == null) return NotFound();
 
             var app = await _db.Apparecchiature.FindAsync(n.ApparecchiaturaId);
-            ViewData["Title"]              = "Modifica Notifica di Pratica";
+            ViewData["Title"]              = "Modifica Notifica di Pratica e DVR";
             ViewBag.ApparecchiaturaId          = n.ApparecchiaturaId;
             ViewBag.ApparecchiaturaDescrizione = app?.Descrizione;
             ViewBag.IsEdit    = true;
-            ViewBag.FileAttuale = n.FileAllegati
-                .FirstOrDefault(f => f.Categoria == "NOTIFICA_PRATICA")?.NomeStorage;
+           
+// ✅ FILE NOTIFICA
+    var fileNotifica = n.FileAllegati
+        .FirstOrDefault(f => f.Categoria == "NOTIFICA_PRATICA");
+
+    ViewBag.FileAttuale = fileNotifica?.NomeStorage;
+    ViewBag.FileNome = fileNotifica?.NomeOriginale;
+
+    // ✅ FILE DVR
+    var fileDvr = n.FileAllegati
+        .FirstOrDefault(f => f.Categoria == "DVR");
+
+    ViewBag.FileDvrAttuale = fileDvr?.NomeStorage;
+    ViewBag.FileDvrNome = fileDvr?.NomeOriginale;
+
 
             return View("Create_NotificaPratica", n);
         }
@@ -123,7 +252,7 @@ namespace RadiologiaAppNew.Controllers
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "ADMIN_ORG,EDR")]
         public async Task<IActionResult> EditNotifica(
-            int id, NotificaPratica model, IFormFile? fileNotifica)
+            int id, NotificaPratica model, IFormFile? fileNotifica, IFormFile? fileDvr)
         {
             ModelState.Remove("Apparecchiatura");
             ModelState.Remove("FileAllegati");
@@ -149,6 +278,16 @@ namespace RadiologiaAppNew.Controllers
 
             if (fileNotifica != null)
             {
+                // rimuove il vecchio allegato (db + disco) prima di salvare il nuovo
+                var vecchio = await _db.FileAllegati
+                    .FirstOrDefaultAsync(f => f.NotificaPraticaId == existing.Id
+                                            && f.Categoria == "NOTIFICA_PRATICA");
+                if (vecchio != null)
+                {
+                    EliminaFileFisico(vecchio.NomeStorage);
+                    _db.FileAllegati.Remove(vecchio);
+                }
+
                 var pathFile = await SalvaFile(fileNotifica, "notifiche");
                 if (pathFile != null)
                 {
@@ -160,19 +299,484 @@ namespace RadiologiaAppNew.Controllers
                         DimensioneBytes   = fileNotifica.Length,
                         Categoria         = "NOTIFICA_PRATICA",
                         ApparecchiaturaId = existing.ApparecchiaturaId,
+                        NotificaPraticaId = existing.Id,
                         UploadedAt        = DateTime.UtcNow,
                         UploadedByUserId  = User.FindFirst(
                             System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
                     });
                 }
             }
+if (fileDvr != null)
+{
+    // rimuove il vecchio DVR (db + disco) prima di salvare il nuovo
+    var vecchioDvr = await _db.FileAllegati
+        .FirstOrDefaultAsync(f => f.NotificaPraticaId == existing.Id
+                                && f.Categoria == "DVR");
+    if (vecchioDvr != null)
+    {
+        EliminaFileFisico(vecchioDvr.NomeStorage);
+        _db.FileAllegati.Remove(vecchioDvr);
+    }
 
+    var pathDvr = await SalvaFile(fileDvr, "notifiche");
+    if (pathDvr != null)
+    {
+        _db.FileAllegati.Add(new FileAllegato
+        {
+            NomeOriginale     = fileDvr.FileName,
+            NomeStorage       = pathDvr,
+            MimeType          = fileDvr.ContentType,
+            DimensioneBytes   = fileDvr.Length,
+            Categoria         = "DVR",
+            ApparecchiaturaId = existing.ApparecchiaturaId,
+            NotificaPraticaId = existing.Id,
+            UploadedAt        = DateTime.UtcNow,
+            UploadedByUserId  = User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
+        });
+    }
+}
             await _db.SaveChangesAsync();
             TempData["Success"] = "Notifica di Pratica aggiornata.";
             return RedirectToAction("Detail", "Apparecchiature",
                 new { id = existing.ApparecchiaturaId, tab = "adempimenti" });
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // CESSAZIONI DI PRATICA
+        // ═══════════════════════════════════════════════════════════
+       
+[HttpGet]
+public async Task<IActionResult> EditCessazione(int id)
+{
+    var c = await _db.CessazioniPratica
+        .Include(x => x.FileAllegati)
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (c == null) return NotFound();
+
+    var app = await _db.Apparecchiature.FindAsync(c.ApparecchiaturaId);
+
+    ViewData["Title"] = "Modifica Cessazione di Pratica";
+    ViewBag.ApparecchiaturaId = c.ApparecchiaturaId;
+    ViewBag.ApparecchiaturaDescrizione = app?.Descrizione;
+    ViewBag.IsEdit = true;
+
+    var file = c.FileAllegati
+        .FirstOrDefault(f => f.Categoria == "CESSAZIONE");
+        ViewBag.FileAttuale = file?.NomeStorage;
+ViewBag.FileNome = file?.NomeOriginale; // ✅ AGGIUNTO
+
+
+    return View("Create_CessazionePratica", c);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EditCessazione(
+    int id,
+    CessazionePratica model,
+    IFormFile? fileCessazione)
+{
+    ModelState.Remove("Apparecchiatura");
+    ModelState.Remove("FileAllegati");
+
+    if (!ModelState.IsValid)
+    {
+        ViewBag.ApparecchiaturaId = model.ApparecchiaturaId;
+        ViewBag.ApparecchiaturaDescrizione =
+            (await _db.Apparecchiature.FindAsync(model.ApparecchiaturaId))?.Descrizione;
+        ViewBag.IsEdit = true;
+
+        return View("Create_CessazionePratica", model);
+    }
+
+    var existing = await _db.CessazioniPratica.FindAsync(id);
+    if (existing == null) return NotFound();
+
+    existing.NumeroProtocolloPec = model.NumeroProtocolloPec;
+    existing.DataCessazione = model.DataCessazione;
+    existing.EnteDestinatario = model.EnteDestinatario;
+    existing.Note = model.Note;
+
+    if (fileCessazione != null)
+    {
+        // rimuove il vecchio allegato (db + disco) prima di salvare il nuovo,
+        // cosi non si accumulano file orfani e l'edit mostra sempre l'ultimo
+        var vecchio = await _db.FileAllegati
+            .FirstOrDefaultAsync(f => f.CessazionePraticaId == existing.Id
+                                    && f.Categoria == "CESSAZIONE");
+        if (vecchio != null)
+        {
+            EliminaFileFisico(vecchio.NomeStorage);
+            _db.FileAllegati.Remove(vecchio);
+        }
+
+        var path = await SalvaFile(fileCessazione, "cessazioni");
+
+        if (path != null)
+        {
+            _db.FileAllegati.Add(new FileAllegato
+            {
+                NomeOriginale     = fileCessazione.FileName,
+                NomeStorage       = path,
+                MimeType          = fileCessazione.ContentType,
+                DimensioneBytes   = fileCessazione.Length,
+                Categoria         = "CESSAZIONE",
+                ApparecchiaturaId = existing.ApparecchiaturaId,
+                CessazionePraticaId = existing.Id,
+                UploadedAt        = DateTime.UtcNow,
+                UploadedByUserId  = User.FindFirst(
+                    System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
+            });
+        }
+    }
+
+    await _db.SaveChangesAsync();
+
+    TempData["Success"] = "Cessazione aggiornata.";
+
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = existing.ApparecchiaturaId, tab = "adempimenti" });
+}
+
+       [HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EliminaCessazione(int id, int apparecchiaturaId)
+{
+    var item = await _db.CessazioniPratica
+        .Include(x => x.FileAllegati)
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (item != null)
+    {
+        // 1. elimina i file fisici dal disco
+        foreach (var f in item.FileAllegati)
+        {
+            EliminaFileFisico(f.NomeStorage);
+        }
+
+        // 2. elimina i record degli allegati
+        if (item.FileAllegati.Any())
+        {
+            _db.FileAllegati.RemoveRange(item.FileAllegati);
+        }
+
+        // 3. elimina cessazione
+        _db.CessazioniPratica.Remove(item);
+
+        await _db.SaveChangesAsync();
+    }
+
+
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = apparecchiaturaId, tab = "adempimenti" });
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EliminaFileCessazione(int id, int apparecchiaturaId)
+{
+    // id = Id della CessazionePratica, non del FileAllegato:
+    // così il bottone "X" nel form puo' richiamare l'azione senza dover
+    // conoscere l'Id del FileAllegato, che la view non riceve.
+    var file = await _db.FileAllegati
+        .FirstOrDefaultAsync(f => f.CessazionePraticaId == id
+                                && f.Categoria == "CESSAZIONE");
+
+    if (file != null)
+    {
+        EliminaFileFisico(file.NomeStorage);
+        _db.FileAllegati.Remove(file);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "File eliminato.";
+    }
+
+    return RedirectToAction("EditCessazione", new { id = id });
+}
+
+        [HttpGet]
+public async Task<IActionResult> NuovaCessazione(int id)
+{
+    var app = await _db.Apparecchiature.FindAsync(id);
+    if (app == null) return NotFound();
+
+    ViewBag.ApparecchiaturaId = id;
+    ViewBag.ApparecchiaturaDescrizione = app.Descrizione;
+    ViewBag.IsEdit = false;
+
+    return View("Create_CessazionePratica", new CessazionePratica
+    {
+        ApparecchiaturaId = id,
+        DataCessazione = DateTime.Today,
+        FileAllegati = new List<FileAllegato>()
+    });
+}
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> NuovaCessazione(
+    CessazionePratica model,
+    IFormFile? fileCessazione)
+{
+    ModelState.Remove("Apparecchiatura");
+    ModelState.Remove("FileAllegati");
+
+    if (!ModelState.IsValid)
+    {
+        return View("Create_CessazionePratica", model);
+    }
+_db.CessazioniPratica.Add(model);
+    await _db.SaveChangesAsync();
+     if (fileCessazione != null)
+    {
+
+    var pathFile = await SalvaFile(fileCessazione, "cessazioni");
+
+    if (pathFile != null)
+    {
+        _db.FileAllegati.Add(new FileAllegato
+        {
+            NomeOriginale = fileCessazione!.FileName,
+            NomeStorage = pathFile,
+            MimeType = fileCessazione.ContentType,
+            DimensioneBytes = fileCessazione.Length,
+            Categoria = "CESSAZIONE",
+            ApparecchiaturaId = model.ApparecchiaturaId,
+            CessazionePraticaId = model.Id,
+            UploadedAt = DateTime.UtcNow,
+            UploadedByUserId  = User.FindFirst(
+    System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
+        });
+        await _db.SaveChangesAsync();
+
+    }
+    }
+    
+    _logger.LogInformation(
+    "Cessazione di Pratica creata per app {Id}.", model.ApparecchiaturaId);
+
+TempData["Success"] = "Cessazione di Pratica registrata.";
+
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = model.ApparecchiaturaId, tab = "adempimenti" });
+}
+        // ═══════════════════════════════════════════════════════════
+        // PRIMA VERIFICA BENESTARE
+        // ═══════════════════════════════════════════════════════════
+
+[HttpGet]
+public async Task<IActionResult> EditPrimaVerifica(int id)
+{
+    var p = await _db.PrimeVerificheBenestare
+        .Include(x => x.FileAllegati)
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (p == null) return NotFound();
+
+    var app = await _db.Apparecchiature.FindAsync(p.ApparecchiaturaId);
+
+    ViewData["Title"] = "Modifica Prima Verifica e Benestare";
+    ViewBag.ApparecchiaturaId = p.ApparecchiaturaId;
+    ViewBag.ApparecchiaturaDescrizione = app?.Descrizione;
+    ViewBag.IsEdit = true;
+
+    var file =  p.FileAllegati
+        .FirstOrDefault(f => f.Categoria == "PRIMA_VERIFICA");
+        
+ViewBag.FileAttuale = file?.NomeStorage;
+ViewBag.FileNome = file?.NomeOriginale; 
+
+
+    return View("Create_PrimaVerifica", p);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EditPrimaVerifica(
+    int id,
+    PrimaVerificaBenestare model,
+    IFormFile? fileVerifica)
+{
+    ModelState.Remove("Apparecchiatura");
+    ModelState.Remove("FileAllegati");
+
+    if (!ModelState.IsValid)
+    {
+        ViewBag.ApparecchiaturaId = model.ApparecchiaturaId;
+        ViewBag.ApparecchiaturaDescrizione =
+            (await _db.Apparecchiature.FindAsync(model.ApparecchiaturaId))?.Descrizione;
+        ViewBag.IsEdit = true;
+
+        return View("Create_PrimaVerifica", model);
+    }
+
+    var existing = await _db.PrimeVerificheBenestare.FindAsync(id);
+    if (existing == null) return NotFound();
+
+    existing.DataVerifica = model.DataVerifica;
+    existing.EnteVerificatore = model.EnteVerificatore;
+    existing.Note = model.Note;
+
+    if (fileVerifica != null)
+    {
+        // rimuove il vecchio allegato (db + disco) prima di salvare il nuovo,
+        // cosi non si accumulano file orfani e l'edit mostra sempre l'ultimo
+        var vecchio = await _db.FileAllegati
+            .FirstOrDefaultAsync(f => f.PrimaVerificaBenestareId == existing.Id
+                                    && f.Categoria == "PRIMA_VERIFICA");
+        if (vecchio != null)
+        {
+            EliminaFileFisico(vecchio.NomeStorage);
+            _db.FileAllegati.Remove(vecchio);
+        }
+
+        var path = await SalvaFile(fileVerifica, "prime_verifiche");
+
+        if (path != null)
+        {
+            _db.FileAllegati.Add(new FileAllegato
+            {
+                NomeOriginale     = fileVerifica.FileName,
+                NomeStorage       = path,
+                MimeType          = fileVerifica.ContentType,
+                DimensioneBytes   = fileVerifica.Length,
+                Categoria         = "PRIMA_VERIFICA",
+                ApparecchiaturaId = existing.ApparecchiaturaId,
+                PrimaVerificaBenestareId = existing.Id,
+                UploadedAt        = DateTime.UtcNow,
+                UploadedByUserId  = User.FindFirst(
+                    System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
+            });
+        }
+    }
+
+    await _db.SaveChangesAsync();
+
+    TempData["Success"] = "Prima verifica aggiornata.";
+
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = existing.ApparecchiaturaId, tab = "adempimenti" });
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EliminaPrimaVerifica(int id, int apparecchiaturaId)
+{
+    var item = await _db.PrimeVerificheBenestare
+        .Include(x => x.FileAllegati)
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (item != null)
+    {
+        // 1. elimina i file fisici dal disco
+        foreach (var f in item.FileAllegati)
+        {
+            EliminaFileFisico(f.NomeStorage);
+        }
+
+        // 2. elimina i record degli allegati
+        if (item.FileAllegati.Any())
+        {
+            _db.FileAllegati.RemoveRange(item.FileAllegati);
+        }
+
+        // 3. elimina verifica
+        _db.PrimeVerificheBenestare.Remove(item);
+
+        await _db.SaveChangesAsync();
+    }
+
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = apparecchiaturaId, tab = "adempimenti" });
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EliminaFilePrimaVerifica(int id, int apparecchiaturaId)
+{
+    // id = Id della PrimaVerificaBenestare, non del FileAllegato:
+    // così il bottone "X" nel form puo' richiamare l'azione senza dover
+    // conoscere l'Id del FileAllegato, che la view non riceve.
+    var file = await _db.FileAllegati
+        .FirstOrDefaultAsync(f => f.PrimaVerificaBenestareId == id
+                                && f.Categoria == "PRIMA_VERIFICA");
+
+    if (file != null)
+    {
+        EliminaFileFisico(file.NomeStorage);
+        _db.FileAllegati.Remove(file);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "File eliminato.";
+    }
+
+    return RedirectToAction("EditPrimaVerifica", new { id = id });
+}
+
+[HttpGet]
+public async Task<IActionResult> NuovaPrimaVerifica(int id)
+{
+    var app = await _db.Apparecchiature.FindAsync(id);
+    if (app == null) return NotFound();
+
+    ViewBag.ApparecchiaturaId = id;
+    ViewBag.ApparecchiaturaDescrizione = app.Descrizione;
+    ViewBag.IsEdit = false;
+
+    return View("Create_PrimaVerifica", new PrimaVerificaBenestare
+    {
+        ApparecchiaturaId = id,
+        DataVerifica = DateTime.Today,
+        FileAllegati = new List<FileAllegato>() // ✅ IMPORTANTISSIMO
+    });
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> NuovaPrimaVerifica(
+    PrimaVerificaBenestare model,
+    IFormFile? fileVerifica)
+{
+    ModelState.Remove("Apparecchiatura");
+    ModelState.Remove("FileAllegati");
+
+    if (!ModelState.IsValid)
+        return View("Create_PrimaVerifica", model);
+
+
+// ✅ 1. SALVA PRIMA LA VERIFICA
+    _db.PrimeVerificheBenestare.Add(model);
+    await _db.SaveChangesAsync(); // ✅ ORA model.Id è valorizzato
+
+    // ✅ 2. POI SALVA IL FILE (con FK CORRETTA)
+    if (fileVerifica != null)
+    {
+
+    var path = await SalvaFile(fileVerifica, "prime_verifiche");
+
+
+    if (path != null)
+    {
+        _db.FileAllegati.Add(new FileAllegato
+        {
+            NomeOriginale = fileVerifica!.FileName,
+            NomeStorage = path,
+            MimeType = fileVerifica.ContentType,
+            DimensioneBytes = fileVerifica.Length,
+            Categoria = "PRIMA_VERIFICA",
+            ApparecchiaturaId = model.ApparecchiaturaId,
+            PrimaVerificaBenestareId = model.Id,
+            UploadedAt = DateTime.UtcNow,
+            UploadedByUserId = User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
+        });
+         await _db.SaveChangesAsync();
+    }
+      }
+    TempData["Success"] = "Prima verifica registrata.";
+
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = model.ApparecchiaturaId, tab = "adempimenti" });
+}
         // ═══════════════════════════════════════════════════════════
         // NULLA OSTA
         // ═══════════════════════════════════════════════════════════
@@ -194,7 +798,8 @@ namespace RadiologiaAppNew.Controllers
             {
                 ApparecchiaturaId = id,
                 DataRilascio      = DateTime.Today,
-                Stato             = StatoNullaOsta.Valido
+                Stato             = StatoNullaOsta.Valido,
+                FileAllegati = new List<FileAllegato>()
             });
         }
 
@@ -215,6 +820,14 @@ namespace RadiologiaAppNew.Controllers
                 ViewBag.IsEdit = false;
                 return View("Create_NullaOsta", model);
             }
+            
+// ✅ 1. SALVA PRIMA IL NULLA OSTA
+    model.Id = 0;
+    model.CreatedAt = DateTime.UtcNow;
+
+    _db.NullaOsta.Add(model);
+    await _db.SaveChangesAsync(); // ✅ ORA model.Id è valorizzato
+
 
             // Upload file
             if (fileNullaOsta != null)
@@ -222,7 +835,7 @@ namespace RadiologiaAppNew.Controllers
                 var pathFile = await SalvaFile(fileNullaOsta, "nullaosta");
                 if (pathFile != null)
                 {
-                    model.FileAllegati.Add(new FileAllegato
+                    _db.FileAllegati.Add(new FileAllegato
                     {
                         NomeOriginale     = fileNullaOsta.FileName,
                         NomeStorage       = pathFile,
@@ -230,19 +843,17 @@ namespace RadiologiaAppNew.Controllers
                         DimensioneBytes   = fileNullaOsta.Length,
                         Categoria         = "NULLA_OSTA",
                         ApparecchiaturaId = model.ApparecchiaturaId,
+                        NullaOstaId       = model.Id, 
                         UploadedAt        = DateTime.UtcNow,
                         UploadedByUserId  = User.FindFirst(
                             System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
                     });
+                    await _db.SaveChangesAsync();
                 }
             }
 
-            // Stato: solo Valido o InRinnovo (non calcolare automatico scaduto)
-            // Il calcolo automatico viene fatto nella vista Compliance
-            model.Id        = 0;
-            model.CreatedAt = DateTime.UtcNow;
-            _db.NullaOsta.Add(model);
-            await _db.SaveChangesAsync();
+            
+            
 
             TempData["Success"] = "Nulla Osta registrato.";
             return RedirectToAction("Detail", "Apparecchiature",
@@ -263,8 +874,11 @@ namespace RadiologiaAppNew.Controllers
             ViewBag.ApparecchiaturaId          = n.ApparecchiaturaId;
             ViewBag.ApparecchiaturaDescrizione = app?.Descrizione;
             ViewBag.IsEdit    = true;
-            ViewBag.FileAttuale = n.FileAllegati
-                .FirstOrDefault(f => f.Categoria == "NULLA_OSTA")?.NomeStorage;
+            var file =  n.FileAllegati
+                .FirstOrDefault(f => f.Categoria == "NULLA_OSTA");
+
+            ViewBag.FileAttuale = file?.NomeStorage;
+            ViewBag.FileNome = file?.NomeOriginale;
 
             return View("Create_NullaOsta", n);
         }
@@ -300,6 +914,16 @@ namespace RadiologiaAppNew.Controllers
 
             if (fileNullaOsta != null)
             {
+                // rimuove il vecchio allegato (db + disco) prima di salvare il nuovo
+                var vecchio = await _db.FileAllegati
+                    .FirstOrDefaultAsync(f => f.NullaOstaId == existing.Id
+                                            && f.Categoria == "NULLA_OSTA");
+                if (vecchio != null)
+                {
+                    EliminaFileFisico(vecchio.NomeStorage);
+                    _db.FileAllegati.Remove(vecchio);
+                }
+
                 var pathFile = await SalvaFile(fileNullaOsta, "nullaosta");
                 if (pathFile != null)
                 {
@@ -311,6 +935,7 @@ namespace RadiologiaAppNew.Controllers
                         DimensioneBytes   = fileNullaOsta.Length,
                         Categoria         = "NULLA_OSTA",
                         ApparecchiaturaId = existing.ApparecchiaturaId,
+                        NullaOstaId       = existing.Id,
                         UploadedAt        = DateTime.UtcNow,
                         UploadedByUserId  = User.FindFirst(
                             System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
@@ -329,20 +954,111 @@ namespace RadiologiaAppNew.Controllers
         [Authorize(Roles = "ADMIN_ORG,EDR")]
         public async Task<IActionResult> EliminaNullaOsta(int id, int apparecchiaturaId)
         {
-            var no = await _db.NullaOsta.FindAsync(id);
-            if (no != null)
-            {
-                _db.NullaOsta.Remove(no);
-                await _db.SaveChangesAsync();
-                TempData["Success"] = "Nulla Osta eliminato.";
-            }
+         var item = await _db.NullaOsta
+        .Include(x => x.FileAllegati)
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (item != null)
+    {
+        // 1. elimina i file fisici dal disco
+        foreach (var f in item.FileAllegati)
+        {
+            EliminaFileFisico(f.NomeStorage);
+        }
+
+        // 2. elimina i record degli allegati
+        if (item.FileAllegati.Any())
+        {
+            _db.FileAllegati.RemoveRange(item.FileAllegati);
+        }
+
+        // 3. elimina nulla osta
+        _db.NullaOsta.Remove(item);
+
+        await _db.SaveChangesAsync();
+    }
+
             return RedirectToAction("Detail", "Apparecchiature",
                 new { id = apparecchiaturaId, tab = "adempimenti" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ADMIN_ORG,EDR")]
+        public async Task<IActionResult> EliminaFileNullaOsta(int id, int apparecchiaturaId)
+        {
+            // id = Id del NullaOsta, non del FileAllegato.
+            var file = await _db.FileAllegati
+                .FirstOrDefaultAsync(f => f.NullaOstaId == id
+                                        && f.Categoria == "NULLA_OSTA");
+
+            if (file != null)
+            {
+                EliminaFileFisico(file.NomeStorage);
+                _db.FileAllegati.Remove(file);
+                await _db.SaveChangesAsync();
+                TempData["Success"] = "File eliminato.";
+            }
+
+            return RedirectToAction("EditNullaOsta", new { id = id });
         }
 
         // ═══════════════════════════════════════════════════════════
         // SOPRALLUOGHI  (ex Verbali)
         // ═══════════════════════════════════════════════════════════
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EliminaVerbale(int id, int apparecchiaturaId)
+{
+    var item = await _db.Verbali
+        .Include(x => x.FileAllegati)
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (item != null)
+    {
+        // 1. elimina i file fisici dal disco
+        foreach (var f in item.FileAllegati)
+        {
+            EliminaFileFisico(f.NomeStorage);
+        }
+
+        // 2. elimina i record degli allegati
+        if (item.FileAllegati.Any())
+        {
+            _db.FileAllegati.RemoveRange(item.FileAllegati);
+        }
+
+        // 3. elimina verbale
+        _db.Verbali.Remove(item);
+
+        await _db.SaveChangesAsync();
+    }
+
+    return RedirectToAction("Detail", "Apparecchiature",
+        new { id = apparecchiaturaId, tab = "adempimenti" });
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+[Authorize(Roles = "ADMIN_ORG,EDR")]
+public async Task<IActionResult> EliminaFileVerbale(int id, int apparecchiaturaId)
+{
+    // id = Id del Verbale, non del FileAllegato.
+    var file = await _db.FileAllegati
+        .FirstOrDefaultAsync(f => f.VerbaleId == id
+                                && f.Categoria == "VERBALE_SOPRALLUOGO");
+
+    if (file != null)
+    {
+        EliminaFileFisico(file.NomeStorage);
+        _db.FileAllegati.Remove(file);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "File eliminato.";
+    }
+
+    return RedirectToAction("EditVerbale", new { id = id });
+}
+
 
         [HttpGet]
         public async Task<IActionResult> NuovoVerbale(int id)
@@ -397,6 +1113,7 @@ namespace RadiologiaAppNew.Controllers
                         DimensioneBytes   = fileVerbale.Length,
                         Categoria         = "VERBALE_SOPRALLUOGO",
                         ApparecchiaturaId = model.ApparecchiaturaId,
+
                         UploadedAt        = DateTime.UtcNow,
                         UploadedByUserId  = User.FindFirst(
                             System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
@@ -431,6 +1148,12 @@ namespace RadiologiaAppNew.Controllers
             ViewBag.ApparecchiaturaId          = v.ApparecchiaturaId;
             ViewBag.ApparecchiaturaDescrizione = app?.Descrizione;
             ViewBag.IsEdit = true;
+
+            var file = v.FileAllegati
+                .FirstOrDefault(f => f.Categoria == "VERBALE_SOPRALLUOGO");
+
+            ViewBag.FileAttuale = file?.NomeStorage;
+            ViewBag.FileNome = file?.NomeOriginale;
 
             return View("Create_Verbale", v);
         }
@@ -496,6 +1219,16 @@ namespace RadiologiaAppNew.Controllers
 
             if (fileVerbale != null)
             {
+                // rimuove il vecchio allegato (db + disco) prima di salvare il nuovo
+                var vecchio = await _db.FileAllegati
+                    .FirstOrDefaultAsync(f => f.VerbaleId == existing.Id
+                                            && f.Categoria == "VERBALE_SOPRALLUOGO");
+                if (vecchio != null)
+                {
+                    EliminaFileFisico(vecchio.NomeStorage);
+                    _db.FileAllegati.Remove(vecchio);
+                }
+
                 var pathFile = await SalvaFile(fileVerbale, "verbali");
                 if (pathFile != null)
                 {
@@ -507,6 +1240,7 @@ namespace RadiologiaAppNew.Controllers
                         DimensioneBytes   = fileVerbale.Length,
                         Categoria         = "VERBALE_SOPRALLUOGO",
                         ApparecchiaturaId = existing.ApparecchiaturaId,
+                        VerbaleId         = existing.Id, // ⚠️ FIX: mancava, il file restava orfano
                         UploadedAt        = DateTime.UtcNow,
                         UploadedByUserId  = User.FindFirst(
                             System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""
@@ -591,6 +1325,31 @@ namespace RadiologiaAppNew.Controllers
             await using var stream = new FileStream(path, FileMode.Create);
             await file.CopyToAsync(stream);
             return $"/uploads/{subfolder}/{nome}";
+        }
+
+        // ─── HELPER elimina file fisico dal disco ──────────────────────────
+        // nomeStorage e' il path relativo salvato in DB, es: "/uploads/cessazioni/xxx_file.pdf"
+        private void EliminaFileFisico(string? nomeStorage)
+        {
+            if (string.IsNullOrWhiteSpace(nomeStorage)) return;
+
+            try
+            {
+                var relativo = nomeStorage.TrimStart('/', '\\');
+                var fullPath = Path.Combine(_env.WebRootPath, relativo);
+
+                if (System.IO.File.Exists(fullPath))
+                {
+                    System.IO.File.Delete(fullPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                // non blocchiamo l'operazione utente se la cancellazione fisica fallisce
+                // (es. file gia' rimosso a mano, permessi, file in uso, ecc.)
+                _logger.LogWarning(ex,
+                    "Impossibile eliminare il file fisico {Path}", nomeStorage);
+            }
         }
     }
 }

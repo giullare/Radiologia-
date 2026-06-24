@@ -161,6 +161,8 @@ ViewBag.TipologiePerAmbito = tipologie;
                     .ThenInclude(v => v.FileAllegati)
                 .Include(a => a.FileAllegati)
                 .Include(a => a.NotifichePratica)
+                .Include(a => a.CessazioniPratica)
+                .Include(a => a.PrimeVerificheBenestare)
                 .Include(a => a.NullaOsta)
                 .Include(a => a.Verbali)
                 .FirstOrDefaultAsync(a => a.Id == id);
@@ -213,6 +215,8 @@ ViewBag.TipologiePerAmbito = tipologie;
                 VerificheEDR     = verifiche.Where(v => v.Tipo == TipoProtocollo.PrimaVerificaEdr || v.Tipo == TipoProtocollo.SorveglianzaPeriodicaEdr).ToList(),
                 UltimaAccettazione = accettazione,
                 NotichePratica   = app.NotifichePratica.OrderByDescending(n => n.DataNotifica).ToList(),
+                PrimeVerificheBenestare = app.PrimeVerificheBenestare.OrderByDescending(p => p.DataVerifica).ToList(),
+                CessazioniPratica = app.CessazioniPratica.OrderByDescending(c => c.DataCessazione).ToList(),
                 NullaOsta        = app.NullaOsta.OrderByDescending(n => n.DataRilascio).ToList(),
                 Verbali          = app.Verbali.OrderByDescending(v => v.DataSopralluogo).ToList(),
                 FileAllegati     = app.FileAllegati.OrderByDescending(f => f.UploadedAt).ToList(),
