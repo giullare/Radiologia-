@@ -6,7 +6,6 @@
     ViewData["BreadcrumbParent"] = "Inventario";
     ViewData["BreadcrumbParentUrl"] = "/Apparecchiature";
 }
-
 <div class="page-header">
     <div>
         <h1 class="page-title">
@@ -29,7 +28,6 @@
         </a>
     </div>
 </div>
-
 <!-- ═══ WIZARD STEPS — cliccabili ════════════════════════════════ -->
 <div class="wizard-steps mb-4">
     @foreach (var (num, lbl) in new[] {
@@ -45,16 +43,14 @@
         </div>
     }
 </div>
-
 <!-- ═══ FORM ══════════════════════════════════════════════════════ -->
 <form asp-action="Edit" asp-controller="Apparecchiature"
-      asp-route-id="@Model.Id" 
+      asp-route-id="@Model.Id"
       method="post" id="formEdit"
       enctype="multipart/form-data" novalidate>
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="Modulo" value="Radiologica" />
-
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert-radiologia alert-danger mb-4">
@@ -70,7 +66,6 @@
             </div>
         </div>
     }
-
     <!-- ══ STEP 1 — Dati Base ════════════════════════════════════ -->
     <div class="wizard-panel active" id="panel-1">
         <div class="form-section">
@@ -80,27 +75,24 @@
             </div>
             <div class="form-section-body">
                 <div class="row g-3">
-
                     <div class="col-md-4">
                         <label asp-for="Codice" class="form-label"></label>
                         <input asp-for="Codice" class="form-control" />
                         <span asp-validation-for="Codice" class="text-danger"
                               style="font-size:0.775rem"></span>
                     </div>
-
                     <div class="col-md-8">
                         <label asp-for="Descrizione" class="form-label"></label>
                         <input asp-for="Descrizione" class="form-control" />
                         <span asp-validation-for="Descrizione" class="text-danger"
                               style="font-size:0.775rem"></span>
                     </div>
-
                     <div class="col-md-4">
                         <label asp-for="AmbitoIntervento" class="form-label">Ambito</label>
                         <select asp-for="AmbitoIntervento" class="form-select"
                                 id="selectAmbito" onchange="onAmbitoChange()">
                             <option value="">— Seleziona —</option>
-                            <option value="@AmbitoIntervento.Radiologia.ToString()" 
+                            <option value="@AmbitoIntervento.Radiologia.ToString()"
             selected="@(Model.AmbitoIntervento == AmbitoIntervento.Radiologia ? "selected" : null)">
         Radiologia
     </option>
@@ -118,7 +110,6 @@
     </option>
                         </select>
                     </div>
-
                     <div class="col-md-4">
                         <label asp-for="Tipologia" class="form-label"></label>
                         <select asp-for="Tipologia" class="form-select" id="selectTipologia">
@@ -127,8 +118,6 @@
                         <span asp-validation-for="Tipologia" class="text-danger"
                               style="font-size:0.775rem"></span>
                     </div>
-
-
                     <div class="col-md-4">
                         <label class="form-label">Costruttore / Produttore</label>
                         <select name="Costruttore" class="form-select"
@@ -146,26 +135,22 @@
                             }
                         </select>
                     </div>
-
                     <div class="col-md-4">
                         <label class="form-label">Modello</label>
                         <select name="Modello" class="form-select" id="selectModello">
                             <option value="@Model.Modello" selected>@Model.Modello</option>
                         </select>
                     </div>
-
                     <div class="col-md-4">
                         <label asp-for="Matricola" class="form-label"></label>
                         <input asp-for="Matricola" class="form-control" />
                         <span asp-validation-for="Matricola" class="text-danger"
                               style="font-size:0.775rem"></span>
                     </div>
-
                     <div class="col-md-4">
                         <label asp-for="SerialNumber" class="form-label"></label>
                         <input asp-for="SerialNumber" class="form-control" />
                     </div>
-
                     <div class="col-md-4">
                         <label asp-for="Stato" class="form-label"></label>
                         <select asp-for="Stato" class="form-select">
@@ -175,7 +160,6 @@
                             <option value="Cessata">Cessata</option>
                         </select>
                     </div>
-
                     <div class="col-md-4">
                         <label asp-for="DataAccettazione" class="form-label"></label>
                         <input asp-for="DataAccettazione" type="date" class="form-control" />
@@ -185,12 +169,10 @@
                         <label asp-for="SapId" class="form-label"></label>
                         <input asp-for="SapId" class="form-control" />
                     </div>
-
                     <div class="col-md-6">
                         <label asp-for="SiapDescrizione" class="form-label"></label>
                         <input asp-for="SiapDescrizione" class="form-control" />
                     </div>
-
                 </div>
             </div>
         </div>
@@ -200,7 +182,6 @@
             </button>
         </div>
     </div>
-
     <!-- ══ STEP 2 — Parametri Tecnici ════════════════════════════ -->
     <div class="wizard-panel" id="panel-2">
         <div class="form-section">
@@ -274,10 +255,8 @@
             </button>
         </div>
     </div>
-
     <!-- ══ STEP 3 — Collocazione / Responsabili ══════════════════ -->
     <div class="wizard-panel" id="panel-3">
-
         <div class="form-section mb-4">
             <div class="form-section-header">
                 <i class="bi bi-geo-alt text-primary"></i>
@@ -285,14 +264,12 @@
             </div>
             <div class="form-section-body">
                 <div class="row g-3">
-                    
  <div class="col-12">
                         <p style="font-size:0.85rem;color:var(--neutral-500);margin-bottom:12px;">
                             <i class="bi bi-info-circle me-1"></i>
                             Seleziona la posizione esatta (Sito → Edificio → Piano → Locale)
                         </p>
                     </div>
-
                     <div class="col-md-3">
                         <label class="form-label">Sito / Presidio</label>
                         <select class="form-select" id="selectSito"
@@ -319,14 +296,13 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Locale / Stanza</label>
-                        <select  class="form-select" 
-                                id="selectLocale"  
+                        <select  class="form-select"
+                                id="selectLocale"
                                 style="pointer-events:none; background-color:#e9ecef;">
                             <option value="">— Prima seleziona Piano —</option>
                         </select>
                        <input type="hidden" asp-for="LocaleId" id="hiddenLocaleId" />
                     </div>
-
                     <div class="col-md-4">
                         <label class="form-label">Struttura</label>
                         <select asp-for="RepartoId" class="form-select"
@@ -334,7 +310,6 @@
                             <option value="">— Seleziona struttura —</option>
                         </select>
                     </div>
-
                     <div class="col-md-4">
                         <label class="form-label">Dipartimento</label>
                         <select asp-for="DipartimentoId" class="form-select"
@@ -342,26 +317,31 @@
                             <option value="">— Seleziona dipartimento —</option>
                         </select>
                     </div>
-
-
-                  
-
                     <div class="col-12">
                         <label asp-for="DescrizioneZoneClassificate" class="form-label"></label>
                         <textarea asp-for="DescrizioneZoneClassificate"
                                   class="form-control" rows="3"></textarea>
                     </div>
-
                     <div class="col-md-6">
                         <label class="form-label">Piantina Zone Classificate</label>
                         @if (!string.IsNullOrEmpty(Model.PiantinaZoneClassificateFile))
                         {
-                            <div class="mb-2">
+                            <div class="mb-2 d-flex align-items-center gap-2">
                                 <a href="@Model.PiantinaZoneClassificateFile"
                                    target="_blank" class="btn btn-ghost btn-sm">
                                     <i class="bi bi-file-earmark-image"></i>
-                                    File attuale — clicca per vedere
+                                    @(string.IsNullOrEmpty(Model.PiantinaZoneClassificateNomeOriginale)
+                                        ? "File attuale — clicca per vedere"
+                                        : Model.PiantinaZoneClassificateNomeOriginale)
                                 </a>
+                                <button type="submit"
+                                        formaction="/Apparecchiature/EliminaFile?id=@Model.Id&amp;campo=PiantinaZoneClassificateFile"
+                                        formmethod="post"
+                                        class="btn btn-outline-danger btn-sm"
+                                        title="Elimina definitivamente il file"
+                                        onclick="return confirm('Eliminare definitivamente questo file? L\'operazione non è reversibile.');">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
                             </div>
                         }
                         <input type="file" name="filePiantina" class="form-control"
@@ -373,7 +353,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Responsabili -->
         <div class="form-section">
             <div class="form-section-header">
@@ -381,7 +360,6 @@
                 <h4 class="form-section-title">Responsabili</h4>
             </div>
             <div class="form-section-body">
-
                 @{
                     void RespRow(string label,
                                  string nomeField,  string? nomeVal,
@@ -421,46 +399,38 @@
                         </div>
                     }
                 }
-
                 @{ RespRow("Direttore Dipartimento",
                        "DirettoreDipartimento",         Model.DirettoreDipartimento,
                        "DirettoreDipartimentoEmail",    Model.DirettoreDipartimentoEmail,
                        "DirettoreDipartimentoEmailPec", Model.DirettoreDipartimentoEmailPec,
                        "DirettoreDipartimentoTelefono", Model.DirettoreDipartimentoTelefono); }
-
                 @{ RespRow("Direttore Struttura",
                        "DirettoreStruttura",         Model.DirettoreStruttura,
                        "DirettoreStrutturaEmail",    Model.DirettoreStrutturaEmail,
                        "DirettoreStrutturaEmailPec", Model.DirettoreStrutturaEmailPec,
                        "DirettoreStrutturaTelefono", Model.DirettoreStrutturaTelefono); }
-
                 @{ RespRow("Preposto D. Lgs 101/20",
                        "Caposala",        Model.Caposala,
                        "PrepostoEmail",   Model.PrepostoEmail,
                        "PrepostoEmailPec",Model.PrepostoEmailPec,
                        "PrepostoTelefono",Model.PrepostoTelefono); }
-
                 @{ RespRow("Responsabile Impianto Radiologico (RIR)",
                        "RirNome",    Model.RirNome,
                        "RirEmail",   Model.RirEmail,
                        "RirEmailPec",Model.RirEmailPec,
                        "RirTelefono",Model.RirTelefono); }
-
                 @{ RespRow("Specialista in Fisica Medica (SFM)",
                        "SfmNome",    Model.SfmNome,
                        "SfmEmail",   Model.SfmEmail,
                        "SfmEmailPec",Model.SfmEmailPec,
                        "SfmTelefono",Model.SfmTelefono); }
-
                 @{ RespRow("Esperto di Radioprotezione (EdR)",
                        "EdrNome",    Model.EdrNome,
                        "EdrEmail",   Model.EdrEmail,
                        "EdrEmailPec",Model.EdrEmailPec,
                        "EdrTelefono",Model.EdrTelefono); }
-
             </div>
         </div>
-
         <div class="d-flex justify-content-between mt-3">
             <button type="button" class="btn btn-ghost" onclick="vaiStep(2)">
                 <i class="bi bi-arrow-left"></i> Indietro
@@ -470,7 +440,6 @@
             </button>
         </div>
     </div>
-
     <!-- ══ STEP 4 — Assistenza ════════════════════════════════════ -->
     <div class="wizard-panel" id="panel-4">
         <div class="form-section">
@@ -512,11 +481,9 @@
             </button>
         </div>
     </div>
-
     <!-- ══ STEP 5 — Tracciabilità ════════════════════════════════ -->
     <div class="wizard-panel" id="panel-5">
         <div class="row g-4">
-
             <!-- STRIMS -->
             <div class="col-md-6">
                 <div class="form-section h-100">
@@ -557,11 +524,22 @@
                                 <label class="form-label">Ricevuta Registrazione STRIMS</label>
                                 @if (!string.IsNullOrEmpty(Model.StrimsRicevutaRegistrazioneFile))
                                 {
-                                    <div class="mb-1">
+                                    <div class="mb-1 d-flex align-items-center gap-2">
                                         <a href="@Model.StrimsRicevutaRegistrazioneFile"
                                            target="_blank" class="btn btn-ghost btn-sm">
-                                            <i class="bi bi-file-earmark"></i> File attuale
+                                            <i class="bi bi-file-earmark"></i>
+                                            @(string.IsNullOrEmpty(Model.StrimsRicevutaRegistrazioneNomeOriginale)
+                                                ? "File attuale"
+                                                : Model.StrimsRicevutaRegistrazioneNomeOriginale)
                                         </a>
+                                        <button type="submit"
+                                                formaction="/Apparecchiature/EliminaFile?id=@Model.Id&amp;campo=StrimsRicevutaRegistrazioneFile"
+                                                formmethod="post"
+                                                class="btn btn-outline-danger btn-sm"
+                                                title="Elimina definitivamente il file"
+                                                onclick="return confirm('Eliminare definitivamente questo file? L\'operazione non è reversibile.');">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
                                     </div>
                                 }
                                 <input type="file" name="fileStrimsReg" class="form-control"
@@ -571,11 +549,22 @@
                                 <label class="form-label">Ricevuta Cessazione STRIMS</label>
                                 @if (!string.IsNullOrEmpty(Model.StrimsRicevutaCessioneFile))
                                 {
-                                    <div class="mb-1">
+                                    <div class="mb-1 d-flex align-items-center gap-2">
                                         <a href="@Model.StrimsRicevutaCessioneFile"
                                            target="_blank" class="btn btn-ghost btn-sm">
-                                            <i class="bi bi-file-earmark"></i> File attuale
+                                            <i class="bi bi-file-earmark"></i>
+                                            @(string.IsNullOrEmpty(Model.StrimsRicevutaCessioneNomeOriginale)
+                                                ? "File attuale"
+                                                : Model.StrimsRicevutaCessioneNomeOriginale)
                                         </a>
+                                        <button type="submit"
+                                                formaction="/Apparecchiature/EliminaFile?id=@Model.Id&amp;campo=StrimsRicevutaCessioneFile"
+                                                formmethod="post"
+                                                class="btn btn-outline-danger btn-sm"
+                                                title="Elimina definitivamente il file"
+                                                onclick="return confirm('Eliminare definitivamente questo file? L\'operazione non è reversibile.');">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
                                     </div>
                                 }
                                 <input type="file" name="fileStrimsCess" class="form-control"
@@ -585,7 +574,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- INAIL -->
             <div class="col-md-6">
                 <div class="form-section h-100">
@@ -616,11 +604,22 @@
                                 <label class="form-label">Ricevuta Registrazione INAIL</label>
                                 @if (!string.IsNullOrEmpty(Model.InailRicevutaRegistrazioneFile))
                                 {
-                                    <div class="mb-1">
+                                    <div class="mb-1 d-flex align-items-center gap-2">
                                         <a href="@Model.InailRicevutaRegistrazioneFile"
                                            target="_blank" class="btn btn-ghost btn-sm">
-                                            <i class="bi bi-file-earmark"></i> File attuale
+                                            <i class="bi bi-file-earmark"></i>
+                                            @(string.IsNullOrEmpty(Model.InailRicevutaRegistrazioneNomeOriginale)
+                                                ? "File attuale"
+                                                : Model.InailRicevutaRegistrazioneNomeOriginale)
                                         </a>
+                                        <button type="submit"
+                                                formaction="/Apparecchiature/EliminaFile?id=@Model.Id&amp;campo=InailRicevutaRegistrazioneFile"
+                                                formmethod="post"
+                                                class="btn btn-outline-danger btn-sm"
+                                                title="Elimina definitivamente il file"
+                                                onclick="return confirm('Eliminare definitivamente questo file? L\'operazione non è reversibile.');">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
                                     </div>
                                 }
                                 <input type="file" name="fileInailReg" class="form-control"
@@ -630,11 +629,22 @@
                                 <label class="form-label">Ricevuta Cessazione INAIL</label>
                                 @if (!string.IsNullOrEmpty(Model.InailRicevutaCessioneFile))
                                 {
-                                    <div class="mb-1">
+                                    <div class="mb-1 d-flex align-items-center gap-2">
                                         <a href="@Model.InailRicevutaCessioneFile"
                                            target="_blank" class="btn btn-ghost btn-sm">
-                                            <i class="bi bi-file-earmark"></i> File attuale
+                                            <i class="bi bi-file-earmark"></i>
+                                            @(string.IsNullOrEmpty(Model.InailRicevutaCessioneNomeOriginale)
+                                                ? "File attuale"
+                                                : Model.InailRicevutaCessioneNomeOriginale)
                                         </a>
+                                        <button type="submit"
+                                                formaction="/Apparecchiature/EliminaFile?id=@Model.Id&amp;campo=InailRicevutaCessioneFile"
+                                                formmethod="post"
+                                                class="btn btn-outline-danger btn-sm"
+                                                title="Elimina definitivamente il file"
+                                                onclick="return confirm('Eliminare definitivamente questo file? L\'operazione non è reversibile.');">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
                                     </div>
                                 }
                                 <input type="file" name="fileInailCess" class="form-control"
@@ -644,9 +654,7 @@
                     </div>
                 </div>
             </div>
-
         </div>
-
         <div class="d-flex justify-content-between mt-3">
             <button type="button" class="btn btn-ghost" onclick="vaiStep(4)">
                 <i class="bi bi-arrow-left"></i> Indietro
@@ -656,7 +664,6 @@
             </button>
         </div>
     </div>
-
     <!-- ══ STEP 6 — Riepilogo ════════════════════════════════════ -->
     <div class="wizard-panel" id="panel-6">
         <div class="alert-radiologia alert-info mb-4">
@@ -695,22 +702,22 @@
                 </div>
             </div>
         </div>
-
         <div class="d-flex justify-content-between mt-3">
             <button type="button" class="btn btn-ghost" onclick="vaiStep(5)">
                 <i class="bi bi-arrow-left"></i> Indietro
             </button>
-             
-
         </div>
     </div>
-
 </form>
-
 @section Scripts {
 <script>
 let stepCorrente = 1;
-
+window.addEventListener('DOMContentLoaded', () => {
+    const stepIniziale = @(ViewBag.StepIniziale ?? 1);
+    if (stepIniziale && stepIniziale !== 1) {
+        vaiStep(stepIniziale);
+    }
+});
 function vaiStep(n) {
     document.querySelectorAll('.wizard-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.wizard-step').forEach((s, i) => {
@@ -723,7 +730,6 @@ function vaiStep(n) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (n === 6) aggiornaRiepilogo();
 }
-
 function aggiornaRiepilogo() {
     const get  = id => document.getElementById(id)?.value || '—';
     const getT = id => {
@@ -740,7 +746,6 @@ function aggiornaRiepilogo() {
     setR('riepilogo-modello',      getT('selectModello'));
     setR('riepilogo-tipologia',    getT('selectTipologia'));
 }
-
 async function onAmbitoChange() {
     const ambito  = document.getElementById('selectAmbito')?.value;
     const selTipo = document.getElementById('selectTipologia');
@@ -752,16 +757,13 @@ async function onAmbitoChange() {
         data.forEach(t => selTipo.add(new Option(t, t)));
     } catch {}
 }
-
 async function caricaImmobili(sitoId) {
 document.getElementById('hiddenSitoId').value = sitoId;
     // reset livelli sotto
     document.getElementById('hiddenImmobileId').value = '';
     document.getElementById('hiddenPianoId').value = '';
     document.getElementById('hiddenLocaleId').value = '';
-
 const sel = document.getElementById('selectImmobile');
-
     resetSelect(sel, '— Prima seleziona Edificio —');
     resetSelect(document.getElementById('selectPiano'), '— Prima seleziona Piano —');
     resetSelect(document.getElementById('selectLocale'), '— Prima seleziona Locale —');
@@ -774,17 +776,13 @@ const sel = document.getElementById('selectImmobile');
         //sel.disabled = false;
     sel.style.pointerEvents = 'auto';
     sel.style.backgroundColor = '';
-    
-
     } catch {}
 }
-
 async function caricaPiani(immobileId) {
 document.getElementById('hiddenImmobileId').value = immobileId;
     document.getElementById('hiddenPianoId').value = '';
     document.getElementById('hiddenLocaleId').value = '';
 const sel = document.getElementById('selectPiano');
-
     resetSelect(sel, '— Prima seleziona Piano —');
     resetSelect(document.getElementById('selectLocale'), '— Prima seleziona Locale —');
     if (!immobileId) return;
@@ -794,13 +792,10 @@ const sel = document.getElementById('selectPiano');
         sel.innerHTML = '<option value="">— Seleziona piano —</option>';
         data.forEach(p => sel.add(new Option(p.nome, p.id)));
         //sel.disabled = false;
-        
  sel.style.pointerEvents = 'auto';
     sel.style.backgroundColor = '';
-
     } catch {}
 }
-
 async function caricaLocali(pianoId) {
     document.getElementById('hiddenPianoId').value = pianoId;
     const sel = document.getElementById('selectLocale');
@@ -812,14 +807,11 @@ async function caricaLocali(pianoId) {
         const data = await res.json();
         sel.innerHTML = '<option value="">— Seleziona locale —</option>';
         data.forEach(l => sel.add(new Option(l.nome, l.id)));
-       
  sel.style.pointerEvents = 'auto';
     sel.style.backgroundColor = '';
 sel.onchange = () => hidden.value = sel.value;
-
     } catch {}
 }
-
 //function resetSelect(sel, placeholder) {
     //if (!sel) return;
     //sel.innerHTML = `<option value="">${placeholder}</option>`;
@@ -831,7 +823,6 @@ function resetSelect(sel, placeholder) {
     sel.style.pointerEvents = 'none';
     sel.style.backgroundColor = '#e9ecef';
 }
-
 async function onCostruttoreChange() {
     const sel  = document.getElementById('selectCostruttore');
     const selM = document.getElementById('selectModello');
@@ -849,8 +840,6 @@ async function onCostruttoreChange() {
         } catch {}
     }
 }
-
-
 window.addEventListener('DOMContentLoaded', async () => {
     const ambito = '@(Model.AmbitoIntervento?.ToString() ?? "")';
     const tipo   = '@(Model.Tipologia ?? "")';
@@ -865,33 +854,27 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch {}
 });
 </script>
-
 <script>
 document.getElementById('selectSito').addEventListener('change', e => {
     hiddenSitoId.value = e.target.value;
     caricaImmobili(e.target.value);
 });
-
 document.getElementById('selectImmobile').addEventListener('change', e => {
     hiddenImmobileId.value = e.target.value;
     caricaPiani(e.target.value);
 });
-
 document.getElementById('selectPiano').addEventListener('change', e => {
     hiddenPianoId.value = e.target.value;
     caricaLocali(e.target.value);
 });
-
 document.getElementById('selectLocale').addEventListener('change', e => {
     hiddenLocaleId.value = e.target.value;
 });
 window.addEventListener('DOMContentLoaded', async () => {
-
     const sitoId     = '@Model.SitoId';
     const immobileId = '@Model.ImmobileId';
     const pianoId    = '@Model.PianoId';
     const localeId   = '@Model.LocaleId';
-
     if (sitoId) {
         document.getElementById('selectSito').value = sitoId;
         await caricaImmobili(sitoId);

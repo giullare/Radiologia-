@@ -232,6 +232,10 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Piantina Zone Classificate")]
         public string? PiantinaZoneClassificateFile { get; set; }
 
+        /// <summary>Nome originale del file piantina, per visualizzazione in UI</summary>
+        [MaxLength(255)]
+        public string? PiantinaZoneClassificateNomeOriginale { get; set; }
+
         // ─── RIFERIMENTI ASSISTENZA ──────────────────────────────────────
         [MaxLength(255)]
         [Display(Name = "Società di Manutenzione")]
@@ -288,10 +292,18 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Ricevuta Registrazione INAIL")]
         public string? InailRicevutaRegistrazioneFile { get; set; }
 
+        /// <summary>Nome originale del file ricevuta registrazione INAIL, per visualizzazione in UI</summary>
+        [MaxLength(255)]
+        public string? InailRicevutaRegistrazioneNomeOriginale { get; set; }
+
         /// <summary>File ricevuta cessazione INAIL</summary>
         [MaxLength(500)]
         [Display(Name = "Ricevuta Cessazione INAIL")]
         public string? InailRicevutaCessioneFile { get; set; }
+
+        /// <summary>Nome originale del file ricevuta cessazione INAIL, per visualizzazione in UI</summary>
+        [MaxLength(255)]
+        public string? InailRicevutaCessioneNomeOriginale { get; set; }
 
         // ─── ADEMPIMENTI STRIMS ──────────────────────────────────────────
         [Display(Name = "Stato Registrazione STRIMS")]
@@ -316,10 +328,18 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Ricevuta Registrazione STRIMS")]
         public string? StrimsRicevutaRegistrazioneFile { get; set; }
 
+        /// <summary>Nome originale del file ricevuta registrazione STRIMS, per visualizzazione in UI</summary>
+        [MaxLength(255)]
+        public string? StrimsRicevutaRegistrazioneNomeOriginale { get; set; }
+
         /// <summary>File ricevuta cessazione STRIMS</summary>
         [MaxLength(500)]
         [Display(Name = "Ricevuta Cessazione STRIMS")]
         public string? StrimsRicevutaCessioneFile { get; set; }
+
+        /// <summary>Nome originale del file ricevuta cessazione STRIMS, per visualizzazione in UI</summary>
+        [MaxLength(255)]
+        public string? StrimsRicevutaCessioneNomeOriginale { get; set; }
 
         // ─── TIMESTAMPS ──────────────────────────────────────────────────
         [Display(Name = "Data Creazione")]

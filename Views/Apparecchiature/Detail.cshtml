@@ -330,7 +330,9 @@
                         <a href="@app.PiantinaZoneClassificateFile" target="_blank"
                            class="btn btn-ghost btn-sm">
                             <i class="bi bi-map"></i>
-                            @System.IO.Path.GetFileName(app.PiantinaZoneClassificateFile)
+                            @(string.IsNullOrEmpty(app.PiantinaZoneClassificateNomeOriginale)
+                                ? System.IO.Path.GetFileName(app.PiantinaZoneClassificateFile)
+                                : app.PiantinaZoneClassificateNomeOriginale)
                         </a>
                     </div>
                 }
@@ -544,7 +546,9 @@
                                     <a href="@app.StrimsRicevutaRegistrazioneFile" target="_blank"
                                        class="btn btn-ghost btn-sm" style="font-size:0.78rem">
                                         <i class="bi bi-file-earmark-pdf text-danger"></i>
-                                        @System.IO.Path.GetFileName(app.StrimsRicevutaRegistrazioneFile)
+                                        @(string.IsNullOrEmpty(app.StrimsRicevutaRegistrazioneNomeOriginale)
+                                            ? System.IO.Path.GetFileName(app.StrimsRicevutaRegistrazioneFile)
+                                            : app.StrimsRicevutaRegistrazioneNomeOriginale)
                                     </a>
                                 </div>
                             }
@@ -555,7 +559,9 @@
                                     <a href="@app.StrimsRicevutaCessioneFile" target="_blank"
                                        class="btn btn-ghost btn-sm" style="font-size:0.78rem">
                                         <i class="bi bi-file-earmark-pdf text-danger"></i>
-                                        @System.IO.Path.GetFileName(app.StrimsRicevutaCessioneFile)
+                                        @(string.IsNullOrEmpty(app.StrimsRicevutaCessioneNomeOriginale)
+                                            ? System.IO.Path.GetFileName(app.StrimsRicevutaCessioneFile)
+                                            : app.StrimsRicevutaCessioneNomeOriginale)
                                     </a>
                                 </div>
                             }
@@ -604,7 +610,9 @@
                                     <a href="@app.InailRicevutaRegistrazioneFile" target="_blank"
                                        class="btn btn-ghost btn-sm" style="font-size:0.78rem">
                                         <i class="bi bi-file-earmark-pdf text-danger"></i>
-                                        @System.IO.Path.GetFileName(app.InailRicevutaRegistrazioneFile)
+                                        @(string.IsNullOrEmpty(app.InailRicevutaRegistrazioneNomeOriginale)
+                                            ? System.IO.Path.GetFileName(app.InailRicevutaRegistrazioneFile)
+                                            : app.InailRicevutaRegistrazioneNomeOriginale)
                                     </a>
                                 </div>
                             }
@@ -615,7 +623,9 @@
                                     <a href="@app.InailRicevutaCessioneFile" target="_blank"
                                        class="btn btn-ghost btn-sm" style="font-size:0.78rem">
                                         <i class="bi bi-file-earmark-pdf text-danger"></i>
-                                        @System.IO.Path.GetFileName(app.InailRicevutaCessioneFile)
+                                        @(string.IsNullOrEmpty(app.InailRicevutaCessioneNomeOriginale)
+                                            ? System.IO.Path.GetFileName(app.InailRicevutaCessioneFile)
+                                            : app.InailRicevutaCessioneNomeOriginale)
                                     </a>
                                 </div>
                             }
@@ -924,6 +934,28 @@
                                             <i class="bi bi-check"></i> Inviato RSPP
                                         </span>
                                     }
+                                    @{
+                                        var fileNp  = np.FileAllegati.FirstOrDefault(f => f.Categoria == "NOTIFICA_PRATICA");
+                                        var fileDvr = np.FileAllegati.FirstOrDefault(f => f.Categoria == "DVR");
+                                    }
+                                    @if (fileNp != null)
+                                    {
+                                        <div style="margin-top:6px;">
+                                            <a href="@fileNp.NomeStorage" target="_blank"
+                                               class="btn btn-ghost btn-sm" style="font-size:0.75rem;">
+                                                <i class="bi bi-paperclip"></i> @fileNp.NomeOriginale
+                                            </a>
+                                        </div>
+                                    }
+                                    @if (fileDvr != null)
+                                    {
+                                        <div style="margin-top:4px;">
+                                            <a href="@fileDvr.NomeStorage" target="_blank"
+                                               class="btn btn-ghost btn-sm" style="font-size:0.75rem;">
+                                                <i class="bi bi-paperclip"></i> DVR — @fileDvr.NomeOriginale
+                                            </a>
+                                        </div>
+                                    }
                                 </div>
                                 <div class="d-flex gap-1 ms-2" style="flex-shrink:0;">
                                     <a href="/Adempimenti/EditNotifica/@np.Id"
@@ -994,6 +1026,18 @@
                                   style="margin-top:4px;font-size:0.7rem;">
                                 <i class="bi bi-check"></i> Benestare
                             </span>
+                            @{
+                                var filePv = p.FileAllegati.FirstOrDefault(f => f.Categoria == "PRIMA_VERIFICA");
+                            }
+                            @if (filePv != null)
+                            {
+                                <div style="margin-top:6px;">
+                                    <a href="@filePv.NomeStorage" target="_blank"
+                                       class="btn btn-ghost btn-sm" style="font-size:0.75rem;">
+                                        <i class="bi bi-paperclip"></i> @filePv.NomeOriginale
+                                    </a>
+                                </div>
+                            }
                         </div>
                         <div class="d-flex gap-1 ms-2" style="flex-shrink:0;">
                                     <a href="/Adempimenti/EditPrimaVerifica/@p.Id"
@@ -1068,6 +1112,18 @@
                                   style="margin-top:4px;font-size:0.7rem;">
                                 <i class="bi bi-x-circle"></i> Cessata
                             </span>
+                            @{
+                                var fileCess = c.FileAllegati.FirstOrDefault(f => f.Categoria == "CESSAZIONE");
+                            }
+                            @if (fileCess != null)
+                            {
+                                <div style="margin-top:6px;">
+                                    <a href="@fileCess.NomeStorage" target="_blank"
+                                       class="btn btn-ghost btn-sm" style="font-size:0.75rem;">
+                                        <i class="bi bi-paperclip"></i> @fileCess.NomeOriginale
+                                    </a>
+                                </div>
+                            }
                         </div>
 
                         <div class="d-flex gap-1 ms-2" style="flex-shrink:0;">
@@ -1166,6 +1222,18 @@
                                             <span> → @no.DataScadenza.Value.ToString("dd/MM/yyyy")</span>
                                         }
                                     </div>
+                                    @{
+                                        var fileNo = no.FileAllegati.FirstOrDefault(f => f.Categoria == "NULLA_OSTA");
+                                    }
+                                    @if (fileNo != null)
+                                    {
+                                        <div style="margin-top:6px;">
+                                            <a href="@fileNo.NomeStorage" target="_blank"
+                                               class="btn btn-ghost btn-sm" style="font-size:0.75rem;">
+                                                <i class="bi bi-paperclip"></i> @fileNo.NomeOriginale
+                                            </a>
+                                        </div>
+                                    }
                                 </div>
                                 <div class="d-flex gap-1 ms-2" style="flex-shrink:0;">
                                     <a href="/Adempimenti/EditNullaOsta/@no.Id"
@@ -1237,6 +1305,18 @@
                                             ? v.Rilievi[..100] + "..."
                                             : v.Rilievi)
                                     </div>
+                                    @{
+                                        var fileVerb = v.FileAllegati.FirstOrDefault(f => f.Categoria == "VERBALE_SOPRALLUOGO");
+                                    }
+                                    @if (fileVerb != null)
+                                    {
+                                        <div style="margin-top:6px;">
+                                            <a href="@fileVerb.NomeStorage" target="_blank"
+                                               class="btn btn-ghost btn-sm" style="font-size:0.75rem;">
+                                                <i class="bi bi-paperclip"></i> @fileVerb.NomeOriginale
+                                            </a>
+                                        </div>
+                                    }
                                 </div>
                             <div class="d-flex align-items-center gap-2 ms-2" style="flex-shrink:0;">
                                 @{
