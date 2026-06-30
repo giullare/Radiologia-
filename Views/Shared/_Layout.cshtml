@@ -536,17 +536,32 @@ if (localStorage.getItem('sidebarCollapsed') === 'true') {
 }
 
 sidebarToggle?.addEventListener('click', () => {
-    appWrapper?.classList.toggle('sidebar-collapsed');
-    localStorage.setItem(
-        'sidebarCollapsed',
-        appWrapper?.classList.contains('sidebar-collapsed') ? 'true' : 'false'
-    );
+
+    if (window.innerWidth <= 768) {
+        // MOBILE → apri/chiudi sidebar
+        const sidebar = document.getElementById('sidebar');
+        sidebar?.classList.toggle('mobile-open');
+    } else {
+        // DESKTOP → collapse normale
+        appWrapper?.classList.toggle('sidebar-collapsed');
+
+        localStorage.setItem(
+            'sidebarCollapsed',
+            appWrapper?.classList.contains('sidebar-collapsed') ? 'true' : 'false'
+        );
+    }
+
 });
 
 document.addEventListener('click', (e) => {
     if (window.innerWidth <= 768) {
         const sidebar = document.getElementById('sidebar');
-        if (sidebar && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+
+        if (
+            sidebar &&
+            !sidebar.contains(e.target) &&
+            !sidebarToggle.contains(e.target)   // 🔥 FIX QUI
+        ) {
             sidebar.classList.remove('mobile-open');
         }
     }
