@@ -257,15 +257,15 @@
                                 onmouseover="this.style.background='var(--neutral-50)'"
                                 onmouseout="this.style.background='white'">
                                 <div class="d-flex align-items-center gap-2">
-                                    @if (v.Esito == "Superato")
+                                    @if (v.Esito == "Positivo")
                                     {
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     }
-                                    else if (v.Esito == "NonSuperato")
+                                    else if (v.Esito == "Negativo")
                                     {
                                         <i class="bi bi-x-circle-fill text-danger"></i>
                                     }
-                                    else if (v.Esito == "ConRiserva")
+                                    else if (v.Esito == "PositivoConRiserva")
                                     {
                                         <i class="bi bi-exclamation-circle-fill text-warning"></i>
                                     }
@@ -367,16 +367,30 @@
                     Model.MesiLabels.Select(m => $"'{m}'")))],
                 datasets: [
                     {
-                        label: 'Superati',
-                        data: [@string.Join(",", Model.CQSuperati)],
+                        label: 'Positivi',
+                        data: [@string.Join(",", Model.CQPositivi)],
                         backgroundColor: 'rgba(39,174,96,0.8)',
                         borderRadius: 6,
                         borderSkipped: false
                     },
                     {
-                        label: 'Non Superati',
-                        data: [@string.Join(",", Model.CQNonSuperati)],
+                        label: 'Negativi',
+                        data: [@string.Join(",", Model.CQNegativi)],
                         backgroundColor: 'rgba(192,57,43,0.8)',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    },
+                    {
+                        label: 'Positivi con riserva',
+                        data: [@string.Join(",", Model.CQConRiserva)],
+                        backgroundColor: 'rgba(243,156,18,0.8)',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    },
+                    {
+                        label: 'In Corso',
+                        data: [@string.Join(",", Model.CQInCorso)],
+                        backgroundColor: 'rgba(149,165,166,0.8)',
                         borderRadius: 6,
                         borderSkipped: false
                     }

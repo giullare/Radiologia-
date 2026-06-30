@@ -147,20 +147,24 @@ namespace RadiologiaAppNew.ViewModels.Verifiche
         /// <summary>Mappa il valore UI all'EsitoVerifica dell'enum</summary>
         public static EsitoVerifica ToEsitoVerifica(string esitoUI) => esitoUI switch
         {
-            "InCorso"           => EsitoVerifica.InCorso,
-            "Positivo"          => EsitoVerifica.Superato,
-            "PositivoConRiserva"=> EsitoVerifica.ConRiserva,
-            "Negativo"          => EsitoVerifica.NonSuperato,
-            _                   => EsitoVerifica.InCorso
+            
+                "InCorso"            => EsitoVerifica.InCorso,
+                "Positivo"           => EsitoVerifica.Positivo,
+                "PositivoConRiserva" => EsitoVerifica.PositivoConRiserva,
+                "Negativo"           => EsitoVerifica.Negativo,
+                _                    => EsitoVerifica.InCorso
+  
         };
 
         public static string ToEsitoUI(EsitoVerifica esito) => esito switch
         {
-            EsitoVerifica.InCorso     => "InCorso",
-            EsitoVerifica.Superato    => "Positivo",
-            EsitoVerifica.ConRiserva  => "PositivoConRiserva",
-            EsitoVerifica.NonSuperato => "Negativo",
-            _                         => "InCorso"
+            
+                EsitoVerifica.InCorso            => "InCorso",
+                EsitoVerifica.Positivo           => "Positivo",
+                EsitoVerifica.PositivoConRiserva => "PositivoConRiserva",
+                EsitoVerifica.Negativo           => "Negativo",
+                _                                => "InCorso"
+
         };
 
         /// <summary>Mappa la periodicità UI ai mesi</summary>

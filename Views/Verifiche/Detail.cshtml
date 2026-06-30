@@ -33,13 +33,12 @@
             @{
                 var (esitoClass, esitoLabel) = v.Esito switch
                 {
-                    RadiologiaAppNew.Enums.EsitoVerifica.Superato =>
-                        ("badge-ok", "Superato"),
-                    RadiologiaAppNew.Enums.EsitoVerifica.NonSuperato =>
-                        ("badge-danger", "Non Superato"),
-                    RadiologiaAppNew.Enums.EsitoVerifica.ConRiserva =>
-                        ("badge-warning", "Con Riserva"),
-                    _ => ("badge-missing", "In Corso")
+                    
+RadiologiaAppNew.Enums.EsitoVerifica.Positivo => ("badge-ok", "Positivo"),
+    RadiologiaAppNew.Enums.EsitoVerifica.Negativo => ("badge-danger", "Negativo"),
+    RadiologiaAppNew.Enums.EsitoVerifica.PositivoConRiserva => ("badge-warning", "Positivo con riserva"),
+    _ => ("badge-missing", "In Corso")
+
                 };
             }
             <span class="badge-compliance @esitoClass">@esitoLabel</span>

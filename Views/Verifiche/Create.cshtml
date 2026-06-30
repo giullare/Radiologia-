@@ -1,3 +1,7 @@
+@using RadiologiaAppNew.Enums
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
 @model RadiologiaAppNew.ViewModels.Verifiche.VerificaCreateViewModel
 @{
     Layout = "_Layout";
@@ -173,25 +177,37 @@
                         <div class="col-md-12">
                             <label class="form-label">Esito</label>
                             <div class="d-flex gap-2 flex-wrap">
-                                @{
-                                    var esiti = new[]
-                                    {
-                                        ("InCorso",            "In Corso",              "badge-todo",    "bi-clock"),
-                                        ("Positivo",           "Positivo",              "badge-ok",      "bi-check-circle"),
-                                        ("PositivoConRiserva", "Positivo con riserva",  "badge-warning", "bi-exclamation-circle"),
-                                        ("Negativo",           "Negativo",              "badge-danger",  "bi-x-circle"),
-                                    };
-                                }
-                                @foreach (var (val, lbl, cls, icon) in esiti)
-                                {
-                                    <button type="button"
-                                            id="esitoBtn_@val"
-                                            class="esito-btn @(Model.EsitoUI == val ? "active" : "")"
-                                            data-val="@val"
-                                            onclick="selezionaEsito('@val')">
-                                        <i class="bi @icon me-1"></i> @lbl
-                                    </button>
-                                }
+                               @foreach (EsitoVerifica e in Enum.GetValues(typeof(EsitoVerifica)))
+{
+    var val = e.ToString();
+
+    var css = e switch
+    {
+        EsitoVerifica.InCorso => "badge-todo",
+        EsitoVerifica.Positivo => "badge-ok",
+        EsitoVerifica.PositivoConRiserva => "badge-warning",
+        EsitoVerifica.Negativo => "badge-danger",
+        _ => ""
+    };
+
+    var icon = e switch
+    {
+        EsitoVerifica.InCorso => "bi-clock",
+        EsitoVerifica.Positivo => "bi-check-circle",
+        EsitoVerifica.PositivoConRiserva => "bi-exclamation-circle",
+        EsitoVerifica.Negativo => "bi-x-circle",
+        _ => ""
+    };
+
+    <button type="button"
+            id="esitoBtn_@val"
+            class="esito-btn @(Model.EsitoUI == val ? "active" : "")"
+            data-val="@val"
+            onclick="selezionaEsito('@val')">
+
+        <i class="bi @icon me-1"></i> @GetDisplayName(e)
+    </button>
+}
                                 <input type="hidden" asp-for="EsitoUI" id="inputEsitoUI" />
                             </div>
                         </div>
@@ -571,9 +587,24 @@ function mapTipoUIToEnum(tipoUI) {
 }
 
 function mapEsitoUIToEnum(esitoUI) {
-    const m = { 'InCorso':'InCorso', 'Positivo':'Superato',
-                'PositivoConRiserva':'ConRiserva', 'Negativo':'NonSuperato' };
+    const m = { 
+        'InCorso':'InCorso',
+        'Positivo':'Positivo',
+        'PositivoConRiserva':'PositivoConRiserva',
+        'Negativo':'Negativo'
+    };
     return m[esitoUI] || 'InCorso';
+}
+
+@functions {
+    string GetDisplayName(Enum value)
+    {
+        return value.GetType()
+            .GetMember(value.ToString())
+            .First()
+            .GetCustomAttribute<DisplayAttribute>()?
+            .Name ?? value.ToString();
+    }
 }
 
 // ─── RIEPILOGO ────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+@using RadiologiaAppNew.Enums
 @model RadiologiaAppNew.ViewModels.Apparecchiature.ApparecchiaturaDetailViewModel
 @{
     Layout = "_Layout";
@@ -302,6 +303,50 @@
         </div>
     </div>
 }
+@if (app.LocaleProvvisorio != null)
+{
+    <div class="alert alert-warning" style="margin-top:15px;">
+        <strong>Collocazione Provvisoria ATTIVA</strong>
+        @if (app.DataInizioProvvisoria.HasValue)
+        {
+            <span> (dal @app.DataInizioProvvisoria.Value.ToString("dd/MM/yyyy"))</span>
+        }
+    </div>
+
+    <div>
+        @if (app.LocaleProvvisorio?.Piano?.Immobile?.Sito != null)
+        {
+            <div>
+             <strong>Sito / Presidio:</strong>
+              @app.LocaleProvvisorio.Piano.Immobile.Sito.Nome</div>
+        }
+        @if (app.LocaleProvvisorio?.Piano?.Immobile != null)
+        {
+            <div>
+            <strong>Edificio:</strong> 
+            @app.LocaleProvvisorio.Piano.Immobile.Nome</div>
+        }
+        @if (app.LocaleProvvisorio?.Piano != null)
+        {
+            <div>
+            <strong>Piano:</strong>  
+            @app.LocaleProvvisorio.Piano.Nome</div>
+        }
+
+        <div>
+            <strong>Locale / Stanza:</strong>  
+            @app.LocaleProvvisorio.Nome
+            @if (!string.IsNullOrEmpty(app.LocaleProvvisorio.Codice))
+            {
+                <span>(@app.LocaleProvvisorio.Codice)</span>
+            }
+        </div>
+    </div>
+}
+
+
+
+
  @if (app.Reparto != null)
                 {
                     <div class="col-md-3">
@@ -786,30 +831,31 @@
                 }
             </td>
             <td>
-                @{
-                    string esitoTabClass;
-                    string esitoTabIcon;
-                    if (v.Esito == EsitoVerifica.Superato)
-                    {
-                        esitoTabClass = "badge-ok";
-                        esitoTabIcon  = "bi-check-circle";
-                    }
-                    else if (v.Esito == EsitoVerifica.NonSuperato)
-                    {
-                        esitoTabClass = "badge-danger";
-                        esitoTabIcon  = "bi-x-circle";
-                    }
-                    else if (v.Esito == EsitoVerifica.ConRiserva)
-                    {
-                        esitoTabClass = "badge-warning";
-                        esitoTabIcon  = "bi-exclamation-circle";
-                    }
-                    else
-                    {
-                        esitoTabClass = "badge-missing";
-                        esitoTabIcon  = "bi-clock";
-                    }
-                }
+              @{
+    string esitoTabClass;
+    string esitoTabIcon;
+
+    if (v.Esito == EsitoVerifica.Positivo)
+    {
+        esitoTabClass = "badge-ok";
+        esitoTabIcon  = "bi-check-circle";
+    }
+    else if (v.Esito == EsitoVerifica.Negativo)
+    {
+        esitoTabClass = "badge-danger";
+        esitoTabIcon  = "bi-x-circle";
+    }
+    else if (v.Esito == EsitoVerifica.PositivoConRiserva)
+    {
+        esitoTabClass = "badge-warning";
+        esitoTabIcon  = "bi-exclamation-circle";
+    }
+    else
+    {
+        esitoTabClass = "badge-missing";
+        esitoTabIcon  = "bi-clock";
+    }
+}
                 <span class="badge-compliance @esitoTabClass">
                     <i class="bi @esitoTabIcon"></i>
                     @v.Esito
@@ -1519,37 +1565,70 @@
     }
     else
     {
+        <div class="d-flex justify-content-end align-items-center mb-3">
+    <label class="me-2 small text-muted mb-0">Anno:</label>
+
+    <select class="form-select form-select-sm"
+            style="width:100px"
+            onchange="changeAnno(this.value)">
+
+        @foreach (var a in Model.AnniDisponibili)
+        {
+            if (a == Model.AnnoSelezionato)
+            {
+                <option value="@a" selected>@a</option>
+            }
+            else
+            {
+                <option value="@a">@a</option>
+            }
+        }
+
+    </select>
+</div>
         <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="bi bi-bar-chart card-icon"></i>
-                            Esiti Verifiche per Anno
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="chartEsitiAnno"
-                                style="height:220px;"></canvas>
-                    </div>
-                </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-bar-chart card-icon"></i>
+                    Esiti per Tipo Verifica
+                    <span class="text-muted small ms-2">(@Model.AnnoSelezionato)</span>
+                </h3>
             </div>
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="bi bi-pie-chart card-icon"></i>
-                            Distribuzione Esiti
-                        </h3>
-                    </div>
-                    <div class="card-body d-flex align-items-center
-                                justify-content-center">
-                        <canvas id="chartDistEsiti"
-                                style="max-height:220px;"></canvas>
+            <div class="card-body">
+                <canvas id="chartEsitiAnno" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title m-0">
+                    <i class="bi bi-pie-chart card-icon"></i>
+                    Distribuzione Esiti
+                    <span class="text-muted small ms-2">(@Model.AnnoSelezionato)</span>
+                </h3>
+                <select class="form-select form-select-sm" style="width:180px" onchange="changeTipo(this.value)">
+                    @foreach (var t in Model.StatistichePerTipo)
+                    {
+                        <option value="@t.Tipo">@t.Tipo</option>
+                    }
+                </select>
+            </div>
+            <div class="card-body" style="position:relative;">
+                <div id="chartDistEsitiTotale" class="text-center text-muted small mb-2"></div>
+                <div style="position:relative;height:240px;">
+                    <canvas id="chartDistEsiti"></canvas>
+                    <div id="chartDistEsitiEmpty" style="display:none;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--neutral-500);font-size:0.85rem;">
+                        <i class="bi bi-pie-chart" style="font-size:1.8rem;margin-bottom:6px;"></i>
+                        Nessun dato per questo tipo di verifica
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
     }
 </div>
 
@@ -1569,110 +1648,206 @@ function switchTab(name) {
         `?tab=${name}`);
 }
 
-// ─── GRAFICI STATISTICHE ─────────────────────────────────────────
 @if (Model.VerificheCQ.Any())
 {
-    var anni = Model.VerificheCQ
-        .Where(v => v.Anno.HasValue)
-        .GroupBy(v => v.Anno!.Value)
-        .OrderBy(g => g.Key)
-        .ToList();
-
     <text>
-    // Grafico esiti per anno
+    const PALETTE = {
+        Positivi: 'rgba(39,174,96,0.85)',
+        Negativi: 'rgba(192,57,43,0.85)',
+        Riserva:  'rgba(243,156,18,0.85)',
+        InCorso:  'rgba(100,116,139,0.85)'
+    };
+
+    // ───────────────────────── Grafico a barre (per tipo verifica) ─────────────────────────
     const ctxAnno = document.getElementById('chartEsitiAnno');
     if (ctxAnno) {
+        @{
+            var labels   = Model.StatistichePerTipo.Select(s => s.Tipo).ToList();
+            var positivi = Model.StatistichePerTipo.Select(s => s.Positivi).ToList();
+            var negativi = Model.StatistichePerTipo.Select(s => s.Negativi).ToList();
+            var riserva  = Model.StatistichePerTipo.Select(s => s.PositivoConRiserva).ToList();
+            var inCorso  = Model.StatistichePerTipo.Select(s => s.InCorso).ToList();
+        }
+        const barLabels   = @Html.Raw(Json.Serialize(labels));
+        const barPositivi = @Html.Raw(Json.Serialize(positivi));
+        const barNegativi = @Html.Raw(Json.Serialize(negativi));
+        const barRiserva  = @Html.Raw(Json.Serialize(riserva));
+        const barInCorso  = @Html.Raw(Json.Serialize(inCorso));
+
+        const barTotals = barLabels.map((_, i) =>
+            barPositivi[i] + barNegativi[i] + barRiserva[i] + barInCorso[i]);
+
         new Chart(ctxAnno, {
             type: 'bar',
             data: {
-                labels: [@Html.Raw(string.Join(",",
-                    anni.Select(g => $"'{g.Key}'")))],
+                labels: barLabels,
                 datasets: [
-                    {
-                        label: 'Superati',
-                        data: [@string.Join(",",
-                            anni.Select(g => g.Count(v =>
-                                v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.Superato)))],
-                        backgroundColor: 'rgba(39,174,96,0.8)',
-                        borderRadius: 6
-                    },
-                    {
-                        label: 'Non Superati',
-                        data: [@string.Join(",",
-                            anni.Select(g => g.Count(v =>
-                                v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.NonSuperato)))],
-                        backgroundColor: 'rgba(192,57,43,0.8)',
-                        borderRadius: 6
-                    },
-                    {
-                        label: 'Con Riserva',
-                        data: [@string.Join(",",
-                            anni.Select(g => g.Count(v =>
-                                v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.ConRiserva)))],
-                        backgroundColor: 'rgba(243,156,18,0.8)',
-                        borderRadius: 6
-                    }
+                    { label: 'Positivi', data: barPositivi, backgroundColor: PALETTE.Positivi, borderRadius: 4 },
+                    { label: 'Negativi', data: barNegativi, backgroundColor: PALETTE.Negativi, borderRadius: 4 },
+                    { label: 'Positivi con riserva', data: barRiserva, backgroundColor: PALETTE.Riserva, borderRadius: 4 },
+                    { label: 'In Corso', data: barInCorso, backgroundColor: PALETTE.InCorso, borderRadius: 4 }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { position: 'top',
-                              labels: { usePointStyle: true,
-                                        font: { size: 11 } } }
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, font: { size: 11 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                const val = ctx.parsed.y;
+                                const tot = barTotals[ctx.dataIndex] || 0;
+                                const pct = tot > 0 ? ((val / tot) * 100).toFixed(0) : 0;
+                                return val > 0 ? `${ctx.dataset.label}: ${val} (${pct}%)` : null;
+                            },
+                            footer: function (items) {
+                                const tot = barTotals[items[0].dataIndex] || 0;
+                                return `Totale: ${tot}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { stacked: true, ticks: { autoSkip: false, maxRotation: 0 }, grid: { display: false } },
+                    y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
                 }
             }
         });
     }
 
-    // Grafico distribuzione esiti (torta)
+    // ───────────────────────── Grafico a torta (distribuzione per tipo selezionato) ─────────────────────────
     const ctxDist = document.getElementById('chartDistEsiti');
+    const emptyStateDist = document.getElementById('chartDistEsitiEmpty');
+    const totaleLabelDist = document.getElementById('chartDistEsitiTotale');
+    const statsPerTipo = @Html.Raw(Json.Serialize(Model.StatistichePerTipo));
+
     if (ctxDist) {
-        new Chart(ctxDist, {
-            type: 'doughnut',
-            data: {
-                labels: ['Superati', 'Non Superati', 'Con Riserva', 'In Corso'],
-                datasets: [{
-                    data: [
-                        @Model.VerificheCQ.Count(v =>
-                            v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.Superato),
-                        @Model.VerificheCQ.Count(v =>
-                            v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.NonSuperato),
-                        @Model.VerificheCQ.Count(v =>
-                            v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.ConRiserva),
-                        @Model.VerificheCQ.Count(v =>
-                            v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.InCorso)
-                    ],
-                    backgroundColor: [
-                        '#27AE60','#C0392B','#F39C12','#64748B'
-                    ],
-                    borderWidth: 3,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '60%',
-                plugins: {
-                    legend: { position: 'bottom',
-                              labels: { usePointStyle: true,
-                                        font: { size: 11 } } }
+        let chartDist;
+
+        function getField(obj, name) {
+            const key = Object.keys(obj).find(k => k.toLowerCase() === name.toLowerCase());
+            return key ? Number(obj[key]) || 0 : 0;
+        }
+
+        function getFieldRaw(obj, name) {
+    const key = Object.keys(obj).find(k => k.toLowerCase() === name.toLowerCase());
+    return key ? obj[key] : null;
+}
+
+        function showEmpty(show) {
+            ctxDist.style.display = show ? 'none' : 'block';
+            emptyStateDist.style.display = show ? 'flex' : 'none';
+        }
+
+        function renderChart(tipo) {
+          
+          if (!tipo) {
+        showEmpty(true);
+        totaleLabelDist.textContent = '';
+        return;
+    }
+    
+    const data = statsPerTipo.find(x => {
+        const tipoVal = getFieldRaw(x, 'tipo');
+        return tipoVal && tipoVal.trim().toLowerCase() === tipo.trim().toLowerCase();
+    });
+
+    if (chartDist) {
+        chartDist.destroy();
+        chartDist = null;
+    }
+
+    if (!data) {
+        showEmpty(true);
+        totaleLabelDist.textContent = '';
+        return;
+    }
+
+    const values = [
+        getField(data, 'positivi'),
+        getField(data, 'negativi'),
+        getField(data, 'positivoConRiserva'),
+        getField(data, 'inCorso')
+    ];
+    const totale = values.reduce((a, b) => a + b, 0);
+
+    if (totale === 0) {
+        showEmpty(true);
+        totaleLabelDist.textContent = '';
+        return;
+    }
+
+    showEmpty(false);
+    totaleLabelDist.textContent = `${totale} verific${totale === 1 ? 'a' : 'he'} totali`;
+
+    chartDist = new Chart(ctxDist, {
+        type: 'doughnut',
+        data: {
+            labels: ['Positivi', 'Negativi', 'Positivi con riserva', 'In Corso'],
+            datasets: [{
+                data: values,
+                backgroundColor: [PALETTE.Positivi, PALETTE.Negativi, PALETTE.Riserva, PALETTE.InCorso],
+                borderWidth: 3,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { usePointStyle: true, font: { size: 11 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            const val = ctx.parsed;
+                            const pct = totale > 0 ? ((val / totale) * 100).toFixed(1) : 0;
+                            return `${ctx.label}: ${val} (${pct}%)`;
+                        }
+                    }
                 }
             }
-        });
+        }
+    });
+}
+
+        window.renderChart = renderChart;
+        if (statsPerTipo.length > 0) {
+           window.renderChart(getFieldRaw(statsPerTipo[0], 'tipo'));
+        }
     }
+
+    window.changeTipo = function (tipo) {
+        window.renderChart(tipo);
+    };
     </text>
 }
+
 function toggleFormFigura() {
     const f = document.getElementById('formFigura');
     if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
 }
+
+
+function changeAnno(anno) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('anno', anno);
+    window.location.href = url.toString();
+}
 </script>
+
+
+
+
+
 <script>
 function toggleCategoria(id) {
     const el = document.getElementById(id);

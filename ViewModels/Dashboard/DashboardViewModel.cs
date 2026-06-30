@@ -26,8 +26,10 @@ namespace RadiologiaAppNew.ViewModels.Dashboard
 
         // Dati grafici — CQ per mese
         public List<string> MesiLabels { get; set; } = new();
-        public List<int> CQSuperati { get; set; } = new();
-        public List<int> CQNonSuperati { get; set; } = new();
+        public List<int> CQPositivi { get; set; } = new();
+        public List<int> CQNegativi { get; set; } = new();
+        public List<int> CQConRiserva { get; set; } = new();
+        public List<int> CQInCorso { get; set; } = new();
 
         // Dati grafici — distribuzione per ambito
         public int CountRadiologia { get; set; }

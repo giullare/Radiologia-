@@ -71,7 +71,7 @@
         v.ProssimaVerificaData > tra7 &&
         v.ProssimaVerificaData <= tra30);
     var superate    = Model.Verifiche.Count(v =>
-        v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.Superato);
+        v.Esito == RadiologiaAppNew.Enums.EsitoVerifica.Positivo);
 }
 
 <div class="kpi-grid mb-4" style="grid-template-columns:repeat(4,1fr)">
@@ -325,14 +325,12 @@
                                     var (esitoClass, esitoIcon, esitoLabel) =
                                         v.Esito switch
                                     {
-                                        RadiologiaAppNew.Enums.EsitoVerifica.Superato =>
-                                            ("badge-ok", "bi-check-circle", "Superato"),
-                                        RadiologiaAppNew.Enums.EsitoVerifica.NonSuperato =>
-                                            ("badge-danger", "bi-x-circle", "Non Superato"),
-                                        RadiologiaAppNew.Enums.EsitoVerifica.ConRiserva =>
-                                            ("badge-warning", "bi-exclamation-circle",
-                                             "Con Riserva"),
-                                        _ => ("badge-missing", "bi-clock", "In Corso")
+                                        
+RadiologiaAppNew.Enums.EsitoVerifica.Positivo => ("badge-ok", "bi-check-circle", "Positivo"),
+    RadiologiaAppNew.Enums.EsitoVerifica.Negativo => ("badge-danger", "bi-x-circle", "Negativo"),
+    RadiologiaAppNew.Enums.EsitoVerifica.PositivoConRiserva => ("badge-warning", "bi-exclamation-circle", "Positivo con riserva"),
+    _ => ("badge-missing", "bi-clock", "In Corso")
+
                                     };
                                 }
                                 <span class="badge-compliance @esitoClass">

@@ -88,22 +88,73 @@
     <!-- Campo nascosto — Modulo impostato dal controller -->
     <input type="hidden" asp-for="Modulo" value="@(isRM ? "RM" : "Radiologica")" />
 
-    @if (!ViewData.ModelState.IsValid)
-    {
-        <div class="alert-radiologia alert-danger mb-4">
-            <i class="bi bi-exclamation-circle alert-icon"></i>
-            <div>
-                <strong>Correggi i seguenti errori:</strong>
-                <ul style="margin:6px 0 0;padding-left:16px;">
-                    @foreach (var error in ViewData.ModelState.Values
-                        .SelectMany(v => v.Errors))
-                    {
-                        <li style="font-size:0.85rem;">@error.ErrorMessage</li>
-                    }
-                </ul>
-            </div>
+   @{
+    var step1 = new[] { "Codice", "Descrizione", "Tipologia", "Costruttore", "Modello", "Matricola" };
+    var step2 = new[] { "CorrenteMaxMa", "TensioneMaxKvolt", "EnergiaMaxKev" };
+    var step3 = new[] { "SitoId", "ImmobileId", "PianoId", "LocaleId", "RepartoId", "DipartimentoId" };
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert-radiologia alert-danger mb-4">
+        <i class="bi bi-exclamation-circle alert-icon"></i>
+        <div>
+            <strong>Correggi i seguenti errori:</strong>
+
+            <ul style="margin:6px 0 0;padding-left:16px;">
+
+                @* STEP 1 *@
+                @if (ViewData.ModelState.Any(m => step1.Contains(m.Key) && m.Value.Errors.Any()))
+                {
+                    <li><strong>Dati Base</strong>
+                        <ul>
+                        @foreach (var kvp in ViewData.ModelState.Where(m => step1.Contains(m.Key)))
+                        {
+                            foreach (var error in kvp.Value.Errors)
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        }
+                        </ul>
+                    </li>
+                }
+
+                @* STEP 2 *@
+                @if (ViewData.ModelState.Any(m => step2.Contains(m.Key) && m.Value.Errors.Any()))
+                {
+                    <li><strong>Parametri Tecnici</strong>
+                        <ul>
+                        @foreach (var kvp in ViewData.ModelState.Where(m => step2.Contains(m.Key)))
+                        {
+                            foreach (var error in kvp.Value.Errors)
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        }
+                        </ul>
+                    </li>
+                }
+
+                @* STEP 3 *@
+                @if (ViewData.ModelState.Any(m => step3.Contains(m.Key) && m.Value.Errors.Any()))
+                {
+                    <li><strong>Collocazione / Responsabili</strong>
+                        <ul>
+                        @foreach (var kvp in ViewData.ModelState.Where(m => step3.Contains(m.Key)))
+                        {
+                            foreach (var error in kvp.Value.Errors)
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        }
+                        </ul>
+                    </li>
+                }
+
+            </ul>
         </div>
-    }
+    </div>
+}
 
     <!-- ══ STEP 1 — Dati Base ════════════════════════════════════ -->
     <div class="wizard-panel active" id="panel-1">
@@ -347,28 +398,31 @@
                    <!-- PRIMA: Sito → Edificio → Piano → Locale -->
 <div class="col-md-3">
     <label class="form-label">Sito / Presidio</label>
-    <select class="form-select" id="selectSito" asp-items="ViewBag.Siti">
-        <option value="">— Seleziona —</option>
+    <select class="form-select" asp-for="SitoId" id="selectSito" asp-items="ViewBag.Siti">
+        <option value="0">— Seleziona —</option>
     </select>
-    <input type="hidden" asp-for="SitoId" id="hiddenSitoId" />
+    <span asp-validation-for="SitoId" class="text-danger"></span>
+   
 </div>
 
 <div class="col-md-3">
     <label class="form-label">Edificio</label>
-    <select class="form-select" id="selectImmobile"
+    <select class="form-select" asp-for="ImmobileId" id="selectImmobile"
             style="pointer-events:none; background-color:#e9ecef;">
-        <option value="">— Prima seleziona Sito —</option>
+        <option value="0">— Prima seleziona Sito —</option>
     </select>
-    <input type="hidden" asp-for="ImmobileId" id="hiddenImmobileId" />
+    <span asp-validation-for="ImmobileId" class="text-danger"></span>
+   
 </div>
 
 <div class="col-md-3">
     <label class="form-label">Piano</label>
-    <select class="form-select" id="selectPiano"
+    <select class="form-select" asp-for="PianoId" id="selectPiano"
             style="pointer-events:none; background-color:#e9ecef;">
-        <option value="">— Prima seleziona Edificio —</option>
+        <option value="0">— Prima seleziona Edificio —</option>
     </select>
-    <input type="hidden" asp-for="PianoId" id="hiddenPianoId" />
+    <span asp-validation-for="PianoId" class="text-danger"></span>
+   
 </div>
 
 <div class="col-md-3">
@@ -834,7 +888,7 @@ async function caricaTipologiePerAmbito(ambito) {
 
 // ─── COLLOCAZIONE AJAX ──────────────────────────────────────────
 async function caricaImmobili(sitoId) {
-    document.getElementById('hiddenSitoId').value = sitoId;
+    //document.getElementById('hiddenSitoId').value = sitoId;
 
     resetSelect(document.getElementById('selectImmobile'), '— Prima seleziona Sito —');
     resetSelect(document.getElementById('selectPiano'), '— Prima seleziona Edificio —');
@@ -858,7 +912,7 @@ async function caricaImmobili(sitoId) {
 
 
 async function caricaPiani(immobileId) {
-    document.getElementById('hiddenImmobileId').value = immobileId;
+    //document.getElementById('hiddenImmobileId').value = immobileId;
 
     resetSelect(document.getElementById('selectPiano'), '— Prima seleziona Edificio —');
     resetSelect(document.getElementById('selectLocale'), '— Prima seleziona Piano —');
@@ -880,7 +934,7 @@ async function caricaPiani(immobileId) {
 }
 
 async function caricaLocali(pianoId) {
-    document.getElementById('hiddenPianoId').value = pianoId;
+   // document.getElementById('hiddenPianoId').value = pianoId;
 
     const sel = document.getElementById('selectLocale');
     const hidden = document.getElementById('hiddenLocaleId');
@@ -957,19 +1011,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (tipo) document.getElementById('selectTipologia').value = tipo;
 });
 document.getElementById('selectSito').addEventListener('change', e => {
-    document.getElementById('hiddenSitoId').value = e.target.value;
     caricaImmobili(e.target.value);
 });
 
+
 document.getElementById('selectImmobile').addEventListener('change', e => {
-    document.getElementById('hiddenImmobileId').value = e.target.value;
     caricaPiani(e.target.value);
 });
 
 document.getElementById('selectPiano').addEventListener('change', e => {
-    document.getElementById('hiddenPianoId').value = e.target.value;
     caricaLocali(e.target.value);
 });
+
 
 document.getElementById('selectLocale').addEventListener('change', e => {
     document.getElementById('hiddenLocaleId').value = e.target.value;

@@ -94,9 +94,40 @@ namespace RadiologiaAppNew.Models
         [Display(Name = "Locale")]
         public int? LocaleId { get; set; }
         public Locale? Locale { get; set; }
-        public int? SitoId { get; set; }
-        public int? ImmobileId { get; set; }
-        public int? PianoId { get; set; }
+       
+[Required(ErrorMessage = "Sito / Presidio è obbligatorio")]
+[Range(1, int.MaxValue, ErrorMessage = "Seleziona un sito valido")]
+public int SitoId { get; set; }
+
+[Required(ErrorMessage = "Edificio è obbligatorio")]
+[Range(1, int.MaxValue, ErrorMessage = "Seleziona un edificio valido")]
+public int ImmobileId { get; set; }
+
+[Required(ErrorMessage = "Il piano è obbligatorio")]
+[Range(1, int.MaxValue, ErrorMessage = "Seleziona un piano valido")]
+public int PianoId { get; set; }
+
+
+        // ─── COLLOCAZIONE PROVVISORIA ────────────────────────────────────
+        // Popolata quando l'apparecchiatura viene temporaneamente spostata
+        // rispetto alla collocazione ufficiale sopra. Nullable: assente se
+        // non c'è alcun movimento provvisorio attivo.
+        [Display(Name = "Sito Provvisorio")]
+        public int? SitoProvvisorioId { get; set; }
+
+        [Display(Name = "Edificio Provvisorio")]
+        public int? ImmobileProvvisorioId { get; set; }
+
+        [Display(Name = "Piano Provvisorio")]
+        public int? PianoProvvisorioId { get; set; }
+
+        [Display(Name = "Locale Provvisorio")]
+        public int? LocaleProvvisorioId { get; set; }
+        public Locale? LocaleProvvisorio { get; set; }
+
+        [Display(Name = "Data Inizio Collocazione Provvisoria")]
+        [DataType(DataType.Date)]
+        public DateTime? DataInizioProvvisoria { get; set; }
 
         [Display(Name = "Struttura")]
         public int? RepartoId { get; set; }
@@ -360,5 +391,6 @@ namespace RadiologiaAppNew.Models
         public ICollection<PrimaVerificaBenestare> PrimeVerificheBenestare { get; set; } = new List<PrimaVerificaBenestare>();
         public ICollection<NullaOsta> NullaOsta { get; set; } = new List<NullaOsta>();
         public ICollection<Verbale> Verbali { get; set; } = new List<Verbale>();
+        public ICollection<StoricoCollocazione> StoricoCollocazioni { get; set; } = new List<StoricoCollocazione>();
     }
 }

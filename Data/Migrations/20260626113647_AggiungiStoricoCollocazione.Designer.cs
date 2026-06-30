@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RadiologiaAppNew.Data;
 
@@ -10,9 +11,11 @@ using RadiologiaAppNew.Data;
 namespace RadiologiaAppNew.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260626113647_AggiungiStoricoCollocazione")]
+    partial class AggiungiStoricoCollocazione
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
@@ -264,7 +267,7 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ImmobileId")
+                    b.Property<int?>("ImmobileId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("ImmobileProvvisorioId")
@@ -326,7 +329,7 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PianoId")
+                    b.Property<int?>("PianoId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("PianoProvvisorioId")
@@ -399,7 +402,7 @@ namespace RadiologiaAppNew.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("SitoId")
+                    b.Property<int?>("SitoId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("SitoProvvisorioId")

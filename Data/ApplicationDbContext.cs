@@ -33,6 +33,9 @@ namespace RadiologiaAppNew.Data
         public DbSet<PrimaVerificaBenestare> PrimeVerificheBenestare { get; set; }
         public DbSet<Verbale> Verbali { get; set; }
 
+// Storico collocazioni
+        public DbSet<StoricoCollocazione> StoricoCollocazioni { get; set; }
+        
         // Anagrafica tecnica
         public DbSet<Costruttore> Costruttori { get; set; }
         public DbSet<ModelloApparecchiatura> ModelliApparecchiatura { get; set; }

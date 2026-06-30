@@ -214,12 +214,19 @@ namespace RadiologiaAppNew.Controllers
                 {
                     var mese = new DateTime(oggi.Year, m, 1);
                     vm.MesiLabels.Add(mese.ToString("MMM"));
-                    vm.CQSuperati.Add(verificheAnno.Count(
+                    vm.CQPositivi.Add(verificheAnno.Count(
                         v => v.DataInizio.Month == m &&
-                             v.Esito == EsitoVerifica.Superato));
-                    vm.CQNonSuperati.Add(verificheAnno.Count(
+                             v.Esito == EsitoVerifica.Positivo));
+                    vm.CQNegativi.Add(verificheAnno.Count(
                         v => v.DataInizio.Month == m &&
-                             v.Esito == EsitoVerifica.NonSuperato));
+                             v.Esito == EsitoVerifica.Negativo));                 
+                    vm.CQConRiserva.Add(verificheAnno.Count(
+                        v => v.DataInizio.Month == m &&
+                             v.Esito == EsitoVerifica.PositivoConRiserva));
+                    vm.CQInCorso.Add(verificheAnno.Count(
+                        v => v.DataInizio.Month == m &&
+                             v.Esito == EsitoVerifica.InCorso));
+
                 }
 
                 // ── GRAFICI — Distribuzione ambiti (solo MOD1 + MOD2) ────

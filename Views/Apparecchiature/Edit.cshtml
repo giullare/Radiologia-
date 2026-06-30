@@ -45,7 +45,7 @@
 </div>
 <!-- ═══ FORM ══════════════════════════════════════════════════════ -->
 <form asp-action="Edit" asp-controller="Apparecchiature"
-      asp-route-id="@Model.Id"
+      asp-route-id="@Model.Id" 
       method="post" id="formEdit"
       enctype="multipart/form-data" novalidate>
     @Html.AntiForgeryToken()
@@ -92,7 +92,7 @@
                         <select asp-for="AmbitoIntervento" class="form-select"
                                 id="selectAmbito" onchange="onAmbitoChange()">
                             <option value="">— Seleziona —</option>
-                            <option value="@AmbitoIntervento.Radiologia.ToString()"
+                            <option value="@AmbitoIntervento.Radiologia.ToString()" 
             selected="@(Model.AmbitoIntervento == AmbitoIntervento.Radiologia ? "selected" : null)">
         Radiologia
     </option>
@@ -264,6 +264,7 @@
             </div>
             <div class="form-section-body">
                 <div class="row g-3">
+                    
  <div class="col-12">
                         <p style="font-size:0.85rem;color:var(--neutral-500);margin-bottom:12px;">
                             <i class="bi bi-info-circle me-1"></i>
@@ -296,13 +297,155 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Locale / Stanza</label>
-                        <select  class="form-select"
-                                id="selectLocale"
+                        <select  class="form-select" 
+                                id="selectLocale"  
                                 style="pointer-events:none; background-color:#e9ecef;">
                             <option value="">— Prima seleziona Piano —</option>
                         </select>
                        <input type="hidden" asp-for="LocaleId" id="hiddenLocaleId" />
                     </div>
+
+        <!-- Collocazione Provvisoria -->
+        <div class="form-section mb-4">
+            <div class="form-section-header">
+                <i class="bi bi-arrow-left-right text-warning"></i>
+                <h4 class="form-section-title">Collocazione Provvisoria</h4>
+            </div>
+            <div class="form-section-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <p style="font-size:0.85rem;color:var(--neutral-500);margin-bottom:12px;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Compila questa sezione solo se l'apparecchiatura è stata temporaneamente spostata rispetto alla collocazione ufficiale sopra.
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Sito / Presidio</label>
+                        <select class="form-select" id="selectSitoProv"
+                                asp-items="ViewBag.Siti">
+                            <option value="">— Seleziona —</option>
+                        </select>
+                        <input type="hidden" asp-for="SitoProvvisorioId" id="hiddenSitoProvvisorioId" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Edificio</label>
+                        <select class="form-select" id="selectImmobileProv"
+                                style="pointer-events:none; background-color:#e9ecef;">
+                            <option value="">— Prima seleziona Sito —</option>
+                        </select>
+                       <input type="hidden" asp-for="ImmobileProvvisorioId" id="hiddenImmobileProvvisorioId" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Piano</label>
+                        <select class="form-select" id="selectPianoProv"
+                                style="pointer-events:none; background-color:#e9ecef;">
+                            <option value="">— Prima seleziona Edificio —</option>
+                        </select>
+                       <input type="hidden" asp-for="PianoProvvisorioId" id="hiddenPianoProvvisorioId" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Locale / Stanza</label>
+                        <select class="form-select"
+                                id="selectLocaleProv"
+                                style="pointer-events:none; background-color:#e9ecef;">
+                            <option value="">— Prima seleziona Piano —</option>
+                        </select>
+                       <input type="hidden" asp-for="LocaleProvvisorioId" id="hiddenLocaleProvvisorioId" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="DataInizioProvvisoria" class="form-label"></label>
+                        <input asp-for="DataInizioProvvisoria" type="date" class="form-control" />
+                        <div class="form-text">Lascia vuoto per usare la data di oggi</div>
+                    </div>
+                    @if (Model.LocaleProvvisorioId.HasValue)
+                    {
+                        <div class="col-12">
+                            <div class="alert-radiologia" style="background:#FEF9E7;border-color:#B7950B;">
+                                <i class="bi bi-exclamation-triangle text-warning"></i>
+                                <div style="font-size:0.85rem;">
+                                    Collocazione provvisoria attiva dal
+                                    <strong>@(Model.DataInizioProvvisoria?.ToString("dd/MM/yyyy") ?? "-")</strong>.
+                                    Per terminarla, svuota i campi sopra e salva, oppure usa
+                                    "Imposta come ufficiale" nello storico qui sotto.
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <!-- Storico Collocazioni -->
+        <div class="form-section mb-4">
+            <div class="form-section-header">
+                <i class="bi bi-clock-history text-primary"></i>
+                <h4 class="form-section-title">Storico Collocazioni</h4>
+            </div>
+            <div class="form-section-body">
+                @{
+                    var storico = ViewBag.StoricoCollocazioni as List<RadiologiaAppNew.Models.StoricoCollocazione>;
+                }
+                @if (storico == null || !storico.Any())
+                {
+                    <p style="font-size:0.85rem;color:var(--neutral-500);">Nessun movimento registrato.</p>
+                }
+                else
+                {
+                    <table class="table table-sm" style="font-size:0.82rem;">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Collocazione</th>
+                                <th>Dal</th>
+                                <th>Al</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in storico)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (s.Tipo == RadiologiaAppNew.Enums.TipoCollocazione.Ufficiale)
+                                        {
+                                            <span class="badge-compliance badge-ok">Ufficiale</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-compliance badge-warning">Provvisoria</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @(s.Sito?.Nome ?? "-")
+                                        @if (s.Immobile != null) { <span> / @s.Immobile.Nome</span> }
+                                        @if (s.Piano != null) { <span> / @s.Piano.Nome</span> }
+                                        @if (s.Locale != null) { <span> / @s.Locale.Nome</span> }
+                                    </td>
+                                    <td>@s.DataInizio.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        @(s.DataFine.HasValue ? s.DataFine.Value.ToString("dd/MM/yyyy") : "in corso")
+                                    </td>
+                                    <td>
+                                        @if (s.DataFine == null && !(s.Tipo == RadiologiaAppNew.Enums.TipoCollocazione.Ufficiale))
+                                        {
+                                            <button type="submit"
+                                                    formaction="/Apparecchiature/ImpostaCollocazioneUfficiale?id=@Model.Id&amp;storicoId=@s.Id"
+                                                    formmethod="post"
+                                                    class="btn btn-outline-primary btn-sm"
+                                                    style="font-size:0.72rem;"
+                                                    onclick="return confirm('Impostare questa collocazione come ufficiale?');">
+                                                Imposta come ufficiale
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+
                     <div class="col-md-4">
                         <label class="form-label">Struttura</label>
                         <select asp-for="RepartoId" class="form-select"
@@ -317,6 +460,7 @@
                             <option value="">— Seleziona dipartimento —</option>
                         </select>
                     </div>
+                  
                     <div class="col-12">
                         <label asp-for="DescrizioneZoneClassificate" class="form-label"></label>
                         <textarea asp-for="DescrizioneZoneClassificate"
@@ -353,6 +497,7 @@
                 </div>
             </div>
         </div>
+
         <!-- Responsabili -->
         <div class="form-section">
             <div class="form-section-header">
@@ -706,6 +851,7 @@
             <button type="button" class="btn btn-ghost" onclick="vaiStep(5)">
                 <i class="bi bi-arrow-left"></i> Indietro
             </button>
+             
         </div>
     </div>
 </form>
@@ -776,6 +922,7 @@ const sel = document.getElementById('selectImmobile');
         //sel.disabled = false;
     sel.style.pointerEvents = 'auto';
     sel.style.backgroundColor = '';
+    
     } catch {}
 }
 async function caricaPiani(immobileId) {
@@ -792,6 +939,7 @@ const sel = document.getElementById('selectPiano');
         sel.innerHTML = '<option value="">— Seleziona piano —</option>';
         data.forEach(p => sel.add(new Option(p.nome, p.id)));
         //sel.disabled = false;
+        
  sel.style.pointerEvents = 'auto';
     sel.style.backgroundColor = '';
     } catch {}
@@ -807,6 +955,7 @@ async function caricaLocali(pianoId) {
         const data = await res.json();
         sel.innerHTML = '<option value="">— Seleziona locale —</option>';
         data.forEach(l => sel.add(new Option(l.nome, l.id)));
+       
  sel.style.pointerEvents = 'auto';
     sel.style.backgroundColor = '';
 sel.onchange = () => hidden.value = sel.value;
@@ -890,6 +1039,96 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (localeId) {
         document.getElementById('selectLocale').value = localeId;
         document.getElementById('hiddenLocaleId').value = localeId;
+    }
+});
+// ─── Cascata Collocazione Provvisoria (stessi endpoint della ufficiale) ───
+async function caricaImmobiliProv(sitoId) {
+    document.getElementById('hiddenSitoProvvisorioId').value = sitoId;
+    document.getElementById('hiddenImmobileProvvisorioId').value = '';
+    document.getElementById('hiddenPianoProvvisorioId').value = '';
+    document.getElementById('hiddenLocaleProvvisorioId').value = '';
+    const sel = document.getElementById('selectImmobileProv');
+    resetSelect(sel, '— Prima seleziona Edificio —');
+    resetSelect(document.getElementById('selectPianoProv'), '— Prima seleziona Piano —');
+    resetSelect(document.getElementById('selectLocaleProv'), '— Prima seleziona Locale —');
+    if (!sitoId) return;
+    try {
+        const res  = await fetch(`/Apparecchiature/GetImmobiliPerSito?sitoId=${sitoId}`);
+        const data = await res.json();
+        sel.innerHTML = '<option value="">— Seleziona edificio —</option>';
+        data.forEach(i => sel.add(new Option(i.nome, i.id)));
+        sel.style.pointerEvents = 'auto';
+        sel.style.backgroundColor = '';
+    } catch {}
+}
+async function caricaPianiProv(immobileId) {
+    document.getElementById('hiddenImmobileProvvisorioId').value = immobileId;
+    document.getElementById('hiddenPianoProvvisorioId').value = '';
+    document.getElementById('hiddenLocaleProvvisorioId').value = '';
+    const sel = document.getElementById('selectPianoProv');
+    resetSelect(sel, '— Prima seleziona Piano —');
+    resetSelect(document.getElementById('selectLocaleProv'), '— Prima seleziona Locale —');
+    if (!immobileId) return;
+    try {
+        const res  = await fetch(`/Apparecchiature/GetPianiPerImmobile?immobileId=${immobileId}`);
+        const data = await res.json();
+        sel.innerHTML = '<option value="">— Seleziona piano —</option>';
+        data.forEach(p => sel.add(new Option(p.nome, p.id)));
+        sel.style.pointerEvents = 'auto';
+        sel.style.backgroundColor = '';
+    } catch {}
+}
+async function caricaLocaliProv(pianoId) {
+    document.getElementById('hiddenPianoProvvisorioId').value = pianoId;
+    const sel = document.getElementById('selectLocaleProv');
+    const hidden = document.getElementById('hiddenLocaleProvvisorioId');
+    resetSelect(sel, '— Prima seleziona Locale —');
+    if (!pianoId) return;
+    try {
+        const res  = await fetch(`/Apparecchiature/GetLocaliPerPiano?pianoId=${pianoId}`);
+        const data = await res.json();
+        sel.innerHTML = '<option value="">— Seleziona locale —</option>';
+        data.forEach(l => sel.add(new Option(l.nome, l.id)));
+        sel.style.pointerEvents = 'auto';
+        sel.style.backgroundColor = '';
+        sel.onchange = () => hidden.value = sel.value;
+    } catch {}
+}
+document.getElementById('selectSitoProv')?.addEventListener('change', e => {
+    document.getElementById('hiddenSitoProvvisorioId').value = e.target.value;
+    caricaImmobiliProv(e.target.value);
+});
+document.getElementById('selectImmobileProv')?.addEventListener('change', e => {
+    document.getElementById('hiddenImmobileProvvisorioId').value = e.target.value;
+    caricaPianiProv(e.target.value);
+});
+document.getElementById('selectPianoProv')?.addEventListener('change', e => {
+    document.getElementById('hiddenPianoProvvisorioId').value = e.target.value;
+    caricaLocaliProv(e.target.value);
+});
+document.getElementById('selectLocaleProv')?.addEventListener('change', e => {
+    document.getElementById('hiddenLocaleProvvisorioId').value = e.target.value;
+});
+window.addEventListener('DOMContentLoaded', async () => {
+    const sitoProvId     = '@Model.SitoProvvisorioId';
+    const immobileProvId = '@Model.ImmobileProvvisorioId';
+    const pianoProvId    = '@Model.PianoProvvisorioId';
+    const localeProvId   = '@Model.LocaleProvvisorioId';
+    if (sitoProvId) {
+        document.getElementById('selectSitoProv').value = sitoProvId;
+        await caricaImmobiliProv(sitoProvId);
+    }
+    if (immobileProvId) {
+        document.getElementById('selectImmobileProv').value = immobileProvId;
+        await caricaPianiProv(immobileProvId);
+    }
+    if (pianoProvId) {
+        document.getElementById('selectPianoProv').value = pianoProvId;
+        await caricaLocaliProv(pianoProvId);
+    }
+    if (localeProvId) {
+        document.getElementById('selectLocaleProv').value = localeProvId;
+        document.getElementById('hiddenLocaleProvvisorioId').value = localeProvId;
     }
 });
 </script>

@@ -256,7 +256,7 @@ namespace RadiologiaAppNew.Controllers
             }
 
             if (model.Tipo == TipoProtocollo.Accettazione &&
-                model.Esito == EsitoVerifica.Superato &&
+                model.Esito == EsitoVerifica.Positivo &&
                 !app.DataAccettazione.HasValue)
             {
                 app.DataAccettazione = model.DataInizio;

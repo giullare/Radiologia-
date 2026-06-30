@@ -123,8 +123,16 @@ ViewBag.TipologiePerAmbito = tipologie;
             return View(vm);
         }
         // ─── DETAIL ──────────────────────────────────────────────────────
-        public async Task<IActionResult> Detail(int id, string tab = "anagrafica")
+        public async Task<IActionResult> Detail(int id, string tab = "anagrafica", int? anno = null)
         {
+            var annoSelezionato = anno ?? DateTime.Today.Year;
+            var anniDisponibili = await _db.RecordVerifiche
+                .Where(v => v.ApparecchiaturaId == id)
+                .Select(v => v.DataInizio.Year)
+                .Distinct()
+                .OrderByDescending(a => a)
+                .ToListAsync();
+
             var app = await _db.Apparecchiature
                 .Include(a => a.Reparto)
                 .Include(a => a.Dipartimento)
@@ -132,6 +140,13 @@ ViewBag.TipologiePerAmbito = tipologie;
                   .ThenInclude(l => l.Piano)
                   .ThenInclude(p => p.Immobile)
                   .ThenInclude(i => i.Sito)
+        
+// ✅ AGGIUNGI QUESTO BLOCCO
+    .Include(a => a.LocaleProvvisorio)
+        .ThenInclude(l => l.Piano)
+            .ThenInclude(p => p.Immobile)
+                .ThenInclude(i => i.Sito)
+
                 .Include(a => a.FigureResponsabili)
                 .Include(a => a.RecordVerifiche)
                     .ThenInclude(v => v.Protocollo)
@@ -157,13 +172,40 @@ ViewBag.TipologiePerAmbito = tipologie;
             var tra30 = oggi.AddDays(30);
             var verifiche = await _db.RecordVerifiche
                 .Include(v => v.Protocollo)
-                .Include(v => v.FileAllegati)
-                .Where(v => v.ApparecchiaturaId == id)
+                .Include(v => v.FileAllegati)         
+                .Where(v => v.ApparecchiaturaId == id &&
+                       v.DataInizio.Year == annoSelezionato)
                 .OrderByDescending(v => v.DataInizio)
                 .ToListAsync();
+
+            var statsTipo = verifiche
+                .GroupBy(v => v.Tipo)
+                .Select(g => new StatisticaTipoVerifica
+                {
+                    Tipo = g.Key switch
+{
+    TipoProtocollo.Accettazione => "Accettazione",
+    TipoProtocollo.Periodico => "Funzionamento Periodico",
+    TipoProtocollo.PostManutenzione => "Post Manutenzione",
+    TipoProtocollo.Ldr => "LDR",
+    _ => g.Key.ToString()
+},
+
+                    Positivi = g.Count(v => v.Esito == EsitoVerifica.Positivo),
+                    Negativi = g.Count(v => v.Esito == EsitoVerifica.Negativo),
+                    PositivoConRiserva = g.Count(v => v.Esito == EsitoVerifica.PositivoConRiserva),
+                    InCorso = g.Count(v => v.Esito == EsitoVerifica.InCorso)
+                })
+                .OrderBy(x =>
+     x.Tipo == "Accettazione" ? 1 :
+     x.Tipo == "Funzionamento Periodico" ? 2 :
+     x.Tipo == "Post Manutenzione" ? 3 :
+     x.Tipo == "LDR" ? 4 : 99)
+                .ToList();
+
             var compliance = new List<ComplianceItemVm>();
             var accettazione = verifiche.FirstOrDefault(v => v.Tipo == TipoProtocollo.Accettazione);
-            compliance.Add(new ComplianceItemVm { Label = "Collaudo di Accettazione", Stato = accettazione?.Esito == EsitoVerifica.Superato ? "ok" : accettazione != null ? "warning" : "missing", Dettaglio = accettazione != null ? $"Eseguito il {accettazione.DataInizio:dd/MM/yyyy} — {accettazione.Esito}" : "Non ancora eseguito", Icona = "bi-check2-circle" });
+            compliance.Add(new ComplianceItemVm { Label = "Collaudo di Accettazione", Stato = accettazione?.Esito == EsitoVerifica.Positivo ? "ok" : accettazione != null ? "warning" : "missing", Dettaglio = accettazione != null ? $"Eseguito il {accettazione.DataInizio:dd/MM/yyyy} — {accettazione.Esito}" : "Non ancora eseguito", Icona = "bi-check2-circle" });
             var ultimoCQ  = verifiche.Where(v => v.Tipo == TipoProtocollo.Periodico).OrderByDescending(v => v.DataInizio).FirstOrDefault();
             var prossimoVm = ultimoCQ?.ProssimaVerificaData;
             compliance.Add(new ComplianceItemVm { Label = "Controllo Periodico/Manutentivo", Stato = prossimoVm == null ? "missing" : prossimoVm < oggi ? "danger" : prossimoVm <= tra30 ? "warning" : "ok", Dettaglio = prossimoVm.HasValue ? $"Prossimo controllo: {prossimoVm:dd/MM/yyyy}" : "Nessun controllo registrato", Icona = "bi-clipboard2-check" });
@@ -174,7 +216,7 @@ ViewBag.TipologiePerAmbito = tipologie;
             var no = app.NullaOsta.OrderByDescending(n => n.DataRilascio).FirstOrDefault();
             compliance.Add(new ComplianceItemVm { Label = "Nulla Osta", Stato = no == null ? "missing" : no.Stato == StatoNullaOsta.Scaduto ? "danger" : no.DataScadenza.HasValue && no.DataScadenza <= tra30 ? "warning" : "ok", Dettaglio = no != null ? $"NO {no.Tipo} — {no.Numero} — {no.Stato}" : "Nessun Nulla Osta", Icona = "bi-shield-check" });
             var primaVerifica = verifiche.FirstOrDefault(v => v.Tipo == TipoProtocollo.PrimaVerificaEdr);
-            compliance.Add(new ComplianceItemVm { Label = "Prima Verifica EDR", Stato = primaVerifica?.Esito == EsitoVerifica.Superato ? "ok" : primaVerifica != null ? "warning" : "missing", Dettaglio = primaVerifica != null ? $"Eseguita il {primaVerifica.DataInizio:dd/MM/yyyy}" : "Non ancora eseguita", Icona = "bi-person-check" });
+            compliance.Add(new ComplianceItemVm { Label = "Prima Verifica EDR", Stato = primaVerifica?.Esito == EsitoVerifica.Positivo ? "ok" : primaVerifica != null ? "warning" : "missing", Dettaglio = primaVerifica != null ? $"Eseguita il {primaVerifica.DataInizio:dd/MM/yyyy}" : "Non ancora eseguita", Icona = "bi-person-check" });
             var vm = new ApparecchiaturaDetailViewModel
             {
                 Apparecchiatura  = app,
@@ -183,6 +225,9 @@ ViewBag.TipologiePerAmbito = tipologie;
                 FigureRIR        = app.FigureResponsabili.Where(f => f.Ruolo == RuoloResponsabile.RIR).ToList(),
                 FigureMA         = app.FigureResponsabili.Where(f => f.Ruolo == RuoloResponsabile.MA).ToList(),
                 VerificheCQ      = verifiche,
+                StatistichePerTipo = statsTipo,
+                AnnoSelezionato = annoSelezionato,
+                AnniDisponibili = anniDisponibili,
                 VerificheEDR     = verifiche.Where(v => v.Tipo == TipoProtocollo.PrimaVerificaEdr || v.Tipo == TipoProtocollo.SorveglianzaPeriodicaEdr).ToList(),
                 UltimaAccettazione = accettazione,
                 NotichePratica   = app.NotifichePratica.OrderByDescending(n => n.DataNotifica).ToList(),
@@ -229,10 +274,10 @@ ViewBag.TipologiePerAmbito = tipologie;
             ModelState.Remove("Verbali");
             
 // ✅ COLLOCAZIONE
-ModelState.Remove("LocaleId");
-ModelState.Remove("SitoId");
-ModelState.Remove("ImmobileId");
-ModelState.Remove("PianoId");
+//ModelState.Remove("LocaleId");
+//ModelState.Remove("SitoId");
+//ModelState.Remove("ImmobileId");
+//ModelState.Remove("PianoId");
             // Forza modulo Radiologica
             model.Modulo = TipoModulo.Radiologica;
             if (!ModelState.IsValid)
@@ -267,6 +312,22 @@ ModelState.Remove("PianoId");
             model.CreatedByUserId  = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             _db.Apparecchiature.Add(model);
             await _db.SaveChangesAsync();
+            // ── Storico collocazione: prima riga "Ufficiale" se è stata indicata una collocazione
+            if (model.LocaleId.HasValue || model.SitoId > 0)
+            {
+                _db.StoricoCollocazioni.Add(new StoricoCollocazione
+                {
+                    ApparecchiaturaId = model.Id,
+                    Tipo              = TipoCollocazione.Ufficiale,
+                    SitoId            = model.SitoId,
+                    ImmobileId        = model.ImmobileId,
+                    PianoId           = model.PianoId,
+                    LocaleId          = model.LocaleId,
+                    DataInizio        = DateTime.UtcNow,
+                    CreatedByUserId   = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                });
+                await _db.SaveChangesAsync();
+            }
             TempData["Success"] = $"Apparecchiatura «{model.Descrizione}» creata con successo.";
             return RedirectToAction(nameof(Detail), new { id = model.Id });
         }
@@ -421,6 +482,22 @@ ModelState.Remove("PianoId");
                 System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             _db.Apparecchiature.Add(model);
             await _db.SaveChangesAsync();
+            // ── Storico collocazione: prima riga "Ufficiale" se è stata indicata una collocazione
+            if (model.LocaleId.HasValue || model.SitoId > 0)
+            {
+                _db.StoricoCollocazioni.Add(new StoricoCollocazione
+                {
+                    ApparecchiaturaId = model.Id,
+                    Tipo              = TipoCollocazione.Ufficiale,
+                    SitoId            = model.SitoId,
+                    ImmobileId        = model.ImmobileId,
+                    PianoId           = model.PianoId,
+                    LocaleId          = model.LocaleId,
+                    DataInizio        = DateTime.UtcNow,
+                    CreatedByUserId   = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                });
+                await _db.SaveChangesAsync();
+            }
             TempData["Success"] =
                 $"Apparecchiatura RM «{model.Descrizione}» creata con successo.";
             return RedirectToAction(nameof(Detail), new { id = model.Id });
@@ -448,6 +525,15 @@ ModelState.Remove("PianoId");
                 ViewData["BreadcrumbParent"]    = "Inventario";
                 ViewData["BreadcrumbParentUrl"] = "/Apparecchiature";
             }
+            // ── Storico collocazioni (più recente prima)
+            ViewBag.StoricoCollocazioni = await _db.StoricoCollocazioni
+                .Where(s => s.ApparecchiaturaId == id)
+                .Include(s => s.Sito)
+                .Include(s => s.Immobile)
+                .Include(s => s.Piano)
+                .Include(s => s.Locale)
+                .OrderByDescending(s => s.DataInizio)
+                .ToListAsync();
             await PopolateViewBag();
             return View(app);
         }
@@ -474,6 +560,8 @@ ModelState.Remove("PianoId");
             ModelState.Remove("NotichePratica");
             ModelState.Remove("NullaOsta");
             ModelState.Remove("Verbali");
+            ModelState.Remove("LocaleProvvisorio");
+            ModelState.Remove("StoricoCollocazioni");
             if (!ModelState.IsValid)
             {
                 await PopolateViewBag();
@@ -500,11 +588,92 @@ ModelState.Remove("PianoId");
             existing.TipoMagnete         = model.TipoMagnete;
             existing.LanCollegata        = model.LanCollegata;
             existing.MedsquareInstallato = model.MedsquareInstallato;
+            // ── Storico collocazione: confronto PRIMA di sovrascrivere existing
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var oraUtc = DateTime.UtcNow;
+            bool collocazioneUfficialeCambiata =
+                existing.LocaleId != model.LocaleId ||
+                existing.SitoId != model.SitoId ||
+                existing.ImmobileId != model.ImmobileId ||
+                existing.PianoId != model.PianoId;
+           if (collocazioneUfficialeCambiata &&
+    (model.LocaleId.HasValue || model.SitoId > 0 || model.ImmobileId > 0 || model.PianoId > 0))
+            {
+                // chiude lo storico "Ufficiale" ancora attivo (se esiste)
+                var storicoUfficialeAttivo = await _db.StoricoCollocazioni
+                    .Where(s => s.ApparecchiaturaId == id
+                             && s.Tipo == TipoCollocazione.Ufficiale
+                             && s.DataFine == null)
+                    .FirstOrDefaultAsync();
+                if (storicoUfficialeAttivo != null)
+                {
+                    storicoUfficialeAttivo.DataFine = oraUtc;
+                }
+                _db.StoricoCollocazioni.Add(new StoricoCollocazione
+                {
+                    ApparecchiaturaId = id,
+                    Tipo              = TipoCollocazione.Ufficiale,
+                    SitoId            = model.SitoId,
+                    ImmobileId        = model.ImmobileId,
+                    PianoId           = model.PianoId,
+                    LocaleId          = model.LocaleId,
+                    DataInizio        = oraUtc,
+                    CreatedByUserId   = userId
+                });
+            }
+            bool collocazioneProvvisoriaCambiata =
+                existing.LocaleProvvisorioId != model.LocaleProvvisorioId ||
+                existing.SitoProvvisorioId != model.SitoProvvisorioId ||
+                existing.ImmobileProvvisorioId != model.ImmobileProvvisorioId ||
+                existing.PianoProvvisorioId != model.PianoProvvisorioId;
+            if (collocazioneProvvisoriaCambiata && model.LocaleProvvisorioId.HasValue)
+            {
+                // chiude l'eventuale storico "Provvisoria" ancora attivo
+                var storicoProvvisorioAttivo = await _db.StoricoCollocazioni
+                    .Where(s => s.ApparecchiaturaId == id
+                             && s.Tipo == TipoCollocazione.Provvisoria
+                             && s.DataFine == null)
+                    .FirstOrDefaultAsync();
+                if (storicoProvvisorioAttivo != null)
+                {
+                    storicoProvvisorioAttivo.DataFine = oraUtc;
+                }
+                _db.StoricoCollocazioni.Add(new StoricoCollocazione
+                {
+                    ApparecchiaturaId = id,
+                    Tipo              = TipoCollocazione.Provvisoria,
+                    SitoId            = model.SitoProvvisorioId,
+                    ImmobileId        = model.ImmobileProvvisorioId,
+                    PianoId           = model.PianoProvvisorioId,
+                    LocaleId          = model.LocaleProvvisorioId,
+                    DataInizio        = model.DataInizioProvvisoria ?? oraUtc,
+                    CreatedByUserId   = userId
+                });
+                existing.DataInizioProvvisoria = model.DataInizioProvvisoria ?? oraUtc;
+            }
+            else if (!model.LocaleProvvisorioId.HasValue)
+            {
+                // l'utente ha svuotato la collocazione provvisoria: chiude lo storico attivo
+                var storicoProvvisorioAttivo = await _db.StoricoCollocazioni
+                    .Where(s => s.ApparecchiaturaId == id
+                             && s.Tipo == TipoCollocazione.Provvisoria
+                             && s.DataFine == null)
+                    .FirstOrDefaultAsync();
+                if (storicoProvvisorioAttivo != null)
+                {
+                    storicoProvvisorioAttivo.DataFine = oraUtc;
+                }
+                existing.DataInizioProvvisoria = null;
+            }
             // ── Collocazione
             existing.LocaleId            = model.LocaleId;
             existing.SitoId     = model.SitoId;
 existing.ImmobileId = model.ImmobileId;
 existing.PianoId    = model.PianoId;
+            existing.SitoProvvisorioId      = model.SitoProvvisorioId;
+            existing.ImmobileProvvisorioId  = model.ImmobileProvvisorioId;
+            existing.PianoProvvisorioId     = model.PianoProvvisorioId;
+            existing.LocaleProvvisorioId    = model.LocaleProvvisorioId;
             existing.RepartoId           = model.RepartoId;
             existing.DipartimentoId      = model.DipartimentoId;
             // ── Responsabili
@@ -612,6 +781,68 @@ existing.PianoId    = model.PianoId;
             return RedirectToAction(nameof(Index));
         }
         // ─── ELIMINA FILE ALLEGATO ───────────────────────────────────────
+        // ─── IMPOSTA UNA RIGA DI STORICO COME COLLOCAZIONE UFFICIALE ──
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ADMIN_ORG,EFM,EDR")]
+        public async Task<IActionResult> ImpostaCollocazioneUfficiale(int id, int storicoId)
+        {
+            var app = await _db.Apparecchiature.FindAsync(id);
+            if (app == null) return NotFound();
+            var riga = await _db.StoricoCollocazioni
+                .FirstOrDefaultAsync(s => s.Id == storicoId && s.ApparecchiaturaId == id);
+            if (riga == null)
+            {
+                TempData["Error"] = "Riga di storico non trovata.";
+                return RedirectToAction(nameof(Edit), new { id, step = 3 });
+            }
+            var oraUtc = DateTime.UtcNow;
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            // chiude lo storico Ufficiale attualmente attivo (se diverso dalla riga scelta)
+            var ufficialeAttivo = await _db.StoricoCollocazioni
+                .Where(s => s.ApparecchiaturaId == id
+                         && s.Tipo == TipoCollocazione.Ufficiale
+                         && s.DataFine == null
+                         && s.Id != storicoId)
+                .FirstOrDefaultAsync();
+            if (ufficialeAttivo != null)
+            {
+                ufficialeAttivo.DataFine = oraUtc;
+            }
+            // se la riga scelta era la collocazione provvisoria attiva, la chiude
+            // e svuota i campi provvisori sull'apparecchiatura
+            if (riga.Tipo == TipoCollocazione.Provvisoria && riga.DataFine == null)
+            {
+                riga.DataFine = oraUtc;
+                app.SitoProvvisorioId     = null;
+                app.ImmobileProvvisorioId = null;
+                app.PianoProvvisorioId    = null;
+                app.LocaleProvvisorioId   = null;
+                app.DataInizioProvvisoria = null;
+            }
+            // applica la collocazione scelta come ufficiale sull'apparecchiatura
+            app.SitoId     = riga.SitoId.Value;
+            app.ImmobileId = riga.ImmobileId.Value;
+            app.PianoId    = riga.PianoId.Value;
+            app.LocaleId   = riga.LocaleId;
+            // apre una nuova riga di storico "Ufficiale" con questi dati,
+            // cosi' si registra anche il momento esatto della promozione
+            _db.StoricoCollocazioni.Add(new StoricoCollocazione
+            {
+                ApparecchiaturaId = id,
+                Tipo              = TipoCollocazione.Ufficiale,
+                SitoId            = riga.SitoId,
+                ImmobileId        = riga.ImmobileId,
+                PianoId           = riga.PianoId,
+                LocaleId          = riga.LocaleId,
+                DataInizio        = oraUtc,
+                Note              = "Promossa da collocazione precedente (storico #" + riga.Id + ")",
+                CreatedByUserId   = userId
+            });
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Collocazione ufficiale aggiornata con successo.";
+            return RedirectToAction(nameof(Edit), new { id, step = 3 });
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "ADMIN_ORG,EFM,EDR")]
