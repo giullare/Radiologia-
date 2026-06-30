@@ -1,5 +1,6 @@
 using RadiologiaAppNew.Enums;
 using RadiologiaAppNew.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace RadiologiaAppNew.ViewModels.Verifiche
 {
@@ -62,8 +63,12 @@ namespace RadiologiaAppNew.ViewModels.Verifiche
         /// (mappato a TipoProtocollo nell'enum esistente)
         /// </summary>
         public string TipoUI { get; set; } = "FunzionamentoPeriodico";
+        
 
-        public int     ProtocolloId { get; set; }
+        
+        [Display(Name = "Protocollo di Riferimento")]
+        [Required(ErrorMessage = "Il {0} è obbligatorio")]
+        public int?     ProtocolloId { get; set; }
         public TipoProtocollo Tipo  { get; set; } = TipoProtocollo.Periodico;
 
         // ── Date ed Esito ────────────────────────────────────────────────

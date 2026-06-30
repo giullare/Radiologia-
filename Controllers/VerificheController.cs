@@ -199,7 +199,7 @@ namespace RadiologiaAppNew.Controllers
             var app = await _db.Apparecchiature.FindAsync(model.ApparecchiaturaId);
             if (app == null) return NotFound();
 
-            var protocollo = await _db.ProtocolliVerifica.FindAsync(model.ProtocolloId);
+            var protocollo = await _db.ProtocolliVerifica.FindAsync(model.ProtocolloId.Value);
             if (protocollo == null)
             {
                 ModelState.AddModelError("ProtocolloId", "Protocollo non trovato.");
@@ -224,7 +224,7 @@ namespace RadiologiaAppNew.Controllers
             var verifica = new RecordVerifica
             {
                 ApparecchiaturaId           = model.ApparecchiaturaId,
-                ProtocolloId                = model.ProtocolloId,
+                ProtocolloId                = model.ProtocolloId.Value,
                 Tipo                        = model.Tipo,
                 DataInizio                  = model.DataInizio,
                 DataFine                    = null, // rimosso
@@ -351,7 +351,7 @@ namespace RadiologiaAppNew.Controllers
             if (verifica == null) return NotFound();
 
             var protocollo = await _db.ProtocolliVerifica
-                .FindAsync(model.ProtocolloId);
+                .FindAsync(model.ProtocolloId.Value);
 
             // Mappa UI → enum
             model.Tipo  = TipoUIHelper.ToTipoProtocollo(model.TipoUI);
@@ -365,7 +365,7 @@ namespace RadiologiaAppNew.Controllers
             if (!prossimaVerifica.HasValue && periodicitaMesi.HasValue)
                 prossimaVerifica = model.DataInizio.AddMonths(periodicitaMesi.Value);
 
-            verifica.ProtocolloId              = model.ProtocolloId;
+            verifica.ProtocolloId              = model.ProtocolloId.Value;
             verifica.Tipo                      = model.Tipo;
             verifica.DataInizio                = model.DataInizio;
             verifica.DataFine                  = null;

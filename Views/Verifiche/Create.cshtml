@@ -47,10 +47,17 @@
             <div>
                 <strong>Correggi i seguenti errori:</strong>
                 <ul style="margin:6px 0 0;padding-left:16px;">
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <li style="font-size:0.85rem;">@error.ErrorMessage</li>
-                    }
+                   @foreach (var entry in ViewData.ModelState)
+{
+    var fieldName = entry.Key;
+
+    foreach (var error in entry.Value.Errors)
+    {
+        <li>
+             @error.ErrorMessage
+        </li>
+    }
+}
                 </ul>
             </div>
         </div>
@@ -121,6 +128,7 @@
 </option>
                                 }
                             </select>
+                            <span asp-validation-for="ProtocolloId" class="text-danger"></span>
                         </div>
 
                         <!-- Info protocollo selezionato + link file -->
