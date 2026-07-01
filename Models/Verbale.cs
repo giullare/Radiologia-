@@ -1,7 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using RadiologiaAppNew.Models.Enums;
 
 namespace RadiologiaAppNew.Models
 {
+    
+
     public class Verbale
     {
         public int Id { get; set; }
@@ -40,6 +43,10 @@ namespace RadiologiaAppNew.Models
         [MaxLength(20)]
         [Display(Name = "Stato")]
         public string Stato { get; set; } = "Aperto";
+
+        [Display(Name = "Esito")]
+        public EsitoVerbale? Esito { get; set; }
+
 
         [Display(Name = "Data Chiusura")]
         [DataType(DataType.Date)]
@@ -128,4 +135,5 @@ namespace RadiologiaAppNew.Models
         // Navigation
         public ICollection<FileAllegato> FileAllegati { get; set; } = new List<FileAllegato>();
     }
+
 }

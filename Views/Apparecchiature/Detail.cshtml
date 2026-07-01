@@ -1377,26 +1377,52 @@
                                       style="flex-shrink:0;font-size:0.7rem;">
                                     @v.Stato
                                 </span>
+                                @if (v.Stato == "Chiuso" && v.Esito != null)
+{
+    <span class="badge-compliance ms-1">
+        @v.Esito
+    </span>
+}
                                  <a href="/Adempimenti/EditVerbale/@v.Id"
                                        class="btn btn-ghost btn-icon btn-sm"
                                        title="Modifica">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <form asp-action="ChiudiVerbale"
-                                          asp-controller="Adempimenti"
-                                          method="post" style="display:inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@v.Id" />
-                                        <input type="hidden" name="apparecchiaturaId"
-                                               value="@app.Id" />
-                                        <button type="submit"
-                                                class="btn btn-ghost btn-icon btn-sm"
-                                                title="Chiudi"
-                                                @(v.Stato == "Chiuso" ? "disabled" : "")
-                                                data-confirm="Chiudere questo sopralluogo?">
-                                            <i class="bi bi-check2-circle text-success"></i>
-                                        </button>
-                                    </form>
+
+@if (v.Stato != "Chiuso")
+{
+
+                <form asp-action="ChiudiVerbale"
+      asp-controller="Adempimenti"
+      method="post"
+      style="display:inline-flex; gap:5px; align-items:center;">
+
+    <input type="hidden" name="id" value="@v.Id" />  
+
+    
+   <!-- ✅ APPARECCHIATURA -->
+    <input type="hidden" name="apparecchiaturaId" value="@app.Id" />
+              
+
+    <select name="esito" class="form-select form-select-sm" required
+            @(v.Stato == "Chiuso" ? "disabled" : "")>
+        <option value="">Esito</option>
+        <option value="Positivo">Positivo</option>
+        <option value="PositivoConRiserva">Positivo con riserva</option>
+        <option value="Negativo">Negativo</option>
+    </select>
+
+    
+<button type="submit"
+        class="btn btn-ghost btn-icon btn-sm"
+        title="Chiudi"
+        @(v.Stato == "Chiuso" ? "disabled" : "")
+        onclick="return confirm('Chiudere questo sopralluogo?')">
+        <i class="bi bi-check2-circle text-success"></i>
+    </button>
+</form>
+}
+
                             </div>
                         </div>
                     </div>
@@ -1592,7 +1618,7 @@
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="bi bi-bar-chart card-icon"></i>
-                    Esiti per Tipo Verifica
+                    Esito Verifiche
                     <span class="text-muted small ms-2">(@Model.AnnoSelezionato)</span>
                 </h3>
             </div>
@@ -1606,7 +1632,7 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="card-title m-0">
                     <i class="bi bi-pie-chart card-icon"></i>
-                    Distribuzione Esiti
+                    Distribuzione Esito Verifiche
                     <span class="text-muted small ms-2">(@Model.AnnoSelezionato)</span>
                 </h3>
                 <select class="form-select form-select-sm" style="width:180px" onchange="changeTipo(this.value)">
@@ -1682,9 +1708,9 @@ function switchTab(name) {
             data: {
                 labels: barLabels,
                 datasets: [
-                    { label: 'Positivi', data: barPositivi, backgroundColor: PALETTE.Positivi, borderRadius: 4 },
-                    { label: 'Negativi', data: barNegativi, backgroundColor: PALETTE.Negativi, borderRadius: 4 },
-                    { label: 'Positivi con riserva', data: barRiserva, backgroundColor: PALETTE.Riserva, borderRadius: 4 },
+                    { label: 'Positivo', data: barPositivi, backgroundColor: PALETTE.Positivi, borderRadius: 4 },
+                    { label: 'Negativo', data: barNegativi, backgroundColor: PALETTE.Negativi, borderRadius: 4 },
+                    { label: 'Positivo con riserva', data: barRiserva, backgroundColor: PALETTE.Riserva, borderRadius: 4 },
                     { label: 'In Corso', data: barInCorso, backgroundColor: PALETTE.InCorso, borderRadius: 4 }
                 ]
             },
@@ -1751,7 +1777,7 @@ function switchTab(name) {
         totaleLabelDist.textContent = '';
         return;
     }
-    
+
     const data = statsPerTipo.find(x => {
         const tipoVal = getFieldRaw(x, 'tipo');
         return tipoVal && tipoVal.trim().toLowerCase() === tipo.trim().toLowerCase();
@@ -1788,7 +1814,7 @@ function switchTab(name) {
     chartDist = new Chart(ctxDist, {
         type: 'doughnut',
         data: {
-            labels: ['Positivi', 'Negativi', 'Positivi con riserva', 'In Corso'],
+            labels: ['Positivo', 'Negativo', 'Positivo con riserva', 'In Corso'],
             datasets: [{
                 data: values,
                 backgroundColor: [PALETTE.Positivi, PALETTE.Negativi, PALETTE.Riserva, PALETTE.InCorso],

@@ -1,4 +1,5 @@
 @model RadiologiaAppNew.Models.Verbale
+@using RadiologiaAppNew.Models.Enums
 @{
     Layout = "_Layout";
     var isEdit = ViewBag.IsEdit == true;
@@ -106,7 +107,7 @@
 
                         <div class="col-md-4">
                             <label asp-for="Stato" class="form-label"></label>
-                            <select asp-for="Stato" class="form-select">
+                            <select asp-for="Stato" class="form-select" id="statoSelect">
                                 <option value="Aperto">Aperto</option>
                                 <option value="Chiuso">Chiuso</option>
                                 <option value="InAttesaAzioni">In Attesa Azioni</option>
@@ -118,6 +119,18 @@
                             <label asp-for="DataChiusura" class="form-label"></label>
                             <input asp-for="DataChiusura" type="date" class="form-control" />
                         </div>
+
+
+<div class="col-md-4" id="divEsito"
+     style="@(Model.Stato == "Chiuso" ? "" : "display:none")">
+    <label asp-for="Esito" class="form-label"></label>
+    <select asp-for="Esito"
+            class="form-select"
+            asp-items="Html.GetEnumSelectList<EsitoVerbale>()">
+        <option value="">-- Seleziona --</option>
+    </select>
+</div>
+
 
                         <div class="col-12">
                             <label class="form-label">File Verbale</label>
@@ -338,6 +351,66 @@ function onStatoChange(sel) {
     if (div) div.style.display = sel.value === 'Chiuso' ? 'block' : 'none';
 }
 </script>
+
+<script>
+    function toggleChiusura() {
+        const stato = document.getElementById("statoSelect").value;
+
+        const divData = document.getElementById("divDataChiusura");
+        const divEsito = document.getElementById("divEsito");
+
+        if (stato === "Chiuso") {
+            divData.style.display = "block";
+            divEsito.style.display = "block";
+        } else {
+            divData.style.display = "none";
+            divEsito.style.display = "none";
+
+            // reset valori
+            document.querySelector('[name="DataChiusura"]').value = "";
+            document.querySelector('[name="Esito"]').value = "";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        toggleChiusura();
+
+        document.getElementById("statoSelect")
+                .addEventListener("change", toggleChiusura);
+    });
+</script>
+
+
+<script>
+    function toggleCampiChiusura() {
+        const stato = document.getElementById("statoSelect").value;
+
+        const divData = document.getElementById("divDataChiusura");
+        const divEsito = document.getElementById("divEsito");
+
+        if (stato === "Chiuso") {
+            divData.style.display = "block";
+            divEsito.style.display = "block";
+        } else {
+            divData.style.display = "none";
+            divEsito.style.display = "none";
+
+            document.querySelector('[name="DataChiusura"]').value = "";
+            document.querySelector('[name="Esito"]').value = "";
+
+        }
+    }
+
+    // al caricamento pagina
+    document.addEventListener("DOMContentLoaded", function () {
+        toggleCampiChiusura();
+
+        document.getElementById("statoSelect")
+            .addEventListener("change", toggleCampiChiusura);
+    });
+</script>
+
+
 
 <style>
 /* Titolo sezione specifiche */

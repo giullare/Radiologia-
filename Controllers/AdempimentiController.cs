@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RadiologiaAppNew.Data;
 using RadiologiaAppNew.Enums;
 using RadiologiaAppNew.Models;
+using RadiologiaAppNew.Models.Enums;
 
 namespace RadiologiaAppNew.Controllers
 {
@@ -1089,6 +1090,30 @@ public async Task<IActionResult> EliminaFileVerbale(int id, int apparecchiaturaI
         {
             ModelState.Remove("Apparecchiatura");
             ModelState.Remove("FileAllegati");
+            
+ // ✅ PULIZIA DATI (PRIMA)
+    if (model.Stato != "Chiuso")
+    {
+        model.Esito = null;
+        model.DataChiusura = null;
+        
+ModelState.Remove("Esito");
+    ModelState.Remove("DataChiusura");
+
+    }
+
+
+        
+ // ✅ AGGIUNGI QUI
+    if (model.Stato == "Chiuso")
+    {
+        if (model.Esito == null)
+            ModelState.AddModelError("Esito", "Esito obbligatorio");
+
+        if (model.DataChiusura == null)
+            ModelState.AddModelError("DataChiusura", "Data chiusura obbligatoria");
+    }
+
 
             if (!ModelState.IsValid)
             {
@@ -1167,6 +1192,29 @@ public async Task<IActionResult> EliminaFileVerbale(int id, int apparecchiaturaI
             ModelState.Remove("Apparecchiatura");
             ModelState.Remove("FileAllegati");
 
+// ✅ PULIZIA DATI
+    if (model.Stato != "Chiuso")
+    {
+        model.Esito = null;
+        model.DataChiusura = null;
+        
+ModelState.Remove("Esito");
+    ModelState.Remove("DataChiusura");
+
+    
+  }
+            
+// ✅ AGGIUNGI QUI
+    if (model.Stato == "Chiuso")
+    {
+        if (model.Esito == null)
+            ModelState.AddModelError("Esito", "Esito obbligatorio");
+
+        if (model.DataChiusura == null)
+            ModelState.AddModelError("DataChiusura", "Data chiusura obbligatoria");
+    }
+
+
             if (!ModelState.IsValid)
             {
                 ViewBag.ApparecchiaturaId          = model.ApparecchiaturaId;
@@ -1189,6 +1237,7 @@ public async Task<IActionResult> EliminaFileVerbale(int id, int apparecchiaturaI
             existing.ScadenzaAzioni   = model.ScadenzaAzioni;
             existing.Stato            = model.Stato;
             existing.DataChiusura     = model.DataChiusura;
+            existing.Esito            = model.Esito;
 
             // Specifiche sopralluogo — Generali
             existing.PresenzaDosimetroAmbientale    = model.PresenzaDosimetroAmbientale;
@@ -1257,14 +1306,18 @@ public async Task<IActionResult> EliminaFileVerbale(int id, int apparecchiaturaI
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "ADMIN_ORG,EDR")]
-        public async Task<IActionResult> ChiudiVerbale(int id, int apparecchiaturaId)
+        public async Task<IActionResult> ChiudiVerbale(int id, int apparecchiaturaId, EsitoVerbale? esito )
         {
+
             var v = await _db.Verbali.FindAsync(id);
+
             if (v != null)
             {
                 v.Stato        = "Chiuso";
                 v.DataChiusura = DateTime.Today;
+                v.Esito = esito;  // ✅ AGGIUNTO
                 await _db.SaveChangesAsync();
+
                 TempData["Success"] = "Sopralluogo chiuso.";
             }
             return RedirectToAction("Detail", "Apparecchiature",
